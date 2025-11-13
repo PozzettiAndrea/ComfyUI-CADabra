@@ -4,11 +4,20 @@ torch>=2.0.0
 transformers>=4.30.0
 trimesh>=3.20.0
 
-# Optional: CAD format conversion (STEP/IGES/BREP/STL)
-# pythonocc-core is recommended to be installed via conda for best compatibility:
+# Mesh Reconstruction Pipeline Dependencies (Phase 1 MVP)
+open3d>=0.17.0           # Point cloud processing and visualization
+scikit-learn>=1.3.0      # KMeans clustering for segmentation
+scipy>=1.11.0            # Spatial operations and optimization
+pyransac3d>=0.5.0        # Primitive fitting (RANSAC-based) - optional but recommended
+
+# Note: B-rep generation uses gmsh.model.occ (already included above)
+# This eliminates the need for pythonocc-core in Phase 1!
+
+# Optional: Advanced CAD operations (Phase 2+)
+# pythonocc-core provides advanced surface operations if needed:
 #   conda install -c conda-forge pythonocc-core=7.9.0
-#
-# If pip installation works in your environment, uncomment the line below:
-# pythonocc-core>=7.8.0
-#
-# See INSTALL.md for detailed installation instructions
+# Used by CAD_Convert_Format node for advanced format conversion
+
+# Future Dependencies (Phase 2+):
+# torch-geometric>=2.4.0   # For PointNet++ graph operations
+# quadwild                 # Quad remeshing (requires C++ compilation)

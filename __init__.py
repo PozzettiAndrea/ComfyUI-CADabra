@@ -32,6 +32,8 @@ if 'pytest' not in sys.modules:
         print(f"[CADabra] Missing system library: {e}")
         print("[CADabra] Install system dependencies: apt-get install libglu1-mesa libxft2")
 
+    # Import all nodes from the nodes module
+    # This includes both CAD nodes and mesh reconstruction nodes
     from .nodes import NODE_CLASS_MAPPINGS, NODE_DISPLAY_NAME_MAPPINGS
 else:
     # During testing, don't import nodes
