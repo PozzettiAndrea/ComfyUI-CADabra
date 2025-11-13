@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>CADabra OpenCascade.js Viewer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+            background: #1a1a1a;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+        #container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+        #loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #ccc;
+            font-size: 14px;
+            text-align: center;
+            z-index: 10;
+        }
+        #error {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #ff6b6b;
+            font-size: 14px;
+            text-align: center;
+            z-index: 10;
+            max-width: 80%;
+            display: none;
+        }
+        #controls {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px;
+            border-radius: 4px;
+            color: #ccc;
+            font-size: 11px;
+            z-index: 5;
+        }
+        #controls button {
+            margin: 2px;
+            padding: 4px 8px;
+            background: #333;
+            border: 1px solid #555;
+            color: #ccc;
+            cursor: pointer;
+            border-radius: 3px;
+            font-size: 11px;
+        }
+        #controls button:hover {
+            background: #444;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <div id="loading">
+            <div>Initializing OpenCascade.js...</div>
+            <div style="margin-top: 10px; font-size: 12px; color: #999;">This may take a moment on first load</div>
+        </div>
+        <div id="error"></div>
+        <div id="controls">
+            <div style="margin-bottom: 8px; font-weight: bold;">Controls</div>
+            <div>Left Mouse: Rotate</div>
+            <div>Right Mouse: Pan</div>
+            <div>Scroll: Zoom</div>
+            <div style="margin-top: 8px;">
+                <button id="resetView">Reset View</button>
+                <button id="fitView">Fit to View</button>
+            </div>
+            <div style="margin-top: 8px;">
+                <label><input type="checkbox" id="wireframe"> Wireframe</label>
+            </div>
+            <div style="margin-top: 8px;">
+                <label><input type="checkbox" id="showEdges" checked> Show Edges</label>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load Three.js for rendering (bundled locally - r138) -->
+    <script src="/extensions/ComfyUI-CADabra/.libs/three/three.min.js"></script>
+    <script src="/extensions/ComfyUI-CADabra/.libs/three/OrbitControls.js"></script>
+
+    <!-- Load OpenCascade.js as ES module (bundled locally - v1.1.1) -->
+    <script type="module">
+        import opencascadeInit from '/extensions/ComfyUI-CADabra/.libs/opencascade/opencascade.wasm.js';
+
+        console.log('[OCC] Loading OpenCascade.js from local bundle: /extensions/ComfyUI-CADabra/.libs/opencascade/');
+
+        let scene, camera, renderer, controls;
+        let currentMesh = null;
+        let currentEdges = null;
+        let oc = null;
+
+        const loadingDiv = document.getElementById('loading');
+        const errorDiv = document.getElementById('error');
+
+        // Initialize Three.js scene
+        function initScene() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x1a1a1a);
+
+            camera = new THREE.PerspectiveCamera(
+                50,
+                window.innerWidth / window.innerHeight,
+                0.01,
+                10000
+            );
+            camera.position.set(100, 100, 100);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            document.getElementById('container').appendChild(renderer.domElement);
+
+            // Add lights
+            const ambientLight = new THREE.AmbientLight(0x404040, 2);
+            scene.add(ambientLight);
+
+            const directionalLight1 = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight1.position.set(1, 1, 1);
+            scene.add(directionalLight1);
+
+            const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.4);
+            directionalLight2.position.set(-1, -1, -1);
+            scene.add(directionalLight2);
+
+            // Add orbit controls
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+
+            // Handle window resize
+            window.addEventListener('resize', onWindowResize, false);
+
+            // Start animation loop
+            animate();
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // Initialize OpenCascade.js
+        async function initOpenCascade() {
+            try {
+                console.log('[OCC] Initializing OpenCascade.js...');
+                // Override locateFile to point to correct WASM location
+                oc = await opencascadeInit({
+                    locateFile: (path) => {
+                        if (path.endsWith('.wasm')) {
+                            return '/extensions/ComfyUI-CADabra/.libs/opencascade/' + path;
+                        }
+                        return path;
+                    }
+                });
+                console.log('[OCC] OpenCascade.js initialized successfully');
+                loadingDiv.style.display = 'none';
+            } catch (error) {
+                console.error('[OCC] Failed to initialize OpenCascade.js:', error);
+                showError('Failed to initialize OpenCascade.js: ' + error.message);
+            }
+        }
+
+        function showError(message) {
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            loadingDiv.style.display = 'none';
+        }
+
+        function showLoading(message) {
+            loadingDiv.innerHTML = `<div>${message}</div>`;
+            loadingDiv.style.display = 'block';
+            errorDiv.style.display = 'none';
+        }
+
+        // Load and display CAD file
+        async function loadCADFile(filepath, format) {
+            if (!oc) {
+                showError('OpenCascade.js not initialized');
+                return;
+            }
+
+            showLoading('Loading CAD file...');
+
+            try {
+                console.log('[OCC] Fetching CAD file:', filepath);
+                const response = await fetch(filepath);
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch file: ${response.statusText}`);
+                }
+
+                const arrayBuffer = await response.arrayBuffer();
+                const fileBuffer = new Uint8Array(arrayBuffer);
+
+                console.log('[OCC] File loaded, size:', fileBuffer.length, 'bytes');
+                showLoading('Parsing CAD geometry...');
+
+                // Write file to virtual filesystem
+                const filename = 'temp.' + (format || 'step');
+                oc.FS.writeFile('/' + filename, fileBuffer);
+
+                // Read the STEP file
+                console.log('[OCC] Reading STEP file...');
+                const reader = new oc.STEPControl_Reader_1();
+                const readStatus = reader.ReadFile('/' + filename);
+
+                if (readStatus !== oc.IFSelect_ReturnStatus.IFSelect_RetDone) {
+                    throw new Error('Failed to read STEP file');
+                }
+
+                console.log('[OCC] Transferring to document...');
+                reader.TransferRoots();  // v1.1.1 API - no parameters needed
+                const shape = reader.OneShape();
+
+                console.log('[OCC] Tessellating shape...');
+                showLoading('Converting to mesh...');
+
+                // Tessellate the shape for visualization
+                const incrementalMesh = new oc.BRepMesh_IncrementalMesh_2(
+                    shape,
+                    0.1,  // Linear deflection
+                    false,
+                    0.5,  // Angular deflection
+                    true
+                );
+
+                // Extract triangulation
+                const vertices = [];
+                const indices = [];
+                const explorer = new oc.TopExp_Explorer_2(
+                    shape,
+                    oc.TopAbs_ShapeEnum.TopAbs_FACE,
+                    oc.TopAbs_ShapeEnum.TopAbs_SHAPE
+                );
+
+                let vertexOffset = 0;
+
+                while (explorer.More()) {
+                    const face = oc.TopoDS.Face_1(explorer.Current());
+                    const location = new oc.TopLoc_Location_1();
+                    const triangulation = oc.BRep_Tool.Triangulation(face, location);
+
+                    if (!triangulation.IsNull()) {
+                        const transformation = location.Transformation();
+                        const nodeCount = triangulation.get().NbNodes();
+                        const triangleCount = triangulation.get().NbTriangles();
+
+                        // Get vertices
+                        for (let i = 1; i <= nodeCount; i++) {
+                            const node = triangulation.get().Node(i);
+                            const transformed = node.Transformed(transformation);
+                            vertices.push(transformed.X(), transformed.Y(), transformed.Z());
+                        }
+
+                        // Get triangles
+                        const faceOrientation = face.Orientation_1();
+                        for (let i = 1; i <= triangleCount; i++) {
+                            const triangle = triangulation.get().Triangle(i);
+                            let i1 = triangle.Value(1);
+                            let i2 = triangle.Value(2);
+                            let i3 = triangle.Value(3);
+
+                            // Adjust for face orientation
+                            if (faceOrientation === oc.TopAbs_Orientation.TopAbs_REVERSED) {
+                                indices.push(
+                                    vertexOffset + i1 - 1,
+                                    vertexOffset + i3 - 1,
+                                    vertexOffset + i2 - 1
+                                );
+                            } else {
+                                indices.push(
+                                    vertexOffset + i1 - 1,
+                                    vertexOffset + i2 - 1,
+                                    vertexOffset + i3 - 1
+                                );
+                            }
+                        }
+
+                        vertexOffset += nodeCount;
+                    }
+
+                    explorer.Next();
+                }
+
+                console.log('[OCC] Mesh created:', vertices.length / 3, 'vertices,', indices.length / 3, 'triangles');
+
+                // Create Three.js geometry
+                const geometry = new THREE.BufferGeometry();
+                geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+                geometry.setIndex(indices);
+                geometry.computeVertexNormals();
+
+                // Remove old mesh if exists
+                if (currentMesh) {
+                    scene.remove(currentMesh);
+                    currentMesh.geometry.dispose();
+                    currentMesh.material.dispose();
+                }
+                if (currentEdges) {
+                    scene.remove(currentEdges);
+                    currentEdges.geometry.dispose();
+                    currentEdges.material.dispose();
+                }
+
+                // Create mesh material
+                const material = new THREE.MeshPhongMaterial({
+                    color: 0x88ccff,
+                    side: THREE.DoubleSide,
+                    flatShading: false,
+                    polygonOffset: true,
+                    polygonOffsetFactor: 1,
+                    polygonOffsetUnits: 1
+                });
+
+                currentMesh = new THREE.Mesh(geometry, material);
+                scene.add(currentMesh);
+
+                // Create edges
+                const edgesGeometry = new THREE.EdgesGeometry(geometry, 15);
+                const edgesMaterial = new THREE.LineBasicMaterial({ color: 0x000000, linewidth: 1 });
+                currentEdges = new THREE.LineSegments(edgesGeometry, edgesMaterial);
+                scene.add(currentEdges);
+
+                // Fit camera to model
+                fitCameraToModel();
+
+                // Clean up
+                oc.FS.unlink('/' + filename);
+
+                loadingDiv.style.display = 'none';
+                console.log('[OCC] CAD file loaded successfully');
+
+            } catch (error) {
+                console.error('[OCC] Error loading CAD file:', error);
+                showError('Failed to load CAD file: ' + error.message);
+            }
+        }
+
+        function fitCameraToModel() {
+            if (!currentMesh) return;
+
+            const box = new THREE.Box3().setFromObject(currentMesh);
+            const center = box.getCenter(new THREE.Vector3());
+            const size = box.getSize(new THREE.Vector3());
+
+            const maxDim = Math.max(size.x, size.y, size.z);
+            const fov = camera.fov * (Math.PI / 180);
+            let cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2));
+
+            cameraZ *= 2; // Add some padding
+
+            camera.position.set(center.x + cameraZ, center.y + cameraZ, center.z + cameraZ);
+            camera.lookAt(center);
+            controls.target.copy(center);
+            controls.update();
+        }
+
+        // UI Controls
+        document.getElementById('resetView').addEventListener('click', () => {
+            if (currentMesh) {
+                camera.position.set(100, 100, 100);
+                controls.target.set(0, 0, 0);
+                controls.update();
+            }
+        });
+
+        document.getElementById('fitView').addEventListener('click', () => {
+            fitCameraToModel();
+        });
+
+        document.getElementById('wireframe').addEventListener('change', (e) => {
+            if (currentMesh) {
+                currentMesh.material.wireframe = e.target.checked;
+            }
+        });
+
+        document.getElementById('showEdges').addEventListener('change', (e) => {
+            if (currentEdges) {
+                currentEdges.visible = e.target.checked;
+            }
+        });
+
+        // Listen for messages from parent window
+        window.addEventListener('message', (event) => {
+            console.log('[OCC] Received message:', event.data);
+            if (event.data.type === 'LOAD_CAD') {
+                loadCADFile(event.data.filepath, event.data.format);
+            }
+        });
+
+        // Initialize everything
+        initScene();
+        initOpenCascade();
+
+        console.log('[OCC] Viewer initialized and ready');
+    </script>
+</body>
+</html>

@@ -2,6 +2,8 @@
 
 CAD file processing and ML-based surface reconstruction nodes for ComfyUI.
 
+![CAD Viewer](docs/viewer.png)
+
 ## Nodes
 
 **CAD_Load_Gmsh** - Load STEP, IGES, and BREP CAD files using Gmsh
