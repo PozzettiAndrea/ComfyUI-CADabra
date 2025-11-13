@@ -16,6 +16,37 @@ CAD file processing and ML-based surface reconstruction nodes for ComfyUI.
 
 **CAD_Viewer** - Interactive Three.js-based 3D viewer for CAD models and meshes
 
+## Features
+
+- **Interactive CAD Viewer**: OpenCascade.js-based 3D viewer with orbit controls
+- **Smart File Loading**: Automatically searches in `input/`, `input/cad/`, and custom paths
+- **Bundled Libraries**: Three.js and OpenCascade.js served locally (no CDN dependencies)
+- **Multiple Formats**: STEP (.step, .stp), IGES (.iges, .igs), BREP (.brep)
+- **Mesh Generation**: Configurable 2D/3D meshing with Gmsh
+
+## Installation
+
+```bash
+cd ComfyUI/custom_nodes
+git clone https://github.com/PozzettiAndrea/ComfyUI-CADabra
+cd ComfyUI-CADabra
+pip install gmsh
+```
+
+System dependencies (auto-installed on Linux):
+- `libglu1-mesa` - OpenGL utility library
+- `libxft2` - X11 FreeType interface library
+
+## Usage
+
+Place your CAD files in:
+- `ComfyUI/input/cad/` (recommended)
+- `ComfyUI/input/` (also works)
+- Any absolute path
+
+Then reference them in the **CAD Load (Gmsh)** node with just the filename.
+
 ## Notes
 
-ML nodes are currently stubs - integrate HuggingFace models as needed.
+- ML nodes are currently stubs - integrate HuggingFace models as needed
+- For publishing to Comfy Registry, see [PUBLISHING.md](PUBLISHING.md)
