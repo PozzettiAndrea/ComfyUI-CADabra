@@ -4,6 +4,7 @@
 CAD file processing and ML-based surface reconstruction nodes for ComfyUI.
 
 ![CAD Viewer](docs/viewer.png)
+![CAD Viewer](docs/meshing.png)
 
 ## Nodes
 

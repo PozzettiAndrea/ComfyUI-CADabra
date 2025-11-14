@@ -9,6 +9,7 @@ import uuid
 import numpy as np
 import torch
 import folder_paths
+import trimesh
 
 
 class CAD_Load_Gmsh:
@@ -119,7 +120,7 @@ class CAD_Mesh_Gmsh:
             }
         }
 
-    RETURN_TYPES = ("MESH",)
+    RETURN_TYPES = ("TRIMESH", "MESH_METADATA")
     FUNCTION = "generate_mesh"
     CATEGORY = "CADabra"
 
@@ -153,16 +154,42 @@ class CAD_Mesh_Gmsh:
 
             faces = elem_node_tags[0].reshape(-1, 3 if mesh_type == "2D" else 4) - 1
 
-            mesh_data = {
-                "vertices": vertices,
-                "faces": faces,
-                "type": mesh_type,
-                "element_size": element_size
+            # Convert faces to triangles if needed (for 3D meshes with tets, extract surface)
+            if mesh_type == "3D" and faces.shape[1] == 4:
+                # For tetrahedra, extract triangular surface faces
+                # Each tet has 4 triangular faces
+                triangles = []
+                for tet in faces:
+                    triangles.append([tet[0], tet[1], tet[2]])
+                    triangles.append([tet[0], tet[1], tet[3]])
+                    triangles.append([tet[0], tet[2], tet[3]])
+                    triangles.append([tet[1], tet[2], tet[3]])
+                faces = np.array(triangles)
+                print(f"  Converted 3D tets to surface triangles: {len(faces)} faces")
+
+            # Create trimesh object
+            tm = trimesh.Trimesh(
+                vertices=vertices,
+                faces=faces
+            )
+
+            # Store CADabra-specific metadata in trimesh.metadata
+            tm.metadata['cadabra_type'] = mesh_type
+            tm.metadata['element_size'] = element_size
+            tm.metadata['algorithm'] = algorithm
+
+            # Create separate metadata dict for explicit output
+            metadata = {
+                'type': mesh_type,
+                'element_size': element_size,
+                'algorithm': algorithm,
+                'vertex_count': len(vertices),
+                'face_count': len(faces),
             }
 
             print(f"[CADabra] Generated {mesh_type} mesh: {len(vertices)} vertices, {len(faces)} elements")
             # Don't finalize gmsh - keep it alive for next operation
-            return (mesh_data,)
+            return (tm, metadata)
 
         except Exception as e:
             # Don't finalize gmsh - keep it alive for next operation
@@ -202,7 +229,7 @@ class CAD_Mesh_Gmsh_Advanced:
             }
         }
 
-    RETURN_TYPES = ("MESH",)
+    RETURN_TYPES = ("TRIMESH", "MESH_METADATA")
     FUNCTION = "generate_mesh"
     CATEGORY = "CADabra/Advanced"
 
@@ -340,23 +367,80 @@ class CAD_Mesh_Gmsh_Advanced:
             else:
                 faces = np.array([])
 
-            mesh_data = {
-                "vertices": vertices,
-                "faces": faces,
-                "type": mesh_type,
-                "element_size": element_size,
-                "element_order": int(element_order),
-                "min_size": min_element_size,
-                "max_size": max_element_size,
-                "algorithm_2d": algorithm_2d,
-                "algorithm_3d": algorithm_3d if mesh_type == "3D" else None,
+            original_face_count = len(faces)
+
+            # Convert all elements to triangles for trimesh compatibility
+            triangulated_faces = []
+            for face in faces:
+                if len(face) == 3:
+                    # Already triangular
+                    triangulated_faces.append(face)
+                elif len(face) == 4:
+                    # Quad: split into 2 triangles
+                    triangulated_faces.append([face[0], face[1], face[2]])
+                    triangulated_faces.append([face[0], face[2], face[3]])
+                elif len(face) > 4:
+                    # Higher-order elements: use only corner vertices (first 3-4 nodes)
+                    if mesh_type == "2D":
+                        # 2D higher-order triangle/quad: take first 3-4 nodes
+                        if len(face) == 6 or len(face) == 9 or len(face) == 10:
+                            # Higher-order triangle (6, 10 nodes) or quad (9 nodes)
+                            # Extract corner nodes
+                            triangulated_faces.append([face[0], face[1], face[2]])
+                            if len(face) == 9:  # Higher-order quad
+                                triangulated_faces.append([face[0], face[2], face[3]])
+                    else:
+                        # 3D: extract surface from volume element
+                        # For tets (10 nodes) and hexes (20, 27 nodes)
+                        # Extract first 4 nodes and create surface
+                        triangulated_faces.append([face[0], face[1], face[2]])
+                        if len(face) >= 4:
+                            triangulated_faces.append([face[0], face[1], face[3]])
+                            triangulated_faces.append([face[0], face[2], face[3]])
+                            triangulated_faces.append([face[1], face[2], face[3]])
+
+            triangulated_faces = np.array(triangulated_faces, dtype=np.int32)
+
+            if original_face_count != len(triangulated_faces):
+                print(f"  Converted {original_face_count} elements to {len(triangulated_faces)} triangles")
+
+            # Create trimesh object
+            tm = trimesh.Trimesh(
+                vertices=vertices,
+                faces=triangulated_faces
+            )
+
+            # Store CADabra-specific metadata in trimesh.metadata
+            tm.metadata['cadabra_type'] = mesh_type
+            tm.metadata['element_size'] = element_size
+            tm.metadata['element_order'] = int(element_order)
+            tm.metadata['algorithm_2d'] = algorithm_2d
+            tm.metadata['algorithm_3d'] = algorithm_3d if mesh_type == "3D" else None
+            tm.metadata['min_size'] = min_element_size
+            tm.metadata['max_size'] = max_element_size
+            tm.metadata['use_curvature_sizing'] = use_curvature_sizing
+
+            # Create separate metadata dict for explicit output
+            metadata = {
+                'type': mesh_type,
+                'element_size': element_size,
+                'element_order': int(element_order),
+                'min_size': min_element_size,
+                'max_size': max_element_size,
+                'algorithm_2d': algorithm_2d,
+                'algorithm_3d': algorithm_3d if mesh_type == "3D" else None,
+                'use_curvature_sizing': use_curvature_sizing,
+                'curvature_divisions': curvature_divisions if use_curvature_sizing else None,
+                'vertex_count': len(vertices),
+                'face_count': len(triangulated_faces),
+                'original_element_count': original_face_count,
             }
 
             print(f"[CADabra] Generated {mesh_type} mesh (Advanced): "
-                  f"{len(vertices)} vertices, {len(faces)} elements, "
+                  f"{len(vertices)} vertices, {len(triangulated_faces)} triangular faces, "
                   f"order {element_order}")
 
-            return (mesh_data,)
+            return (tm, metadata)
 
         except Exception as e:
             raise RuntimeError(f"Advanced mesh generation failed: {str(e)}")
@@ -369,9 +453,10 @@ class Mesh_Optimize_Gmsh:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "mesh": ("MESH",),
+                "mesh": ("TRIMESH",),
             },
             "optional": {
+                "metadata": ("MESH_METADATA",),
                 # Optimization
                 "optimize": ("BOOLEAN", {"default": True}),
                 "optimize_netgen": ("BOOLEAN", {"default": False}),
@@ -390,11 +475,11 @@ class Mesh_Optimize_Gmsh:
             }
         }
 
-    RETURN_TYPES = ("MESH",)
+    RETURN_TYPES = ("TRIMESH", "MESH_METADATA")
     FUNCTION = "optimize_mesh"
     CATEGORY = "CADabra/Advanced"
 
-    def optimize_mesh(self, mesh, optimize=True, optimize_netgen=False, optimize_ho=False,
+    def optimize_mesh(self, mesh, metadata=None, optimize=True, optimize_netgen=False, optimize_ho=False,
                      smooth_steps=1, recombine=False, recombine_algorithm="Simple",
                      recombine_angle=45.0, gmsh_options="{}"):
         try:
@@ -416,9 +501,15 @@ class Mesh_Optimize_Gmsh:
             gmsh.clear()
             gmsh.model.add("optimization_model")
 
-            # Add nodes
-            vertices = mesh["vertices"]
-            faces = mesh["faces"]
+            # Extract data from trimesh object
+            vertices = mesh.vertices
+            faces = mesh.faces
+
+            # Get metadata from input or from trimesh.metadata
+            if metadata is None:
+                metadata = mesh.metadata.copy() if hasattr(mesh, 'metadata') and mesh.metadata else {}
+            else:
+                metadata = metadata.copy()
 
             # Create a temporary mesh in gmsh
             # Note: This is a simplified approach - for full functionality,
@@ -457,24 +548,32 @@ class Mesh_Optimize_Gmsh:
             print(f"[CADabra] Note: For full optimization, use these settings in mesh generation")
             print(f"[CADabra] or ensure the mesh is connected to its source CAD geometry")
 
-            # Create optimized mesh data with metadata about requested optimizations
-            optimized_mesh = {
-                "vertices": vertices,
-                "faces": faces,
-                "type": mesh.get("type", "unknown"),
-                "element_size": mesh.get("element_size", 1.0),
-                "optimizations_applied": {
-                    "optimize": optimize,
-                    "optimize_netgen": optimize_netgen,
-                    "optimize_ho": optimize_ho,
-                    "smooth_steps": smooth_steps,
-                    "recombine": recombine,
-                    "recombine_algorithm": recombine_algorithm if recombine else None,
-                }
+            # Create optimized trimesh object (currently pass-through)
+            optimized_mesh = trimesh.Trimesh(
+                vertices=vertices,
+                faces=faces
+            )
+
+            # Copy existing metadata
+            optimized_mesh.metadata.update(mesh.metadata if hasattr(mesh, 'metadata') and mesh.metadata else {})
+
+            # Add optimization metadata
+            optimized_mesh.metadata['optimizations_applied'] = {
+                "optimize": optimize,
+                "optimize_netgen": optimize_netgen,
+                "optimize_ho": optimize_ho,
+                "smooth_steps": smooth_steps,
+                "recombine": recombine,
+                "recombine_algorithm": recombine_algorithm if recombine else None,
             }
 
+            # Update metadata dict
+            metadata['optimizations_applied'] = optimized_mesh.metadata['optimizations_applied']
+            metadata['vertex_count'] = len(vertices)
+            metadata['face_count'] = len(faces)
+
             print(f"[CADabra] Mesh pass-through with optimization metadata")
-            return (optimized_mesh,)
+            return (optimized_mesh, metadata)
 
         except Exception as e:
             raise RuntimeError(f"Mesh optimization failed: {str(e)}")
@@ -487,7 +586,7 @@ class ML_SurfaceRecon:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "mesh": ("MESH",),
+                "mesh": ("TRIMESH",),
                 "model_name": ([
                     "hustvl/surface-recon",
                     "threedvision/point2surf",
@@ -508,8 +607,8 @@ class ML_SurfaceRecon:
 
         # Stub: return input mesh as-is
         surface_data = {
-            "vertices": mesh["vertices"],
-            "faces": mesh["faces"],
+            "vertices": mesh.vertices,
+            "faces": mesh.faces,
             "model_used": model_name,
             "smoothness": smoothness,
             "status": "stub_implementation"
@@ -525,7 +624,7 @@ class ML_FeatureDetection:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "mesh": ("MESH",),
+                "mesh": ("TRIMESH",),
                 "model_name": ([
                     "autodesk/feature-detection-cad",
                     "hustvl/cad-features"

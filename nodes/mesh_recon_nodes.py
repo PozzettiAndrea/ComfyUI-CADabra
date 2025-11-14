@@ -58,7 +58,7 @@ class QuadRemeshNode:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "mesh": ("MESH",),
+                "mesh": ("TRIMESH",),
                 "target_edge_length": ("FLOAT", {
                     "default": 0.1,
                     "min": 0.001,
@@ -74,34 +74,39 @@ class QuadRemeshNode:
                 }),
             },
             "optional": {
+                "metadata": ("MESH_METADATA",),
                 "smooth": ("BOOLEAN", {"default": True}),
             }
         }
 
-    RETURN_TYPES = ("MESH",)
+    RETURN_TYPES = ("TRIMESH", "MESH_METADATA")
     FUNCTION = "remesh"
     CATEGORY = "CADabra/Mesh Reconstruction"
 
-    def remesh(self, mesh: Dict, target_edge_length: float, iterations: int, smooth: bool = True) -> Tuple[Dict]:
+    def remesh(self, mesh, target_edge_length: float, iterations: int, metadata=None, smooth: bool = True) -> Tuple:
         """
         Remesh the input triangle mesh to improve quality
 
         Args:
-            mesh: Input MESH dict with vertices and faces
+            mesh: Input TRIMESH object
             target_edge_length: Desired edge length for remeshing
             iterations: Number of subdivision iterations
+            metadata: Optional MESH_METADATA dict
             smooth: Whether to apply smoothing
 
         Returns:
-            Tuple containing refined MESH dict
+            Tuple containing refined TRIMESH object and updated metadata
         """
-        print(f"🔄 QuadRemesh: Processing mesh with {len(mesh['vertices'])} vertices, {len(mesh['faces'])} faces")
+        print(f"🔄 QuadRemesh: Processing mesh with {len(mesh.vertices)} vertices, {len(mesh.faces)} faces")
 
-        # Convert to trimesh object
-        tm = trimesh.Trimesh(
-            vertices=mesh['vertices'],
-            faces=mesh['faces']
-        )
+        # Get metadata from input or from trimesh.metadata
+        if metadata is None:
+            metadata = mesh.metadata.copy() if hasattr(mesh, 'metadata') and mesh.metadata else {}
+        else:
+            metadata = metadata.copy()
+
+        # mesh is already a trimesh object
+        tm = mesh
 
         # Phase 1 approach: Subdivision + smoothing
         # Calculate subdivision level based on target edge length
@@ -124,18 +129,25 @@ class QuadRemeshNode:
         if not tm.is_watertight:
             print("  ⚠️  Warning: Mesh is not watertight. Some operations may fail.")
 
-        # Convert back to MESH format
-        output_mesh = {
-            "vertices": np.array(tm.vertices, dtype=np.float32),
-            "faces": np.array(tm.faces, dtype=np.int32),
-            "normals": np.array(tm.vertex_normals, dtype=np.float32),
-            "type": mesh.get("type", "surface"),
-            "element_size": target_edge_length
+        # Update metadata
+        tm.metadata['cadabra_type'] = metadata.get('type', 'surface')
+        tm.metadata['element_size'] = target_edge_length
+        tm.metadata['remesh_applied'] = {
+            'target_edge_length': target_edge_length,
+            'iterations': iterations,
+            'smooth': smooth
         }
 
-        print(f"✅ QuadRemesh: Output {len(output_mesh['vertices'])} vertices, {len(output_mesh['faces'])} faces")
+        # Update metadata dict
+        metadata['type'] = metadata.get('type', 'surface')
+        metadata['element_size'] = target_edge_length
+        metadata['remesh_applied'] = tm.metadata['remesh_applied']
+        metadata['vertex_count'] = len(tm.vertices)
+        metadata['face_count'] = len(tm.faces)
 
-        return (output_mesh,)
+        print(f"✅ QuadRemesh: Output {len(tm.vertices)} vertices, {len(tm.faces)} faces")
+
+        return (tm, metadata)
 
 
 # ============================================================================
@@ -153,7 +165,7 @@ class PointCloudSegmentationNode:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "input_data": ("MESH,POINT_CLOUD",),
+                "input_data": ("TRIMESH,POINT_CLOUD",),
                 "num_segments": ("INT", {
                     "default": 5,
                     "min": 2,
@@ -176,13 +188,13 @@ class PointCloudSegmentationNode:
     FUNCTION = "segment"
     CATEGORY = "CADabra/Mesh Reconstruction"
 
-    def segment(self, input_data: Dict, num_segments: int, use_normals: bool = True,
+    def segment(self, input_data, num_segments: int, use_normals: bool = True,
                 sample_points: int = 10000) -> Tuple[Dict]:
         """
         Segment point cloud using KMeans clustering
 
         Args:
-            input_data: MESH or POINT_CLOUD dict
+            input_data: TRIMESH object or POINT_CLOUD dict
             num_segments: Number of segments to create
             use_normals: Include normals in clustering features
             sample_points: Number of points to sample (if input is mesh)
@@ -194,9 +206,18 @@ class PointCloudSegmentationNode:
             raise ImportError("scikit-learn is required for segmentation. Install with: pip install scikit-learn>=1.3.0")
 
         # Convert input to point cloud
-        if "faces" in input_data:
-            # Input is MESH - convert to point cloud
+        if isinstance(input_data, trimesh.Trimesh):
+            # Input is TRIMESH object
             print(f"🔍 Segmentation: Converting mesh to point cloud ({sample_points} points)")
+            tm = input_data
+
+            # Sample points from mesh surface
+            points, face_indices = trimesh.sample.sample_surface(tm, sample_points)
+            normals = tm.face_normals[face_indices]
+
+        elif isinstance(input_data, dict) and "faces" in input_data:
+            # Input is old MESH dict format (backward compatibility)
+            print(f"🔍 Segmentation: Converting mesh dict to point cloud ({sample_points} points)")
             tm = trimesh.Trimesh(vertices=input_data['vertices'], faces=input_data['faces'])
 
             # Sample points from mesh surface
@@ -204,7 +225,7 @@ class PointCloudSegmentationNode:
             normals = tm.face_normals[face_indices]
 
         else:
-            # Input is already POINT_CLOUD
+            # Input is POINT_CLOUD dict
             print(f"🔍 Segmentation: Processing point cloud ({len(input_data['points'])} points)")
             points = input_data['points']
             normals = input_data.get('normals', np.zeros_like(points))
