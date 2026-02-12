@@ -1,0 +1,259 @@
+{
+  "id": "d3c9b978-0749-456c-87dd-cd2844e01451",
+  "revision": 0,
+  "last_node_id": 18,
+  "last_link_id": 17,
+  "nodes": [
+    {
+      "id": 14,
+      "type": "CAD_Mesh_Gmsh",
+      "pos": [
+        70.74539927268152,
+        -4.000167822133485
+      ],
+      "size": [
+        270,
+        150
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "cad_model",
+          "type": "CAD_MODEL",
+          "link": 11
+        }
+      ],
+      "outputs": [
+        {
+          "name": "TRIMESH",
+          "type": "TRIMESH",
+          "links": [
+            16
+          ]
+        },
+        {
+          "name": "MESH_METADATA",
+          "type": "MESH_METADATA",
+          "links": null
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfyui-cadabra",
+        "ver": "63e2c5712d9f6e38c25e06c185f7a124adbd6c0b",
+        "Node name for S&R": "CAD_Mesh_Gmsh"
+      },
+      "widgets_values": [
+        "2D",
+        0.05,
+        "Relative to Bounds",
+        "Automatic"
+      ]
+    },
+    {
+      "id": 1,
+      "type": "CAD_Load",
+      "pos": [
+        -301.2976929138458,
+        -12.529711767637252
+      ],
+      "size": [
+        270,
+        58
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "CAD_MODEL",
+          "type": "CAD_MODEL",
+          "links": [
+            10,
+            11,
+            15
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfyui-cadabra",
+        "ver": "1.0.0",
+        "Node name for S&R": "CAD_Load"
+      },
+      "widgets_values": [
+        "bellow_pipe.igs"
+      ]
+    },
+    {
+      "id": 17,
+      "type": "CAD_Remesh_OCC",
+      "pos": [
+        68.249774272681,
+        200.67889467786654
+      ],
+      "size": [
+        270,
+        82
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "cad_model",
+          "type": "CAD_MODEL",
+          "link": 15
+        }
+      ],
+      "outputs": [
+        {
+          "name": "TRIMESH",
+          "type": "TRIMESH",
+          "links": [
+            17
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfyui-cadabra",
+        "ver": "63e2c5712d9f6e38c25e06c185f7a124adbd6c0b",
+        "Node name for S&R": "CAD_Remesh_OCC"
+      },
+      "widgets_values": [
+        0.1,
+        0.5
+      ]
+    },
+    {
+      "id": 18,
+      "type": "GeomPackPreviewMeshDual",
+      "pos": [
+        401.06594614768113,
+        -1.8921209471334621
+      ],
+      "size": [
+        768,
+        834
+      ],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mesh_1",
+          "type": "TRIMESH",
+          "link": 16
+        },
+        {
+          "name": "mesh_2",
+          "type": "TRIMESH",
+          "link": 17
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "cnr_id": "comfyui-geometrypack",
+        "ver": "43fa74c9323122bf942fe30da3b4fe72ddb58330",
+        "Node name for S&R": "GeomPackPreviewMeshDual"
+      },
+      "widgets_values": [
+        "side_by_side",
+        "fields",
+        1,
+        1,
+        ""
+      ]
+    },
+    {
+      "id": 13,
+      "type": "PreviewCADOCC",
+      "pos": [
+        -251.97956166481856,
+        307.0501837403666
+      ],
+      "size": [
+        270,
+        736
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "cad_model",
+          "type": "CAD_MODEL",
+          "link": 10
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "cnr_id": "comfyui-cadabra",
+        "ver": "63e2c5712d9f6e38c25e06c185f7a124adbd6c0b",
+        "Node name for S&R": "PreviewCADOCC"
+      },
+      "widgets_values": [
+        0.1,
+        0.5,
+        ""
+      ]
+    }
+  ],
+  "links": [
+    [
+      10,
+      1,
+      0,
+      13,
+      0,
+      "CAD_MODEL"
+    ],
+    [
+      11,
+      1,
+      0,
+      14,
+      0,
+      "CAD_MODEL"
+    ],
+    [
+      15,
+      1,
+      0,
+      17,
+      0,
+      "CAD_MODEL"
+    ],
+    [
+      16,
+      14,
+      0,
+      18,
+      0,
+      "TRIMESH"
+    ],
+    [
+      17,
+      17,
+      0,
+      18,
+      1,
+      "TRIMESH"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 0.8264462809917354,
+      "offset": [
+        662.0561241648188,
+        187.79255063463353
+      ]
+    },
+    "frontendVersion": "1.33.10",
+    "workflowRendererVersion": "LG"
+  },
+  "version": 0.4
+}

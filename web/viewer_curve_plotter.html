@@ -1,0 +1,1022 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CAD Curve Plotter</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            overflow: hidden;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            padding: 8px;
+            gap: 0;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 12px;
+            background: #252542;
+            border-radius: 6px 6px 0 0;
+            border-bottom: 1px solid #333;
+            flex-shrink: 0;
+        }
+
+        .header h1 {
+            font-size: 13px;
+            color: #ff44ff;
+            font-weight: 600;
+        }
+
+        .header .info {
+            font-size: 10px;
+            color: #888;
+        }
+
+        .canvas-wrapper {
+            flex: 1;
+            min-height: 0;
+            background: #1e1e32;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #canvas {
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .legend {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: rgba(30, 30, 50, 0.9);
+            border: 1px solid #444;
+            border-radius: 4px;
+            padding: 6px 10px;
+            font-size: 9px;
+            pointer-events: none;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 3px;
+        }
+
+        .legend-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .legend-color {
+            width: 16px;
+            height: 2px;
+            margin-right: 6px;
+            border-radius: 1px;
+        }
+
+        .controls {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            display: flex;
+            gap: 4px;
+            z-index: 10;
+        }
+
+        .controls button {
+            background: #444;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 5px 10px;
+            font-size: 10px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .controls button:hover {
+            background: #555;
+        }
+
+        #reset-btn {
+            background: #ff6644;
+            display: none;
+        }
+
+        #reset-btn:hover {
+            background: #ff4422;
+        }
+
+        .zoom-hint {
+            position: absolute;
+            bottom: 8px;
+            left: 8px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-size: 9px;
+            color: #888;
+            pointer-events: none;
+        }
+
+        .info-panel {
+            background: #252542;
+            border-radius: 0 0 6px 6px;
+            padding: 10px 12px;
+            border-top: 1px solid #333;
+            flex-shrink: 0;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 6px 16px;
+            font-size: 11px;
+        }
+
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .info-item .label {
+            color: #888;
+        }
+
+        .info-item .value {
+            color: #44ff88;
+            font-family: 'Consolas', monospace;
+            font-size: 10px;
+        }
+
+        .knots-row {
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid #333;
+            font-size: 10px;
+        }
+
+        .knots-row .label {
+            color: #888;
+            margin-right: 8px;
+        }
+
+        .knots-row .value {
+            color: #ffcc44;
+            font-family: 'Consolas', monospace;
+            word-break: break-all;
+        }
+
+        .error-message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 68, 68, 0.1);
+            border: 1px solid #ff4444;
+            border-radius: 8px;
+            padding: 20px 30px;
+            text-align: center;
+            color: #ff8888;
+            font-size: 12px;
+            max-width: 350px;
+        }
+
+        .error-message h2 {
+            color: #ff4444;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 id="title">CAD Curve Plotter</h1>
+            <span class="info" id="header-info">Loading...</span>
+        </div>
+
+        <div class="canvas-wrapper" id="canvas-wrapper">
+            <canvas id="canvas"></canvas>
+
+            <div class="controls">
+                <button id="reset-btn" onclick="resetControlPoints()">Reset Points</button>
+                <button onclick="resetView()">Reset View</button>
+                <button onclick="zoomIn()">+</button>
+                <button onclick="zoomOut()">-</button>
+            </div>
+
+            <div class="legend" id="legend" style="display: none;">
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #44aaff;"></div>
+                    <span>Curve</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #ff8844; border-style: dashed;"></div>
+                    <span>Control Polygon</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #ff44ff; width: 6px; height: 6px; border-radius: 50%;"></div>
+                    <span>Control Points</span>
+                </div>
+            </div>
+
+            <div class="zoom-hint">Scroll=Zoom | Shift+Drag=Pan | Drag points to edit</div>
+
+            <div class="error-message" id="error-panel" style="display: none;">
+                <h2>Error</h2>
+                <p id="error-text"></p>
+            </div>
+        </div>
+
+        <div class="info-panel" id="info-panel" style="display: none;">
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="label">Type:</span>
+                    <span class="value" id="info-type">-</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Degree:</span>
+                    <span class="value" id="info-degree">-</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Poles:</span>
+                    <span class="value" id="info-poles">-</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Rational:</span>
+                    <span class="value" id="info-rational">-</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Plane:</span>
+                    <span class="value" id="info-plane">-</span>
+                </div>
+            </div>
+            <div class="knots-row" id="knots-row">
+                <span class="label">Knots:</span>
+                <span class="value" id="info-knots"></span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const wrapper = document.getElementById('canvas-wrapper');
+        const resetBtn = document.getElementById('reset-btn');
+
+        // Get 2D context with explicit settings for sharpness
+        const ctx = canvas.getContext('2d', {
+            alpha: false,
+            desynchronized: true
+        });
+
+        // State
+        let plotData = null;
+        let dpr = window.devicePixelRatio || 1;
+        let parentDPR = null;  // DPR from parent window (if in iframe)
+        let canvasWidth = 0;
+        let canvasHeight = 0;
+
+        // View state (for zoom/pan)
+        let viewBounds = null;  // Current view bounds (can differ from original)
+        let originalBounds = null;  // Original bounds from data
+
+        // Interactive state
+        let originalControlPoints = null;
+        let editedControlPoints = null;
+        let curvePoints = null;
+        let dragIndex = -1;
+        let isDragging = false;
+        let isPanning = false;
+        let panStart = null;
+        let hoverIndex = -1;
+        let isModified = false;
+
+        // Transform cache for mouse coord conversion
+        let lastTransform = null;
+
+        // ============ HIGH DPI CANVAS SETUP ============
+        function setupCanvas() {
+            const rect = wrapper.getBoundingClientRect();
+
+            // Use parent DPR if available (more reliable in iframe), fallback to window DPR
+            const effectiveDPR = parentDPR || window.devicePixelRatio || 1;
+            dpr = effectiveDPR;
+
+            // Use integer dimensions to avoid subpixel blurriness
+            canvasWidth = Math.floor(rect.width);
+            canvasHeight = Math.floor(rect.height);
+
+            // Avoid zero-size canvas
+            if (canvasWidth < 10 || canvasHeight < 10) {
+                canvasWidth = Math.max(canvasWidth, 100);
+                canvasHeight = Math.max(canvasHeight, 100);
+            }
+
+            // Set backing store size (actual pixels) - use integer
+            const backingWidth = Math.floor(canvasWidth * dpr);
+            const backingHeight = Math.floor(canvasHeight * dpr);
+
+            canvas.width = backingWidth;
+            canvas.height = backingHeight;
+
+            // Set display size (CSS pixels)
+            canvas.style.width = canvasWidth + 'px';
+            canvas.style.height = canvasHeight + 'px';
+
+            // Reset transform and scale for HiDPI
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            ctx.scale(dpr, dpr);
+
+            return { width: canvasWidth, height: canvasHeight };
+        }
+
+        // ============ DE BOOR ALGORITHM (B-SPLINE) ============
+        function deBoor(t, controlPoints, knots, degree, weights) {
+            const n = controlPoints.length;
+            const p = degree;
+
+            // Find knot span k where knots[k] <= t < knots[k+1]
+            let k = p;
+            while (k < n && knots[k + 1] <= t) {
+                k++;
+            }
+            k = Math.min(k, n - 1);
+
+            // Copy relevant control points
+            let d;
+            if (weights && weights.length > 0) {
+                // NURBS - work in homogeneous coordinates
+                d = [];
+                for (let j = k - p; j <= k; j++) {
+                    const w = weights[j] || 1.0;
+                    d.push([
+                        controlPoints[j][0] * w,
+                        controlPoints[j][1] * w,
+                        w
+                    ]);
+                }
+            } else {
+                d = [];
+                for (let j = k - p; j <= k; j++) {
+                    d.push([controlPoints[j][0], controlPoints[j][1]]);
+                }
+            }
+
+            // De Boor recursion
+            for (let r = 1; r <= p; r++) {
+                for (let j = p; j >= r; j--) {
+                    const idx = k - p + j;
+                    const denom = knots[idx + p + 1 - r] - knots[idx];
+                    let alpha = 0;
+                    if (Math.abs(denom) > 1e-10) {
+                        alpha = (t - knots[idx]) / denom;
+                    }
+
+                    for (let dim = 0; dim < d[j].length; dim++) {
+                        d[j][dim] = (1 - alpha) * d[j - 1][dim] + alpha * d[j][dim];
+                    }
+                }
+            }
+
+            if (weights && weights.length > 0) {
+                // Convert from homogeneous
+                const w = d[p][2];
+                const wSafe = Math.abs(w) < 1e-10 ? 1e-10 : w;
+                return [d[p][0] / wSafe, d[p][1] / wSafe];
+            } else {
+                return d[p];
+            }
+        }
+
+        // ============ DE CASTELJAU ALGORITHM (BEZIER) ============
+        function deCasteljau(t, controlPoints) {
+            const n = controlPoints.length;
+            let pts = controlPoints.map(p => [p[0], p[1]]);
+
+            for (let r = 1; r < n; r++) {
+                for (let j = 0; j < n - r; j++) {
+                    pts[j][0] = (1 - t) * pts[j][0] + t * pts[j + 1][0];
+                    pts[j][1] = (1 - t) * pts[j][1] + t * pts[j + 1][1];
+                }
+            }
+
+            return pts[0];
+        }
+
+        // ============ CURVE SAMPLING ============
+        function sampleCurve(controlPoints, degree, knots, weights, numSamples = 100) {
+            if (!knots || knots.length < 2) {
+                return sampleBezier(controlPoints, numSamples);
+            }
+
+            const n = controlPoints.length;
+            const p = degree;
+            const tMin = knots[p];
+            const tMax = knots[n];
+
+            const points = [];
+            for (let i = 0; i < numSamples; i++) {
+                let t = tMin + (tMax - tMin) * i / (numSamples - 1);
+                t = Math.max(tMin, Math.min(t, tMax - 1e-10));
+                points.push(deBoor(t, controlPoints, knots, p, weights));
+            }
+
+            return points;
+        }
+
+        function sampleBezier(controlPoints, numSamples) {
+            const points = [];
+            for (let i = 0; i < numSamples; i++) {
+                const t = i / (numSamples - 1);
+                points.push(deCasteljau(t, controlPoints));
+            }
+            return points;
+        }
+
+        // ============ DRAWING FUNCTIONS ============
+        function drawGrid(width, height, bounds) {
+            const { min_x, max_x, min_y, max_y } = bounds;
+
+            const range_x = max_x - min_x;
+            const range_y = max_y - min_y;
+            const max_range = Math.max(range_x, range_y);
+
+            // Calculate nice grid spacing based on current zoom
+            const magnitude = Math.pow(10, Math.floor(Math.log10(max_range / 5)));
+            let spacing = magnitude;
+            if (max_range / spacing > 10) spacing *= 2;
+            if (max_range / spacing > 10) spacing *= 2.5;
+            if (max_range / spacing < 4) spacing /= 2;
+
+            const minor_spacing = spacing / 5;
+
+            // Transform setup
+            const margin = 40;
+            const plot_width = width - 2 * margin;
+            const plot_height = height - 2 * margin;
+
+            const scaleX = plot_width / range_x;
+            const scaleY = plot_height / range_y;
+            const scale = Math.min(scaleX, scaleY);
+
+            const offsetX = margin + (plot_width - range_x * scale) / 2;
+            const offsetY = margin + (plot_height - range_y * scale) / 2;
+
+            // Transform functions
+            const toCanvasX = (x) => offsetX + (x - min_x) * scale;
+            const toCanvasY = (y) => height - offsetY - (y - min_y) * scale;
+
+            // Inverse transform for mouse coords
+            const fromCanvasX = (cx) => (cx - offsetX) / scale + min_x;
+            const fromCanvasY = (cy) => (height - cy - offsetY) / scale + min_y;
+
+            // Store transform for mouse events
+            lastTransform = { toCanvasX, toCanvasY, fromCanvasX, fromCanvasY, scale, margin, bounds };
+
+            // Background
+            ctx.fillStyle = '#1e1e32';
+            ctx.fillRect(0, 0, width, height);
+
+            // Minor grid
+            ctx.strokeStyle = '#282840';
+            ctx.lineWidth = 1;
+
+            const startX = Math.floor(min_x / minor_spacing) * minor_spacing;
+            const startY = Math.floor(min_y / minor_spacing) * minor_spacing;
+
+            for (let x = startX; x <= max_x; x += minor_spacing) {
+                const cx = Math.round(toCanvasX(x)) + 0.5;
+                if (cx >= margin && cx <= width - margin) {
+                    ctx.beginPath();
+                    ctx.moveTo(cx, margin);
+                    ctx.lineTo(cx, height - margin);
+                    ctx.stroke();
+                }
+            }
+
+            for (let y = startY; y <= max_y; y += minor_spacing) {
+                const cy = Math.round(toCanvasY(y)) + 0.5;
+                if (cy >= margin && cy <= height - margin) {
+                    ctx.beginPath();
+                    ctx.moveTo(margin, cy);
+                    ctx.lineTo(width - margin, cy);
+                    ctx.stroke();
+                }
+            }
+
+            // Major grid + labels
+            ctx.strokeStyle = '#3a3a55';
+            ctx.lineWidth = 1;
+            ctx.fillStyle = '#777';
+            ctx.font = '10px Consolas, monospace';
+
+            const majorStartX = Math.floor(min_x / spacing) * spacing;
+            const majorStartY = Math.floor(min_y / spacing) * spacing;
+
+            for (let x = majorStartX; x <= max_x; x += spacing) {
+                const cx = Math.round(toCanvasX(x)) + 0.5;
+                if (cx >= margin && cx <= width - margin) {
+                    ctx.beginPath();
+                    ctx.moveTo(cx, margin);
+                    ctx.lineTo(cx, height - margin);
+                    ctx.stroke();
+
+                    ctx.textAlign = 'center';
+                    ctx.fillText(formatNumber(x), cx, height - margin + 14);
+                }
+            }
+
+            for (let y = majorStartY; y <= max_y; y += spacing) {
+                const cy = Math.round(toCanvasY(y)) + 0.5;
+                if (cy >= margin && cy <= height - margin) {
+                    ctx.beginPath();
+                    ctx.moveTo(margin, cy);
+                    ctx.lineTo(width - margin, cy);
+                    ctx.stroke();
+
+                    ctx.textAlign = 'right';
+                    ctx.fillText(formatNumber(y), margin - 5, cy + 4);
+                }
+            }
+
+            // Axes (if visible)
+            ctx.strokeStyle = '#666';
+            ctx.lineWidth = 2;
+
+            if (min_x <= 0 && max_x >= 0) {
+                const cx = Math.round(toCanvasX(0)) + 0.5;
+                ctx.beginPath();
+                ctx.moveTo(cx, margin);
+                ctx.lineTo(cx, height - margin);
+                ctx.stroke();
+            }
+
+            if (min_y <= 0 && max_y >= 0) {
+                const cy = Math.round(toCanvasY(0)) + 0.5;
+                ctx.beginPath();
+                ctx.moveTo(margin, cy);
+                ctx.lineTo(width - margin, cy);
+                ctx.stroke();
+            }
+
+            // Border
+            ctx.strokeStyle = '#444';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(margin + 0.5, margin + 0.5, width - 2 * margin, height - 2 * margin);
+
+            return { toCanvasX, toCanvasY, scale };
+        }
+
+        function formatNumber(n) {
+            if (Math.abs(n) < 0.001 && n !== 0) return n.toExponential(1);
+            if (Math.abs(n) >= 1000) return n.toExponential(1);
+            if (Number.isInteger(n)) return n.toString();
+            return n.toFixed(2);
+        }
+
+        function drawCurve(transform) {
+            if (!curvePoints || curvePoints.length < 2) return;
+
+            const { toCanvasX, toCanvasY } = transform;
+
+            ctx.strokeStyle = '#44aaff';
+            ctx.lineWidth = 2.5;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+
+            ctx.beginPath();
+            ctx.moveTo(toCanvasX(curvePoints[0][0]), toCanvasY(curvePoints[0][1]));
+
+            for (let i = 1; i < curvePoints.length; i++) {
+                ctx.lineTo(toCanvasX(curvePoints[i][0]), toCanvasY(curvePoints[i][1]));
+            }
+
+            ctx.stroke();
+        }
+
+        function drawControlPolygon(transform) {
+            if (!editedControlPoints || editedControlPoints.length < 2) return;
+
+            const { toCanvasX, toCanvasY } = transform;
+
+            ctx.strokeStyle = '#ff8844';
+            ctx.lineWidth = 1.5;
+            ctx.setLineDash([6, 4]);
+
+            ctx.beginPath();
+            ctx.moveTo(toCanvasX(editedControlPoints[0][0]), toCanvasY(editedControlPoints[0][1]));
+
+            for (let i = 1; i < editedControlPoints.length; i++) {
+                ctx.lineTo(toCanvasX(editedControlPoints[i][0]), toCanvasY(editedControlPoints[i][1]));
+            }
+
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+
+        function drawControlPoints(transform) {
+            if (!editedControlPoints) return;
+
+            const { toCanvasX, toCanvasY } = transform;
+
+            editedControlPoints.forEach((pt, i) => {
+                const x = toCanvasX(pt[0]);
+                const y = toCanvasY(pt[1]);
+
+                // Determine point appearance based on state
+                let radius = 6;
+                let fillColor = '#ff44ff';
+                let strokeColor = '#fff';
+                let strokeWidth = 2;
+
+                if (i === dragIndex) {
+                    radius = 8;
+                    fillColor = '#ffaa00';
+                    strokeWidth = 2.5;
+                } else if (i === hoverIndex) {
+                    radius = 7;
+                    fillColor = '#ff66ff';
+                }
+
+                // Draw point
+                ctx.fillStyle = fillColor;
+                ctx.strokeStyle = strokeColor;
+                ctx.lineWidth = strokeWidth;
+
+                ctx.beginPath();
+                ctx.arc(x, y, radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+
+                // Label
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 10px Segoe UI, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(`P${i}`, x, y - radius - 5);
+            });
+        }
+
+        function draw() {
+            const { width, height } = setupCanvas();
+
+            if (!plotData || !plotData.success || !viewBounds) {
+                ctx.fillStyle = '#1e1e32';
+                ctx.fillRect(0, 0, width, height);
+                ctx.fillStyle = '#555';
+                ctx.font = '12px Segoe UI, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('Waiting for curve data...', width / 2, height / 2);
+                return;
+            }
+
+            // Resample curve with current control points
+            if (editedControlPoints) {
+                curvePoints = sampleCurve(
+                    editedControlPoints,
+                    plotData.degree,
+                    plotData.knots,
+                    plotData.weights,
+                    150  // More samples for smoother curves when zoomed
+                );
+            }
+
+            const transform = drawGrid(width, height, viewBounds);
+            drawControlPolygon(transform);
+            drawCurve(transform);
+            drawControlPoints(transform);
+        }
+
+        // ============ ZOOM AND PAN ============
+        function zoomAtPoint(factor, centerX, centerY) {
+            if (!viewBounds || !lastTransform) return;
+
+            const { fromCanvasX, fromCanvasY } = lastTransform;
+
+            // Get world coordinates of zoom center
+            const worldX = fromCanvasX(centerX);
+            const worldY = fromCanvasY(centerY);
+
+            // Current range
+            const rangeX = viewBounds.max_x - viewBounds.min_x;
+            const rangeY = viewBounds.max_y - viewBounds.min_y;
+
+            // New range after zoom
+            const newRangeX = rangeX / factor;
+            const newRangeY = rangeY / factor;
+
+            // Calculate new bounds keeping worldX, worldY at the same screen position
+            const ratioX = (worldX - viewBounds.min_x) / rangeX;
+            const ratioY = (worldY - viewBounds.min_y) / rangeY;
+
+            viewBounds = {
+                min_x: worldX - ratioX * newRangeX,
+                max_x: worldX + (1 - ratioX) * newRangeX,
+                min_y: worldY - ratioY * newRangeY,
+                max_y: worldY + (1 - ratioY) * newRangeY
+            };
+
+            draw();
+        }
+
+        function zoomIn() {
+            zoomAtPoint(1.3, canvasWidth / 2, canvasHeight / 2);
+        }
+
+        function zoomOut() {
+            zoomAtPoint(0.7, canvasWidth / 2, canvasHeight / 2);
+        }
+
+        function resetView() {
+            if (originalBounds) {
+                viewBounds = { ...originalBounds };
+                draw();
+            }
+        }
+
+        function pan(dx, dy) {
+            if (!viewBounds || !lastTransform) return;
+
+            const { scale } = lastTransform;
+            const worldDx = -dx / scale;
+            const worldDy = dy / scale;
+
+            viewBounds.min_x += worldDx;
+            viewBounds.max_x += worldDx;
+            viewBounds.min_y += worldDy;
+            viewBounds.max_y += worldDy;
+
+            draw();
+        }
+
+        // Make functions global for onclick handlers
+        window.zoomIn = zoomIn;
+        window.zoomOut = zoomOut;
+        window.resetView = resetView;
+
+        // ============ MOUSE INTERACTION ============
+        function getMousePos(e) {
+            const rect = canvas.getBoundingClientRect();
+            return {
+                x: e.clientX - rect.left,
+                y: e.clientY - rect.top
+            };
+        }
+
+        function findNearestControlPoint(mousePos, threshold = 18) {
+            if (!editedControlPoints || !lastTransform) return -1;
+
+            const { toCanvasX, toCanvasY } = lastTransform;
+
+            for (let i = 0; i < editedControlPoints.length; i++) {
+                const px = toCanvasX(editedControlPoints[i][0]);
+                const py = toCanvasY(editedControlPoints[i][1]);
+                const dist = Math.sqrt((mousePos.x - px) ** 2 + (mousePos.y - py) ** 2);
+                if (dist < threshold) {
+                    return i;
+                }
+            }
+            return -1;
+        }
+
+        function onMouseDown(e) {
+            if (!plotData || !plotData.success) return;
+
+            const pos = getMousePos(e);
+
+            // Shift+click or middle button = pan
+            if (e.shiftKey || e.button === 1) {
+                isPanning = true;
+                panStart = pos;
+                canvas.style.cursor = 'move';
+                e.preventDefault();
+                return;
+            }
+
+            // Left click on control point = drag
+            const nearIdx = findNearestControlPoint(pos);
+            if (nearIdx >= 0) {
+                dragIndex = nearIdx;
+                isDragging = true;
+                canvas.style.cursor = 'grabbing';
+            }
+        }
+
+        function onMouseMove(e) {
+            if (!plotData || !plotData.success) return;
+
+            const pos = getMousePos(e);
+
+            if (isPanning && panStart) {
+                const dx = pos.x - panStart.x;
+                const dy = pos.y - panStart.y;
+                panStart = pos;
+                pan(dx, dy);
+                return;
+            }
+
+            if (isDragging && dragIndex >= 0 && lastTransform) {
+                const { fromCanvasX, fromCanvasY } = lastTransform;
+                editedControlPoints[dragIndex] = [
+                    fromCanvasX(pos.x),
+                    fromCanvasY(pos.y)
+                ];
+                checkModified();
+                draw();
+            } else {
+                // Update hover state
+                const nearIdx = findNearestControlPoint(pos);
+                if (nearIdx !== hoverIndex) {
+                    hoverIndex = nearIdx;
+                    canvas.style.cursor = nearIdx >= 0 ? 'grab' : 'default';
+                    draw();
+                }
+            }
+        }
+
+        function onMouseUp(e) {
+            if (isPanning) {
+                isPanning = false;
+                panStart = null;
+                canvas.style.cursor = 'default';
+            }
+
+            if (isDragging) {
+                isDragging = false;
+                dragIndex = -1;
+
+                const pos = getMousePos(e);
+                const nearIdx = findNearestControlPoint(pos);
+                canvas.style.cursor = nearIdx >= 0 ? 'grab' : 'default';
+                draw();
+            }
+        }
+
+        function onWheel(e) {
+            if (!plotData || !plotData.success) return;
+
+            e.preventDefault();
+            const pos = getMousePos(e);
+            const factor = e.deltaY > 0 ? 0.85 : 1.18;
+            zoomAtPoint(factor, pos.x, pos.y);
+        }
+
+        canvas.addEventListener('mousedown', onMouseDown);
+        canvas.addEventListener('mousemove', onMouseMove);
+        canvas.addEventListener('mouseup', onMouseUp);
+        canvas.addEventListener('mouseleave', onMouseUp);
+        canvas.addEventListener('wheel', onWheel, { passive: false });
+
+        // Prevent context menu on right-click
+        canvas.addEventListener('contextmenu', e => e.preventDefault());
+
+        // ============ RESET FUNCTIONALITY ============
+        function checkModified() {
+            if (!originalControlPoints || !editedControlPoints) {
+                isModified = false;
+                resetBtn.style.display = 'none';
+                return;
+            }
+
+            isModified = false;
+            for (let i = 0; i < originalControlPoints.length; i++) {
+                const dx = Math.abs(originalControlPoints[i][0] - editedControlPoints[i][0]);
+                const dy = Math.abs(originalControlPoints[i][1] - editedControlPoints[i][1]);
+                if (dx > 1e-6 || dy > 1e-6) {
+                    isModified = true;
+                    break;
+                }
+            }
+
+            resetBtn.style.display = isModified ? 'inline-block' : 'none';
+        }
+
+        function resetControlPoints() {
+            if (!originalControlPoints) return;
+
+            editedControlPoints = JSON.parse(JSON.stringify(originalControlPoints));
+            isModified = false;
+            resetBtn.style.display = 'none';
+            draw();
+        }
+
+        window.resetControlPoints = resetControlPoints;
+
+        // ============ UI UPDATE ============
+        function updateInfo() {
+            if (!plotData) return;
+
+            if (!plotData.success) {
+                document.getElementById('error-panel').style.display = 'block';
+                document.getElementById('error-text').textContent = plotData.error || 'Unknown error';
+                document.getElementById('info-panel').style.display = 'none';
+                document.getElementById('legend').style.display = 'none';
+                document.getElementById('header-info').textContent = 'Error';
+                return;
+            }
+
+            document.getElementById('error-panel').style.display = 'none';
+            document.getElementById('info-panel').style.display = 'block';
+            document.getElementById('legend').style.display = 'block';
+
+            document.getElementById('title').textContent = `Curve Plotter - Edge #${plotData.edge_id}`;
+            document.getElementById('header-info').textContent =
+                `${plotData.curve_type.toUpperCase()} | Deg ${plotData.degree} | ${plotData.num_poles} poles`;
+
+            document.getElementById('info-type').textContent = plotData.curve_type;
+            document.getElementById('info-degree').textContent = plotData.degree;
+            document.getElementById('info-poles').textContent = plotData.num_poles;
+            document.getElementById('info-rational').textContent = plotData.is_rational ? 'Yes (NURBS)' : 'No';
+
+            const planarity = plotData.planarity;
+            if (planarity) {
+                const devStr = planarity.deviation_percent < 0.01 ?
+                    'exact' : `±${planarity.deviation_percent.toFixed(2)}%`;
+                document.getElementById('info-plane').textContent = `${planarity.plane} (${devStr})`;
+            }
+
+            if (plotData.knots && plotData.knots.length > 0) {
+                document.getElementById('info-knots').textContent =
+                    '[' + plotData.knots.map(k => k.toFixed(2)).join(', ') + ']';
+                document.getElementById('knots-row').style.display = 'block';
+            } else {
+                document.getElementById('knots-row').style.display = 'none';
+            }
+        }
+
+        // ============ DATA LOADING ============
+        function loadData(data) {
+            try {
+                plotData = typeof data === 'string' ? JSON.parse(data) : data;
+
+                if (plotData.success) {
+                    originalControlPoints = JSON.parse(JSON.stringify(plotData.control_points));
+                    editedControlPoints = JSON.parse(JSON.stringify(plotData.control_points));
+                    curvePoints = plotData.curve_points;
+
+                    // Initialize view bounds
+                    originalBounds = { ...plotData.bounds };
+                    viewBounds = { ...plotData.bounds };
+
+                    isModified = false;
+                    resetBtn.style.display = 'none';
+                    hoverIndex = -1;
+                    dragIndex = -1;
+                }
+
+                updateInfo();
+                draw();
+            } catch (e) {
+                console.error('Failed to load plot data:', e);
+                plotData = { success: false, error: 'Failed to parse plot data' };
+                updateInfo();
+            }
+        }
+
+        // ============ MESSAGE HANDLING ============
+        window.addEventListener('message', (event) => {
+            if (event.data && event.data.type === 'LOAD_PLOT_DATA') {
+                // Capture parent DPR if provided
+                if (event.data.parentDPR) {
+                    parentDPR = event.data.parentDPR;
+                }
+                loadData(event.data.data);
+            }
+        });
+
+        window.addEventListener('resize', () => {
+            if (plotData && plotData.success) {
+                draw();
+            }
+        });
+
+        // ============ INITIAL SETUP ============
+        setupCanvas();
+        ctx.fillStyle = '#1e1e32';
+        ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+        ctx.fillStyle = '#555';
+        ctx.font = '12px Segoe UI, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('Waiting for curve data...', canvasWidth / 2, canvasHeight / 2);
+    </script>
+</body>
+</html>

@@ -1,0 +1,34 @@
+[project]
+name = "comfyui-cadabra"
+description = "WORK IN PROGRESS. CAD file processing nodes for ComfyUI with interactive 3D OCC CAD viewer. Load STEP, IGES, BREP files and generate meshes using OCC, GMSH."
+version = "1.0.3"
+license = {file = "LICENSE"}
+requires-python = ">=3.10"
+classifiers = [
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+]
+
+# Core dependencies for ComfyUI-CADabra
+dependencies = [
+    # CAD processing
+    "gmsh>=4.11.0",
+
+    # 3D processing
+    "numpy",
+    "torch>=2.0.0",
+
+    # Optional: ML-based surface reconstruction (stubs for now)
+    # "trimesh",
+    # "open3d",
+]
+
+[project.urls]
+Repository = "https://github.com/PozzettiAndrea/ComfyUI-CADabra"
+Documentation = "https://github.com/PozzettiAndrea/ComfyUI-CADabra#readme"
+"Bug Tracker" = "https://github.com/PozzettiAndrea/ComfyUI-CADabra/issues"
+
+# Comfy Registry configuration
+[tool.comfy]
+PublisherId = "pznodes"
+DisplayName = "CADabra"
+Icon = ""
