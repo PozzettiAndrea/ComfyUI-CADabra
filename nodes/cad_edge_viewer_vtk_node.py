@@ -1,8 +1,4 @@
-"""
-CAD Edge Viewer (VTK) node for ComfyUI-CADabra
-Uses VTK.js with Trackball interactor for free 3D rotation.
-Exports edges to VTP format for native VTK.js rendering.
-"""
+from __future__ import annotations
 
 import os
 import time
@@ -10,9 +6,7 @@ import json
 import folder_paths
 import vtk
 
-from ..utils.occ_logging import logger
-
-# OCC imports for edge analysis
+from .utils.occ_logging import logger
 from OCC.Core.TopExp import TopExp_Explorer, topexp
 from OCC.Core.TopAbs import TopAbs_FACE, TopAbs_EDGE, TopAbs_VERTEX
 from OCC.Core.TopTools import TopTools_IndexedMapOfShape
@@ -28,18 +22,26 @@ from OCC.Core.BRepGProp import brepgprop
 from OCC.Core.Bnd import Bnd_Box
 from OCC.Core.BRepBndLib import brepbndlib
 
-# Curve type to integer mapping for VTP cell data
-CURVE_TYPE_TO_INT = {
-    GeomAbs_Line: 0,
-    GeomAbs_Circle: 1,
-    GeomAbs_Ellipse: 2,
-    GeomAbs_Hyperbola: 3,
-    GeomAbs_Parabola: 4,
-    GeomAbs_BezierCurve: 5,
-    GeomAbs_BSplineCurve: 6,
-    GeomAbs_OtherCurve: 7,
-}
 
+def _get_curve_type_to_int():
+    """Get curve type to int mapping - called at runtime when OCC is available."""
+    from OCC.Core.GeomAbs import (
+        GeomAbs_Line, GeomAbs_Circle, GeomAbs_Ellipse, GeomAbs_Hyperbola,
+        GeomAbs_Parabola, GeomAbs_BezierCurve, GeomAbs_BSplineCurve, GeomAbs_OtherCurve
+    )
+    return {
+        GeomAbs_Line: 0,
+        GeomAbs_Circle: 1,
+        GeomAbs_Ellipse: 2,
+        GeomAbs_Hyperbola: 3,
+        GeomAbs_Parabola: 4,
+        GeomAbs_BezierCurve: 5,
+        GeomAbs_BSplineCurve: 6,
+        GeomAbs_OtherCurve: 7,
+    }
+
+
+# This dict uses integers as keys - doesn't need lazy initialization
 CURVE_TYPE_NAMES = {
     0: "Line",
     1: "Circle",
@@ -50,7 +52,6 @@ CURVE_TYPE_NAMES = {
     6: "BSpline",
     7: "Other",
 }
-
 
 class CADEdgeViewerVTK:
     """
@@ -94,7 +95,7 @@ class CADEdgeViewerVTK:
         }
 
     RETURN_TYPES = ("CAD_MODEL", "STRING", "STRING", "STRING", "INT")
-    RETURN_NAMES = ("cad_model", "vtp_filepath", "report", "spline_data_file", "selected_edge_id")
+    RETURN_NAMES = ("cad_model", "vtp_filepath", "info", "spline_data_file", "selected_edge_id")
     OUTPUT_NODE = True
     FUNCTION = "analyze_and_export"
     CATEGORY = "CADabra/Analysis"
@@ -116,10 +117,12 @@ class CADEdgeViewerVTK:
 
     def analyze_and_export(self, cad_model, linear_deflection=0.1, visualization_mode="normal", selected_edge_id=-1):
         """Analyze edges and export to VTP format."""
-        # Get OCC shape
-        occ_shape = cad_model.get("occ_shape") or cad_model.get("shape")
-        if occ_shape is None:
-            raise RuntimeError("CAD model has no OCC shape")
+        # Get OCC shape from brep_path
+        try:
+            from .utils.brep_cache import get_occ_shape
+        except ImportError:
+            from .utils.brep_cache import get_occ_shape
+        occ_shape = get_occ_shape(cad_model)
 
         output_dir = folder_paths.get_output_directory()
         timestamp = int(time.time() * 1000)
@@ -196,7 +199,7 @@ class CADEdgeViewerVTK:
 
                 # Get edge type
                 curve_type = curve.GetType()
-                edge_type_int = CURVE_TYPE_TO_INT.get(curve_type, 7)
+                edge_type_int = _get_curve_type_to_int().get(curve_type, 7)
                 edge_type_name = CURVE_TYPE_NAMES.get(edge_type_int, "Unknown")
                 edge_type_counts[edge_type_name] = edge_type_counts.get(edge_type_name, 0) + 1
 

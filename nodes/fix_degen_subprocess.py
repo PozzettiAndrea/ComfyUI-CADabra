@@ -22,11 +22,14 @@ Exit codes:
     1 - Error (details in stderr or result file)
 """
 
+import logging
 import sys
 import argparse
 import json
 import os
 from datetime import datetime
+
+log = logging.getLogger("cadabra")
 
 
 def fix_degenerate_faces(input_path, output_path, iterations, max_degree, log_file=None):
@@ -34,8 +37,8 @@ def fix_degenerate_faces(input_path, output_path, iterations, max_degree, log_fi
     timings = {}
     import time
 
-    def log(msg):
-        print(msg)
+    def _log_msg(msg):
+        log.info(msg)
         if log_file:
             with open(log_file, 'a') as f:
                 f.write(msg + '\n')
@@ -54,7 +57,7 @@ def fix_degenerate_faces(input_path, output_path, iterations, max_degree, log_fi
         builder = BRep_Builder()
         breptools.Read(shape, str(input_path), builder)
         timings['read_brep'] = time.time() - t0
-        log(f"[TIMING] read_brep: {timings['read_brep']:.3f}s")
+        _log_msg(f"[TIMING] read_brep: {timings['read_brep']:.3f}s")
 
         # Find all faces and categorize
         t0 = time.time()
@@ -83,14 +86,14 @@ def fix_degenerate_faces(input_path, output_path, iterations, max_degree, log_fi
 
         timings['categorize_faces'] = time.time() - t0
         total_faces = len(normal_faces) + len(degen_faces)
-        log(f"[TIMING] categorize_faces: {timings['categorize_faces']:.3f}s ({total_faces} faces, {len(degen_faces)} degenerate)")
+        _log_msg(f"[TIMING] categorize_faces: {timings['categorize_faces']:.3f}s ({total_faces} faces, {len(degen_faces)} degenerate)")
 
         # If no degenerate faces, just copy input to output
         if len(degen_faces) == 0:
             t0 = time.time()
             breptools.Write(shape, output_path)
             timings['write_brep'] = time.time() - t0
-            log(f"[TIMING] write_brep: {timings['write_brep']:.3f}s")
+            _log_msg(f"[TIMING] write_brep: {timings['write_brep']:.3f}s")
 
             return {
                 "success": True,
@@ -118,10 +121,10 @@ def fix_degenerate_faces(input_path, output_path, iterations, max_degree, log_fi
                 # Keep original face if replacement fails
                 replacement_faces.append(degen_face)
                 failed_count += 1
-                log(f"[WARNING] Failed to fix face: {status}")
+                _log_msg(f"[WARNING] Failed to fix face: {status}")
 
         timings['fix_faces'] = time.time() - t0
-        log(f"[TIMING] fix_faces: {timings['fix_faces']:.3f}s ({fixed_count} fixed, {failed_count} failed)")
+        _log_msg(f"[TIMING] fix_faces: {timings['fix_faces']:.3f}s ({fixed_count} fixed, {failed_count} failed)")
 
         # Build compound of all faces (no sewing - let user do that with CADSewFaces)
         t0 = time.time()
@@ -134,7 +137,7 @@ def fix_degenerate_faces(input_path, output_path, iterations, max_degree, log_fi
             builder.Add(compound, face)
 
         timings['build_compound'] = time.time() - t0
-        log(f"[TIMING] build_compound: {timings['build_compound']:.3f}s")
+        _log_msg(f"[TIMING] build_compound: {timings['build_compound']:.3f}s")
 
         # Count degenerate edges in result
         t0 = time.time()
@@ -149,23 +152,23 @@ def fix_degenerate_faces(input_path, output_path, iterations, max_degree, log_fi
         faces_after = len(all_result_faces)
 
         timings['count_after'] = time.time() - t0
-        log(f"[TIMING] count_after: {timings['count_after']:.3f}s")
+        _log_msg(f"[TIMING] count_after: {timings['count_after']:.3f}s")
 
         # Write output
         t0 = time.time()
         breptools.Write(compound, output_path)
         timings['write_brep'] = time.time() - t0
-        log(f"[TIMING] write_brep: {timings['write_brep']:.3f}s")
+        _log_msg(f"[TIMING] write_brep: {timings['write_brep']:.3f}s")
 
         total_time = sum(timings.values())
         timings['total'] = total_time
 
-        log(f"\n[Summary]")
-        log(f"  Faces: {total_faces} -> {faces_after}")
-        log(f"  Degenerate faces: {len(degen_faces)} -> {degen_after} (edges with degen flag)")
-        log(f"  Fixed: {fixed_count}, Failed: {failed_count}")
-        log(f"  Total time: {total_time:.3f}s")
-        log(f"  Note: Output is unsewn compound. Use CADSewFaces to sew.")
+        _log_msg(f"\n[Summary]")
+        _log_msg(f"  Faces: {total_faces} -> {faces_after}")
+        _log_msg(f"  Degenerate faces: {len(degen_faces)} -> {degen_after} (edges with degen flag)")
+        _log_msg(f"  Fixed: {fixed_count}, Failed: {failed_count}")
+        _log_msg(f"  Total time: {total_time:.3f}s")
+        _log_msg(f"  Note: Output is unsewn compound. Use CADSewFaces to sew.")
 
         return {
             "success": True,
@@ -181,7 +184,7 @@ def fix_degenerate_faces(input_path, output_path, iterations, max_degree, log_fi
     except Exception as e:
         import traceback
         error_msg = f"{e}\n{traceback.format_exc()}"
-        log(f"[ERROR] {error_msg}")
+        _log_msg(f"[ERROR] {error_msg}")
         return {"success": False, "error": str(e)}
 
 
@@ -273,10 +276,10 @@ def main():
             f.write(f"\nFinished: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
 
     if result['success']:
-        print(f"OK: {result.get('fixed', 0)} fixed, {result.get('failed', 0)} failed")
+        log.info(f"OK: {result.get('fixed', 0)} fixed, {result.get('failed', 0)} failed")
         sys.exit(0)
     else:
-        print(f"ERROR: {result['error']}", file=sys.stderr)
+        log.error(f"{result['error']}")
         sys.exit(1)
 
 

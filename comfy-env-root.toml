@@ -1,0 +1,6 @@
+[node_reqs]
+ComfyUI-GeometryPack = "PozzettiAndrea/ComfyUI-GeometryPack"
+ComfyUI-Multiband = "PozzettiAndrea/ComfyUI-Multiband"
+
+[apt]
+packages = ["libglu1-mesa", "libxft2", "libgl1-mesa-glx"]

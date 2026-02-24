@@ -1,6 +1,9 @@
+import logging
 import trimesh
 import os
 import folder_paths
+
+log = logging.getLogger("cadabra")
 
 class LoadPointCloudXYZ:
     """
@@ -43,11 +46,11 @@ class LoadPointCloudXYZ:
         if not os.path.exists(file_path):
             raise FileNotFoundError(f"File not found: {file_path}")
 
-        print(f"[CADabra] Loading point cloud from: {file_path}")
+        log.info(f" Loading point cloud from: {file_path}")
         try:
             # trimesh.load can directly load .xyz files
             mesh = trimesh.load(file_path, file_type='xyz')
-            print(f"[CADabra] Loaded {len(mesh.vertices)} points.")
+            log.info(f" Loaded {len(mesh.vertices)} points.")
             return (mesh,)
         except Exception as e:
             raise RuntimeError(f"Failed to load .xyz file {file_path}: {e}")

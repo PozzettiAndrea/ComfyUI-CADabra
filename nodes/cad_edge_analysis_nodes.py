@@ -2,15 +2,16 @@
 CAD Edge Analysis nodes for ComfyUI-CADabra
 Wireframe/edge inspection with geometric and topological analysis.
 """
+from __future__ import annotations
 
 import json
+import logging
 import os
 import time
 import folder_paths
 
-from ..utils.occ_logging import log_operation
-
-# OCC imports for edge analysis
+log = logging.getLogger("cadabra")
+from .utils.occ_logging import log_operation
 from OCC.Core.TopExp import TopExp_Explorer, topexp
 from OCC.Core.TopAbs import TopAbs_FACE, TopAbs_EDGE, TopAbs_VERTEX
 from OCC.Core.TopTools import TopTools_IndexedMapOfShape
@@ -28,17 +29,22 @@ from OCC.Core.Bnd import Bnd_Box
 from OCC.Core.BRepBndLib import brepbndlib
 from OCC.Core.gp import gp_Pnt, gp_Vec
 
-# Curve type names (consistent with cad_project_faces.py)
-CURVE_TYPE_NAMES = {
-    GeomAbs_Line: "Line",
-    GeomAbs_Circle: "Circle",
-    GeomAbs_Ellipse: "Ellipse",
-    GeomAbs_Hyperbola: "Hyperbola",
-    GeomAbs_Parabola: "Parabola",
-    GeomAbs_BezierCurve: "Bezier",
-    GeomAbs_BSplineCurve: "BSpline",
-    GeomAbs_OtherCurve: "Other",
-}
+def _get_curve_type_names():
+    """Get curve type names dict - called at runtime when OCC is available."""
+    from OCC.Core.GeomAbs import (
+        GeomAbs_Line, GeomAbs_Circle, GeomAbs_Ellipse, GeomAbs_Hyperbola,
+        GeomAbs_Parabola, GeomAbs_BezierCurve, GeomAbs_BSplineCurve, GeomAbs_OtherCurve
+    )
+    return {
+        GeomAbs_Line: "Line",
+        GeomAbs_Circle: "Circle",
+        GeomAbs_Ellipse: "Ellipse",
+        GeomAbs_Hyperbola: "Hyperbola",
+        GeomAbs_Parabola: "Parabola",
+        GeomAbs_BezierCurve: "Bezier",
+        GeomAbs_BSplineCurve: "BSpline",
+        GeomAbs_OtherCurve: "Other",
+    }
 
 
 class CADEdgeAnalysis:
@@ -70,7 +76,7 @@ class CADEdgeAnalysis:
         }
 
     RETURN_TYPES = ("CAD_MODEL", "STRING", "STRING")
-    RETURN_NAMES = ("cad_model", "edge_json_filepath", "report")
+    RETURN_NAMES = ("cad_model", "edge_json_filepath", "info")
     OUTPUT_NODE = True
     FUNCTION = "analyze_edges"
     CATEGORY = "CADabra/Analysis"
@@ -88,10 +94,9 @@ class CADEdgeAnalysis:
 
     def analyze_edges(self, cad_model, linear_deflection=0.1):
         """Analyze all edges in the CAD model."""
-        # Get OCC shape
-        occ_shape = cad_model.get("occ_shape") or cad_model.get("shape")
-        if occ_shape is None:
-            raise RuntimeError("CAD model has no OCC shape")
+        # Get OCC shape from brep_path
+        from .utils.brep_cache import get_occ_shape
+        occ_shape = get_occ_shape(cad_model)
 
         output_dir = folder_paths.get_output_directory()
         timestamp = int(time.time() * 1000)
@@ -115,7 +120,7 @@ class CADEdgeAnalysis:
         bounds_min = [xmin, ymin, zmin]
         bounds_max = [xmax, ymax, zmax]
 
-        print(f"[CADabra] Edge Analysis: {num_edges} edges, {num_faces} faces, {num_vertices} vertices")
+        log.info(f"Edge Analysis: {num_edges} edges, {num_faces} faces, {num_vertices} vertices")
 
         # Build indexed maps
         edge_map = TopTools_IndexedMapOfShape()
@@ -127,11 +132,11 @@ class CADEdgeAnalysis:
         faces_list = list(self._iter_occ(occ_shape, TopAbs_FACE))
 
         # Build edge-to-faces mapping
-        print(f"[CADabra] Building edge-to-faces map...")
+        log.info("Building edge-to-faces map...")
         edge_to_faces = self._build_edge_to_faces_map(occ_shape, edge_map, faces_list)
 
         # Build vertex-to-edges mapping
-        print(f"[CADabra] Building vertex-to-edges map...")
+        log.info("Building vertex-to-edges map...")
         vertex_to_edges = self._build_vertex_to_edges_map(occ_shape, edge_map, vertex_map)
 
         # Analyze each edge
@@ -166,8 +171,8 @@ class CADEdgeAnalysis:
         if edge_stats:
             edge_stats["total"] = sum(lengths)
 
-        print(f"[CADabra] Edge types: {edge_type_counts}")
-        print(f"[CADabra] Free edges: {free_edge_count}, Shared edges: {len(edge_data) - free_edge_count}")
+        log.info(f"Edge types: {edge_type_counts}")
+        log.info(f"Free edges: {free_edge_count}, Shared edges: {len(edge_data) - free_edge_count}")
 
         # Build JSON output
         analysis_data = {
@@ -188,7 +193,7 @@ class CADEdgeAnalysis:
         with open(json_path, 'w') as f:
             json.dump(analysis_data, f, indent=2)
 
-        print(f"[CADabra] Edge analysis saved: {json_filename}")
+        log.info(f"Edge analysis saved: {json_filename}")
 
         # Build text report
         report = self._build_report(
@@ -256,7 +261,7 @@ class CADEdgeAnalysis:
 
             # Edge type
             curve_type = curve.GetType()
-            edge_info["edge_type"] = CURVE_TYPE_NAMES.get(curve_type, f"Unknown({curve_type})")
+            edge_info["edge_type"] = _get_curve_type_names().get(curve_type, f"Unknown({curve_type})")
 
             # Edge length using BRepGProp
             try:
@@ -482,7 +487,6 @@ class CADEdgeAnalysis:
 
         return "\n".join(lines)
 
-
 class CADEdgeViewer:
     """
     Interactive edge viewer node.
@@ -549,7 +553,7 @@ class CADEdgeViewer:
             edge_stats = analysis_data.get("edge_stats", {})
             free_edge_count = analysis_data.get("free_edge_count", 0)
         except Exception as e:
-            print(f"[CADabra] Warning: Could not load edge analysis JSON: {e}")
+            log.warning(f"Could not load edge analysis JSON: {e}")
             num_edges = num_vertices = num_faces = 0
             bounds_min = bounds_max = [0, 0, 0]
             edge_type_counts = {}
@@ -628,7 +632,7 @@ class CADEdgeDetailAnalyzer:
             with open(edge_json_filepath, 'r') as f:
                 analysis_data = json.load(f)
         except Exception as e:
-            print(f"[CADabra] Error loading edge JSON: {e}")
+            log.error(f"Error loading edge JSON: {e}")
             return {"ui": {"error": [str(e)]}}
 
         # Find the edge

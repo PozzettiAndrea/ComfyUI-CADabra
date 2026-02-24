@@ -4,13 +4,13 @@ Computes surface curvature directly from CAD geometry using BRepLProp_SLProps.
 Outputs a TRIMESH with curvature stored in vertex_attributes for visualization
 with ComfyUI-GeometryPack's Preview Mesh (VTK) node.
 """
+from __future__ import annotations
 
 import numpy as np
 import trimesh
 
-from ..utils.occ_logging import logger
+from .utils.occ_logging import logger
 
-# OCC imports for curvature computation
 from OCC.Core.TopExp import TopExp_Explorer
 from OCC.Core.TopAbs import TopAbs_FACE
 from OCC.Core.TopoDS import topods
@@ -69,7 +69,7 @@ class CADCurvature:
         }
 
     RETURN_TYPES = ("TRIMESH", "CAD_MODEL", "STRING")
-    RETURN_NAMES = ("mesh", "cad_model", "report")
+    RETURN_NAMES = ("mesh", "cad_model", "info")
     FUNCTION = "compute_curvature"
     CATEGORY = "CADabra/Analysis"
     DESCRIPTION = """
@@ -88,10 +88,9 @@ class CADCurvature:
     def compute_curvature(self, cad_model, linear_deflection, angular_deflection,
                           clamp_percentile=1.0):
         """Compute curvature and return as TRIMESH with vertex attributes."""
-        # Get OCC shape
-        occ_shape = cad_model.get("occ_shape") or cad_model.get("shape")
-        if occ_shape is None:
-            raise RuntimeError("CAD model has no OCC shape")
+        # Get OCC shape from brep_path
+        from .utils.brep_cache import get_occ_shape
+        occ_shape = get_occ_shape(cad_model)
 
         # Get bounding box for report
         bbox = Bnd_Box()

@@ -7,57 +7,32 @@ Implements the Mesh-to-CAD pipeline with 4 key nodes:
 4. BrepGenerationNode - Generate B-rep CAD models (Phase 1: pythonocc-core, Future: BrepGen)
 """
 
+import logging
 import numpy as np
 import trimesh
 import os
 from typing import Dict, List, Tuple, Any
 
-# Optional imports with error handling
-try:
-    import open3d as o3d
-    HAS_OPEN3D = True
-except ImportError:
-    HAS_OPEN3D = False
-    print("⚠️  Open3D not installed. Point cloud features will be limited.")
-    print("   Install with: pip install open3d>=0.17.0")
+log = logging.getLogger("cadabra")
 
-try:
-    import pyransac3d as pyrsc
-    HAS_PYRANSAC = True
-except ImportError:
-    HAS_PYRANSAC = False
-    print("⚠️  pyRANSAC3D not installed. Primitive fitting will not work.")
-    print("   Install with: pip install pyransac3d>=0.5.0")
-
-try:
-    from sklearn.cluster import KMeans
-    HAS_SKLEARN = True
-except ImportError:
-    HAS_SKLEARN = False
-    print("⚠️  scikit-learn not installed. Segmentation will not work.")
-    print("   Install with: pip install scikit-learn>=1.3.0")
+import pyransac3d as pyrsc
+from sklearn.cluster import KMeans
 
 # OCC support for CAD_MODEL compatibility and B-rep generation
-try:
-    from OCC.Core.STEPControl import STEPControl_Reader, STEPControl_Writer, STEPControl_AsIs
-    from OCC.Core.IFSelect import IFSelect_RetDone
-    from OCC.Core.gp import gp_Pnt, gp_Vec, gp_Dir, gp_Ax2
-    from OCC.Core.BRepBuilderAPI import (
-        BRepBuilderAPI_MakeEdge,
-        BRepBuilderAPI_MakeWire,
-        BRepBuilderAPI_MakeFace
-    )
-    from OCC.Core.BRepPrimAPI import BRepPrimAPI_MakeCylinder, BRepPrimAPI_MakeSphere
-    from OCC.Core.BRepAlgoAPI import BRepAlgoAPI_Fuse
-    from OCC.Core.TopExp import TopExp_Explorer
-    from OCC.Core.TopAbs import TopAbs_FACE, TopAbs_EDGE, TopAbs_VERTEX, TopAbs_SOLID
-    from OCC.Core.TopoDS import TopoDS_Compound
-    from OCC.Core.BRep import BRep_Builder
-    HAS_OCC = True
-except ImportError:
-    HAS_OCC = False
-    print("⚠️  pythonocc-core not installed. BrepGenerationNode and CAD_MODEL will have limited compatibility.")
-    print("   Install with: conda install -c conda-forge pythonocc-core")
+from OCC.Core.STEPControl import STEPControl_Reader, STEPControl_Writer, STEPControl_AsIs
+from OCC.Core.IFSelect import IFSelect_RetDone
+from OCC.Core.gp import gp_Pnt, gp_Vec, gp_Dir, gp_Ax2
+from OCC.Core.BRepBuilderAPI import (
+    BRepBuilderAPI_MakeEdge,
+    BRepBuilderAPI_MakeWire,
+    BRepBuilderAPI_MakeFace
+)
+from OCC.Core.BRepPrimAPI import BRepPrimAPI_MakeCylinder, BRepPrimAPI_MakeSphere
+from OCC.Core.BRepAlgoAPI import BRepAlgoAPI_Fuse
+from OCC.Core.TopExp import TopExp_Explorer
+from OCC.Core.TopAbs import TopAbs_FACE, TopAbs_EDGE, TopAbs_VERTEX, TopAbs_SOLID
+from OCC.Core.TopoDS import TopoDS_Compound
+from OCC.Core.BRep import BRep_Builder
 
 
 # ============================================================================
@@ -114,7 +89,7 @@ class QuadRemeshNode:
         Returns:
             Tuple containing refined TRIMESH object and updated metadata
         """
-        print(f"🔄 QuadRemesh: Processing mesh with {len(mesh.vertices)} vertices, {len(mesh.faces)} faces")
+        log.info(f"[reload] QuadRemesh: Processing mesh with {len(mesh.vertices)} vertices, {len(mesh.faces)} faces")
 
         # Get metadata from input or from trimesh.metadata
         if metadata is None:
@@ -134,17 +109,17 @@ class QuadRemeshNode:
             # Subdivide to reduce edge length
             for i in range(iterations):
                 tm = tm.subdivide()
-                print(f"  Subdivision {i+1}/{iterations}: {len(tm.vertices)} vertices")
+                log.info(f"Subdivision {i+1}/{iterations}: {len(tm.vertices)} vertices")
 
         # Apply smoothing if requested
         if smooth:
             # Laplacian smoothing
             trimesh.smoothing.filter_laplacian(tm, iterations=iterations)
-            print(f"  Applied Laplacian smoothing ({iterations} iterations)")
+            log.info(f"Applied Laplacian smoothing ({iterations} iterations)")
 
         # Ensure manifold mesh
         if not tm.is_watertight:
-            print("  ⚠️  Warning: Mesh is not watertight. Some operations may fail.")
+            log.warning("Mesh is not watertight. Some operations may fail.")
 
         # Update metadata
         tm.metadata['cadabra_type'] = metadata.get('type', 'surface')
@@ -162,7 +137,7 @@ class QuadRemeshNode:
         metadata['vertex_count'] = len(tm.vertices)
         metadata['face_count'] = len(tm.faces)
 
-        print(f"✅ QuadRemesh: Output {len(tm.vertices)} vertices, {len(tm.faces)} faces")
+        log.info(f"[OK] QuadRemesh: Output {len(tm.vertices)} vertices, {len(tm.faces)} faces")
 
         return (tm, metadata)
 
@@ -219,13 +194,10 @@ class PointCloudSegmentationNode:
         Returns:
             Tuple containing SEGMENTED_CLOUD dict
         """
-        if not HAS_SKLEARN:
-            raise ImportError("scikit-learn is required for segmentation. Install with: pip install scikit-learn>=1.3.0")
-
         # Convert input to point cloud
         if isinstance(input_data, trimesh.Trimesh):
             # Input is TRIMESH object
-            print(f"🔍 Segmentation: Converting mesh to point cloud ({sample_points} points)")
+            log.info(f"[search] Segmentation: Converting mesh to point cloud ({sample_points} points)")
             tm = input_data
 
             # Sample points from mesh surface
@@ -234,7 +206,7 @@ class PointCloudSegmentationNode:
 
         elif isinstance(input_data, dict) and "faces" in input_data:
             # Input is old MESH dict format (backward compatibility)
-            print(f"🔍 Segmentation: Converting mesh dict to point cloud ({sample_points} points)")
+            log.info(f"[search] Segmentation: Converting mesh dict to point cloud ({sample_points} points)")
             tm = trimesh.Trimesh(vertices=input_data['vertices'], faces=input_data['faces'])
 
             # Sample points from mesh surface
@@ -243,7 +215,7 @@ class PointCloudSegmentationNode:
 
         else:
             # Input is POINT_CLOUD dict
-            print(f"🔍 Segmentation: Processing point cloud ({len(input_data['points'])} points)")
+            log.info(f"[search] Segmentation: Processing point cloud ({len(input_data['points'])} points)")
             points = input_data['points']
             normals = input_data.get('normals', np.zeros_like(points))
 
@@ -255,15 +227,15 @@ class PointCloudSegmentationNode:
             # Weight normals to have similar scale as positions
             normal_weight = 0.5
             features = np.hstack([points, normals * normal_weight])
-            print(f"  Using position + normal features ({features.shape[1]} dimensions)")
+            log.info(f"Using position + normal features ({features.shape[1]} dimensions)")
         else:
-            print(f"  Using position features only ({features.shape[1]} dimensions)")
+            log.info(f"Using position features only ({features.shape[1]} dimensions)")
 
         # Normalize features
         features_normalized = (features - features.mean(axis=0)) / (features.std(axis=0) + 1e-8)
 
         # KMeans clustering
-        print(f"  Running KMeans with {num_segments} clusters...")
+        log.info(f"Running KMeans with {num_segments} clusters...")
         kmeans = KMeans(n_clusters=num_segments, random_state=42, n_init=10)
         labels = kmeans.fit_predict(features_normalized)
 
@@ -284,9 +256,9 @@ class PointCloudSegmentationNode:
         # Print statistics
         for i in range(num_segments):
             count = np.sum(labels == i)
-            print(f"  Segment {i}: {count} points ({100*count/len(points):.1f}%)")
+            log.info(f"Segment {i}: {count} points ({100*count/len(points):.1f}%)")
 
-        print(f"✅ Segmentation: Created {num_segments} segments")
+        log.info(f"[OK] Segmentation: Created {num_segments} segments")
 
         return (output,)
 
@@ -326,9 +298,9 @@ class MeshFaceSegmentationNode:
                 "facets_angle_threshold": ("FLOAT", {
                     "default": 0.1,
                     "min": 0.001,
-                    "max": 1.57,  # π/2
+                    "max": 1.57,  # pi/2
                     "step": 0.01,
-                    "tooltip": "Max angle (radians) between normals for coplanar faces. 0.1 rad ≈ 5.7°"
+                    "tooltip": "Max angle (radians) between normals for coplanar faces. 0.1 rad ~ 5.7°"
                 }),
                 # For cluster methods
                 "cluster_num_segments": ("INT", {
@@ -344,7 +316,7 @@ class MeshFaceSegmentationNode:
                     "min": 0.5,
                     "max": 1.0,
                     "step": 0.01,
-                    "tooltip": "Cosine similarity threshold (0.95 ≈ 18° max difference)"
+                    "tooltip": "Cosine similarity threshold (0.95 ~ 18° max difference)"
                 }),
                 "region_grow_min_faces": ("INT", {
                     "default": 10,
@@ -380,8 +352,8 @@ class MeshFaceSegmentationNode:
         import trimesh
         import numpy as np
 
-        print(f"\n[MeshFaceSegmentation] Starting segmentation with method: {method}")
-        print(f"  Mesh: {len(mesh.vertices)} vertices, {len(mesh.faces)} faces")
+        log.info(f"MeshFaceSegmentation] Starting segmentation with method: {method}")
+        log.info(f"Mesh: {len(mesh.vertices)} vertices, {len(mesh.faces)} faces")
 
         # Select and run segmentation method
         if method == "facets_coplanar":
@@ -422,17 +394,17 @@ class MeshFaceSegmentationNode:
         }
 
         # Print summary
-        print(f"\n✅ Segmentation complete:")
-        print(f"  Method: {method}")
-        print(f"  Segments: {num_segments}")
-        print(f"  Unlabeled faces: {np.sum(face_labels == -1)}")
+        log.info(f"OK] Segmentation complete:")
+        log.info(f"Method: {method}")
+        log.info(f"Segments: {num_segments}")
+        log.info(f"Unlabeled faces: {np.sum(face_labels == -1)}")
         for i in range(min(5, num_segments)):
             count = np.sum(face_labels == i)
             area = segment_info['segment_areas'][i]
-            print(f"  Segment {i}: {count} faces, area={area:.2f}")
+            log.info(f"Segment {i}: {count} faces, area={area:.2f}")
         if num_segments > 5:
-            print(f"  ... and {num_segments - 5} more segments")
-        print(f"  Segmentation stored in mesh.face_attributes['segment_id']")
+            log.info(f"... and {num_segments - 5} more segments")
+        log.info(f"Segmentation stored in mesh.face_attributes['segment_id']")
 
         return (mesh,)
 
@@ -445,7 +417,7 @@ class MeshFaceSegmentationNode:
         import trimesh
         import numpy as np
 
-        print(f"[Facets] Angle threshold: {angle_threshold:.3f} rad ({np.degrees(angle_threshold):.1f}°)")
+        log.info(f"[Facets] Angle threshold: {angle_threshold:.3f} rad ({np.degrees(angle_threshold):.1f}°)")
 
         # Get coplanar face groups
         facets = trimesh.graph.facets(mesh, facet_threshold=angle_threshold)
@@ -458,7 +430,7 @@ class MeshFaceSegmentationNode:
 
         num_segments = len(facets)
 
-        print(f"[Facets] Found {num_segments} coplanar regions")
+        log.info(f"[Facets] Found {num_segments} coplanar regions")
 
         return face_labels, num_segments
 
@@ -473,7 +445,7 @@ class MeshFaceSegmentationNode:
         import numpy as np
         from scipy.sparse.csgraph import connected_components
 
-        print(f"[ClusterNormals] Target segments: {num_segments}")
+        log.info(f"[ClusterNormals] Target segments: {num_segments}")
 
         # Get face normals
         normals = mesh.face_normals
@@ -518,7 +490,7 @@ class MeshFaceSegmentationNode:
                 final_labels[global_indices] = current_id
                 current_id += 1
 
-        print(f"[ClusterNormals] Initial clusters: {num_segments}, Final segments: {current_id}")
+        log.info(f"[ClusterNormals] Initial clusters: {num_segments}, Final segments: {current_id}")
 
         return final_labels, current_id
 
@@ -532,8 +504,8 @@ class MeshFaceSegmentationNode:
         import numpy as np
         from collections import deque
 
-        print(f"[RegionGrow] Normal threshold: {normal_threshold:.3f} (cos similarity)")
-        print(f"[RegionGrow] Min faces per segment: {min_faces}")
+        log.info(f"[RegionGrow] Normal threshold: {normal_threshold:.3f} (cos similarity)")
+        log.info(f"[RegionGrow] Min faces per segment: {min_faces}")
 
         num_faces = len(mesh.faces)
         face_labels = np.full(num_faces, -1, dtype=np.int32)
@@ -586,8 +558,8 @@ class MeshFaceSegmentationNode:
                 for face in region_faces:
                     face_labels[face] = -1
 
-        print(f"[RegionGrow] Created {segment_id} segments")
-        print(f"[RegionGrow] Unlabeled faces (noise): {np.sum(face_labels == -1)}")
+        log.info(f"[RegionGrow] Created {segment_id} segments")
+        log.info(f"[RegionGrow] Unlabeled faces (noise): {np.sum(face_labels == -1)}")
 
         return face_labels, segment_id
 
@@ -600,7 +572,7 @@ class MeshFaceSegmentationNode:
         from sklearn.cluster import KMeans
         import numpy as np
 
-        print(f"[ClusterCurvature] Target segments: {num_segments}")
+        log.info(f"[ClusterCurvature] Target segments: {num_segments}")
 
         # Compute discrete Gaussian curvature at vertices
         try:
@@ -609,8 +581,8 @@ class MeshFaceSegmentationNode:
                 mesh.vertices, mesh.faces, mesh.area_faces
             )
         except Exception as e:
-            print(f"[ClusterCurvature] Warning: Curvature computation failed: {e}")
-            print(f"[ClusterCurvature] Falling back to normal clustering only")
+            log.info(f"[ClusterCurvature] Warning: Curvature computation failed: {e}")
+            log.info(f"[ClusterCurvature] Falling back to normal clustering only")
             return self._segment_cluster_normals(mesh, num_segments)
 
         # Convert vertex curvature to face curvature (average of face vertices)
@@ -632,8 +604,8 @@ class MeshFaceSegmentationNode:
         kmeans = KMeans(n_clusters=num_segments, random_state=42, n_init=10)
         face_labels = kmeans.fit_predict(features_normalized)
 
-        print(f"[ClusterCurvature] Created {num_segments} segments")
-        print(f"[ClusterCurvature] Curvature range: [{vertex_curvature.min():.4f}, {vertex_curvature.max():.4f}]")
+        log.info(f"[ClusterCurvature] Created {num_segments} segments")
+        log.info(f"[ClusterCurvature] Curvature range: [{vertex_curvature.min():.4f}, {vertex_curvature.max():.4f}]")
 
         return face_labels, num_segments
 
@@ -715,8 +687,8 @@ class MeshSegmentToPointCloudNode:
                 "Connect this node to MeshFaceSegmentation output."
             )
 
-        print(f"\n[MeshSegmentToPointCloud] Converting mesh to point cloud...")
-        print(f"  Input: {len(mesh.faces)} faces")
+        log.info(f"MeshSegmentToPointCloud] Converting mesh to point cloud...")
+        log.info(f"Input: {len(mesh.faces)} faces")
 
         # Get face labels
         face_labels = mesh.face_attributes['segment_id']
@@ -755,10 +727,10 @@ class MeshSegmentToPointCloudNode:
 
         # Print summary
         num_segments = len(np.unique(valid_labels))
-        print(f"\n✅ Conversion complete:")
-        print(f"  Output: {len(valid_centroids)} points ({num_segments} segments)")
-        print(f"  Filtered: {np.sum(~valid_mask)} noise faces")
-        print(f"  Point cloud stored as TRIMESH with vertex_attributes")
+        log.info(f"OK] Conversion complete:")
+        log.info(f"Output: {len(valid_centroids)} points ({num_segments} segments)")
+        log.info(f"Filtered: {np.sum(~valid_mask)} noise faces")
+        log.info(f"Point cloud stored as TRIMESH with vertex_attributes")
 
         return (point_cloud,)
 
@@ -821,13 +793,10 @@ class PrimitiveFittingNode:
         Returns:
             Tuple containing PRIMITIVES dict and summary string
         """
-        if not HAS_PYRANSAC:
-            raise ImportError("pyRANSAC3D is required for primitive fitting. Install with: pip install pyransac3d>=0.5.0")
-
         # Convert input to standard format (points, labels, num_segments)
         if isinstance(segmented_cloud, trimesh.Trimesh):
             # Input is TRIMESH (point cloud from MeshSegmentToPointCloud)
-            print(f"[PrimitiveFitting] Input: TRIMESH point cloud")
+            log.info(f"[PrimitiveFitting] Input: TRIMESH point cloud")
 
             if not hasattr(segmented_cloud, 'vertex_attributes') or 'segment_id' not in segmented_cloud.vertex_attributes:
                 raise ValueError(
@@ -846,7 +815,7 @@ class PrimitiveFittingNode:
 
         elif isinstance(segmented_cloud, dict):
             # Input is SEGMENTED_CLOUD (from PointCloudSegmentation)
-            print(f"[PrimitiveFitting] Input: SEGMENTED_CLOUD dict")
+            log.info(f"[PrimitiveFitting] Input: SEGMENTED_CLOUD dict")
             points = segmented_cloud['points']
             labels = segmented_cloud['labels']
             num_segments = segmented_cloud['num_segments']
@@ -856,7 +825,7 @@ class PrimitiveFittingNode:
                 f"Input must be TRIMESH or SEGMENTED_CLOUD, got {type(segmented_cloud)}"
             )
 
-        print(f"🔧 Primitive Fitting: Processing {num_segments} segments")
+        log.info(f"[fix] Primitive Fitting: Processing {num_segments} segments")
 
         primitives = []
         assignments = np.full(len(points), -1, dtype=np.int32)
@@ -879,11 +848,11 @@ class PrimitiveFittingNode:
             segment_points = points[segment_mask]
 
             if len(segment_points) < min_points:
-                print(f"  Segment {segment_id}: Skipped (only {len(segment_points)} points, need {min_points})")
+                log.info(f"Segment {segment_id}: Skipped (only {len(segment_points)} points, need {min_points})")
                 stats['skipped'] += 1
                 continue
 
-            print(f"  Segment {segment_id}: Fitting {primitive_type} to {len(segment_points)} points")
+            log.info(f"Segment {segment_id}: Fitting {primitive_type} to {len(segment_points)} points")
 
             # Fit primitive based on type
             if primitive_type == "auto":
@@ -912,9 +881,9 @@ class PrimitiveFittingNode:
 
                     inlier_ratio = np.sum(best_primitive['inliers']) / len(segment_points)
                     stats['total_inlier_ratio'] += inlier_ratio
-                    print(f"    ✓ Fitted {best_primitive['type']}: {inlier_ratio*100:.1f}% inliers")
+                    log.info(f"  [x] Fitted {best_primitive['type']}: {inlier_ratio*100:.1f}% inliers")
             else:
-                print(f"    ✗ Failed to fit primitive")
+                log.info(f"  [ ] Failed to fit primitive")
                 stats['failed'] += 1
 
         output = {
@@ -926,11 +895,11 @@ class PrimitiveFittingNode:
         # Create summary string
         avg_inlier = (stats['total_inlier_ratio'] / stats['fitted'] * 100) if stats['fitted'] > 0 else 0
         summary = f"""Primitive Fitting Results:
-─────────────────────────────
+----------------------------------------------------------
 Total Segments: {num_segments}
-  ✓ Fitted: {stats['fitted']}
-  ⊘ Skipped: {stats['skipped']} (< {min_points} points)
-  ✗ Failed: {stats['failed']}
+  [x] Fitted: {stats['fitted']}
+  [skip] Skipped: {stats['skipped']} (< {min_points} points)
+  [ ] Failed: {stats['failed']}
 
 Primitives by Type:
   Planes: {stats['planes']}
@@ -942,7 +911,7 @@ Average Inlier Ratio: {avg_inlier:.1f}%
 Total Points: {len(points)}
 """
 
-        print(f"✅ Primitive Fitting: Fitted {len(primitives)} primitives")
+        log.info(f"[OK] Primitive Fitting: Fitted {len(primitives)} primitives")
 
         return (output, summary)
 
@@ -999,7 +968,7 @@ Total Points: {len(points)}
             # Would need to implement custom cone fitting or use SPFN in Phase 2
 
         except Exception as e:
-            print(f"    Error fitting {prim_type}: {e}")
+            log.info(f"  Error fitting {prim_type}: {e}")
             return None
 
         return None
@@ -1069,13 +1038,9 @@ class BrepGenerationNode:
         Returns:
             Tuple containing CAD_MODEL dict and file path
         """
-        if not HAS_OCC:
-            raise RuntimeError("pythonocc-core is required for B-rep generation. "
-                             "Install with: conda install -c conda-forge pythonocc-core")
-
         primitives_list = primitives['primitives']
 
-        print(f"  B-rep Generation: Converting {len(primitives_list)} primitives to CAD (using OCC)")
+        log.info(f"B-rep Generation: Converting {len(primitives_list)} primitives to CAD (using OCC)")
 
         shapes = []  # Store created OCC shapes
 
@@ -1089,34 +1054,34 @@ class BrepGenerationNode:
                     shape = self._create_plane_face(params, prim['points'])
                     if shape is not None:
                         shapes.append(shape)
-                        print(f"  Primitive {i}: Plane -> Face")
+                        log.info(f"Primitive {i}: Plane -> Face")
 
                 elif prim_type == "cylinder":
                     # Create cylindrical solid
                     shape = self._create_cylinder(params, prim['points'])
                     if shape is not None:
                         shapes.append(shape)
-                        print(f"  Primitive {i}: Cylinder -> Solid")
+                        log.info(f"Primitive {i}: Cylinder -> Solid")
 
                 elif prim_type == "sphere":
                     # Create spherical solid
                     shape = self._create_sphere(params)
                     if shape is not None:
                         shapes.append(shape)
-                        print(f"  Primitive {i}: Sphere -> Solid")
+                        log.info(f"Primitive {i}: Sphere -> Solid")
 
                 else:
-                    print(f"  Primitive {i}: {prim_type} not yet supported")
+                    log.info(f"Primitive {i}: {prim_type} not yet supported")
 
             except Exception as e:
-                print(f"  Primitive {i}: Error creating {prim_type}: {e}")
+                log.info(f"Primitive {i}: Error creating {prim_type}: {e}")
 
         if not shapes:
             raise ValueError("No shapes were successfully created from primitives")
 
         # Combine shapes if requested
         if combine_shapes and len(shapes) > 1:
-            print(f"  Combining {len(shapes)} shapes into single B-rep...")
+            log.info(f"Combining {len(shapes)} shapes into single B-rep...")
             try:
                 result_shape = shapes[0]
                 for i in range(1, len(shapes)):
@@ -1124,12 +1089,12 @@ class BrepGenerationNode:
                     if fuse.IsDone():
                         result_shape = fuse.Shape()
                     else:
-                        print(f"  Failed to fuse shape {i}")
+                        log.info(f"Failed to fuse shape {i}")
                 occ_shape = result_shape
-                print(f"  Successfully combined shapes")
+                log.info(f"Successfully combined shapes")
             except Exception as e:
-                print(f"  Failed to combine shapes: {e}")
-                print(f"  Keeping shapes in compound")
+                log.info(f"Failed to combine shapes: {e}")
+                log.info(f"Keeping shapes in compound")
                 # Create compound of all shapes
                 occ_shape = self._make_compound(shapes)
         elif len(shapes) == 1:
@@ -1141,7 +1106,7 @@ class BrepGenerationNode:
         os.makedirs(os.path.dirname(output_path) if os.path.dirname(output_path) else ".", exist_ok=True)
 
         # Save to STEP file
-        print(f"  Saving to: {output_path}")
+        log.info(f"Saving to: {output_path}")
         try:
             writer = STEPControl_Writer()
             writer.Transfer(occ_shape, STEPControl_AsIs)
@@ -1154,22 +1119,26 @@ class BrepGenerationNode:
         # Get topology statistics using TopExp_Explorer
         topology = self._count_topology(occ_shape)
 
+        # Save to BREP file for brep_path
+        from .utils.brep_cache import save_shape
+        brep_path = save_shape(occ_shape, "brep_gen")
+
         # Create CAD_MODEL output (compatible with all CAD nodes)
         output = {
-            "occ_shape": occ_shape,
+            "brep_path": brep_path,
             "file_path": output_path,
             "format": ".step",
             "topology": topology,
             "num_primitives": len(primitives_list)
         }
 
-        print(f"  B-rep Generation: Created B-rep with {topology['volumes']} volumes, "
+        log.info(f"B-rep Generation: Created B-rep with {topology['volumes']} volumes, "
               f"{topology['faces']} faces, {topology['edges']} edges, {topology['vertices']} vertices")
-        print(f"   Saved to: {output_path}")
+        log.info(f" Saved to: {output_path}")
 
         return (output, output_path)
 
-    def _make_compound(self, shapes: List) -> TopoDS_Compound:
+    def _make_compound(self, shapes: List):
         """Create a compound from multiple shapes"""
         compound = TopoDS_Compound()
         builder = BRep_Builder()

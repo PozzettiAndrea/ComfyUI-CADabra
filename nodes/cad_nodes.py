@@ -1,18 +1,16 @@
-"""
-ComfyUI-CADabra Nodes
-CAD file loading, meshing, and ML-based processing nodes
-"""
+from __future__ import annotations
 
+import logging
 import os
 import sys
 import tempfile
 import uuid
 import numpy as np
-import torch
 import folder_paths
 import trimesh
+from .utils.occ_logging import log_operation
 
-from ..utils.occ_logging import log_operation
+log = logging.getLogger("cadabra")
 
 
 def _progress_bar(completed, total, elapsed, width=30, prefix=""):
@@ -21,7 +19,7 @@ def _progress_bar(completed, total, elapsed, width=30, prefix=""):
         return
     pct = completed / total
     filled = int(width * pct)
-    bar = "█" * filled + "░" * (width - filled)
+    bar = "=" * filled + "-" * (width - filled)
     rate = completed / elapsed if elapsed > 0 else 0
     eta = (total - completed) / rate if rate > 0 else 0
     # Use \r to overwrite the line
@@ -104,13 +102,16 @@ _IGES_UNIT_FLAGS = {
     10: "microinches",
 }
 
+# prevent IGESControl_Reader destructor crash (free(): invalid pointer)
+_keep_alive = []
+
 
 def _extract_iges_metadata(reader):
     """
     Extract metadata from IGES Global Section.
 
     Args:
-        reader: IGESControl_Reader after ReadFile() but before TransferRoots()
+        reader: IGESControl_Reader after ReadFile()
 
     Returns:
         dict with metadata fields, or empty dict if extraction fails
@@ -124,7 +125,7 @@ def _extract_iges_metadata(reader):
         # Downcast to IGESData_IGESModel to access GlobalSection
         iges_model = IGESData_IGESModel.DownCast(model)
         if not iges_model:
-            print("[CADabra] Warning: Could not downcast to IGESData_IGESModel")
+            log.warning(" Could not downcast to IGESData_IGESModel")
             return {}
 
         gs = iges_model.GlobalSection()
@@ -153,7 +154,7 @@ def _extract_iges_metadata(reader):
 
         return metadata
     except Exception as e:
-        print(f"[CADabra] Warning: Could not extract IGES metadata: {e}")
+        log.warning(f" Could not extract IGES metadata: {e}")
         return {}
 
 
@@ -221,12 +222,17 @@ def _load_step_or_iges(path, ext, filename):
         if status != IFSelect_RetDone:
             raise RuntimeError(f"Failed to read IGES file: {path}")
 
-        # Extract IGES metadata from Global Section before transfer
         metadata = _extract_iges_metadata(reader)
 
         with log_operation("IGES TransferRoots", file=filename):
             reader.TransferRoots()
         occ_shape = reader.OneShape()
+
+        # WORKAROUND: IGESControl_Reader's C++ destructor crashes with
+        # "free(): invalid pointer" after TransferRoots on certain files.
+        # Keep the reader alive to prevent the destructor from running.
+        # Memory impact is negligible since IGES loads are cached to BREP.
+        _keep_alive.append(reader)
     else:
         raise RuntimeError(f"Unsupported format for _load_step_or_iges: {ext}")
 
@@ -318,29 +324,28 @@ class CAD_Load:
             cache_meta = os.path.join(cache_dir, f"{cache_key}.json")
 
             if os.path.exists(cache_brep):
-                # FAST PATH: Load from BREP cache
-                print(f"[CADabra] Loading from cache: {filename}")
-                occ_shape = _load_brep(cache_brep)
+                # FAST PATH: Use cached BREP
+                log.info(f" Using cache: {filename}")
                 metadata = _load_cache_metadata(cache_meta)
+                brep_path = cache_brep
             else:
                 # SLOW PATH: Load original, create cache
-                print(f"[CADabra] Loading CAD file: {filename}")
+                log.info(f" Loading CAD file: {filename}")
                 occ_shape, metadata = _load_step_or_iges(cad_file_path, ext, filename)
                 _save_brep(occ_shape, cache_brep)
                 if metadata:
                     _save_cache_metadata(metadata, cache_meta)
-                print(f"[CADabra] Cached to BREP: {filename}")
+                log.info(f" Cached to BREP: {filename}")
+                brep_path = cache_brep
         else:
-            # BREP files - load directly (no caching needed, already native format)
-            print(f"[CADabra] Loading BREP file: {filename}")
-            occ_shape = _load_brep(cad_file_path)
+            # BREP files - use directly (no caching needed, already native format)
+            log.info(f" Using BREP file: {filename}")
+            brep_path = cad_file_path
 
-        if occ_shape is None:
-            raise RuntimeError(f"Failed to load CAD shape from: {cad_file_path}")
-
-        # Build CAD_MODEL return dict
+        # Build CAD_MODEL return dict with brep_path (not occ_shape)
+        # This avoids pickle issues when crossing process boundaries
         cad_data = {
-            "occ_shape": occ_shape,
+            "brep_path": brep_path,
             "file_path": cad_file_path,
             "format": ext,
         }
@@ -348,277 +353,326 @@ class CAD_Load:
         if metadata:
             cad_data["metadata"] = metadata
 
-        print(f"[CADabra] Loaded: {filename}")
+        log.info(f" Ready: {filename}")
         return (cad_data,)
 
 
-class CAD_Mesh_Gmsh:
-    """Generate mesh from CAD model using Gmsh"""
+
+class CAD_Mesh:
+    """Unified CAD-to-mesh node. Supports BRepIncremental (OCC) and GMSH backends."""
 
     @classmethod
     def INPUT_TYPES(cls):
         return {
             "required": {
                 "cad_model": ("CAD_MODEL",),
-                "mesh_type": (["2D", "3D"],),
-                "element_size": ("FLOAT", {
-                    "default": 0.05,
-                    "min": 0.001,
-                    "max": 1000.0,
-                    "step": 0.01,
-                    "tooltip": "Element size (interpretation depends on size_mode)"
-                }),
-                "size_mode": (["Relative to Bounds", "Absolute"],{
-                    "tooltip": "Relative: element_size is fraction of model diagonal (0.05 = 5%). Absolute: element_size in model units (mm, m, etc.)"
-                }),
-                "algorithm": (["Automatic", "Delaunay", "Frontal"],),
-            }
-        }
-
-    RETURN_TYPES = ("TRIMESH", "MESH_METADATA")
-    FUNCTION = "generate_mesh"
-    CATEGORY = "CADabra"
-
-    def generate_mesh(self, cad_model, mesh_type, element_size, size_mode, algorithm):
-        try:
-            import gmsh
-        except ImportError:
-            raise ImportError("Gmsh not installed. Run: pip install gmsh")
-
-        algo_map = {"Automatic": 1, "Delaunay": 5, "Frontal": 6}
-
-        try:
-            # Load OCC shape into GMSH for meshing
-            occ_shape = cad_model.get("occ_shape")
-            if occ_shape is None:
-                raise RuntimeError("CAD model has no OCC shape")
-            _load_occ_shape_to_gmsh(occ_shape, "mesh_model")
-
-            # Calculate actual element size based on mode
-            if size_mode == "Relative to Bounds":
-                # Get model bounding box to compute diagonal
-                try:
-                    bbox = gmsh.model.getBoundingBox(-1, -1)  # Get overall bounding box
-                    xmin, ymin, zmin, xmax, ymax, zmax = bbox
-                    diagonal = ((xmax - xmin)**2 + (ymax - ymin)**2 + (zmax - zmin)**2)**0.5
-                    actual_element_size = diagonal * element_size
-                    print(f"[CADabra] Model bounds: [{xmin:.2f}, {ymin:.2f}, {zmin:.2f}] to [{xmax:.2f}, {ymax:.2f}, {zmax:.2f}]")
-                    print(f"[CADabra] Diagonal: {diagonal:.2f}, Relative size: {element_size:.3f} -> Actual: {actual_element_size:.4f}")
-                except Exception as e:
-                    print(f"[CADabra] Warning: Could not get bounding box ({e}), using absolute size")
-                    actual_element_size = element_size
-            else:
-                actual_element_size = element_size
-                print(f"[CADabra] Using absolute element size: {actual_element_size}")
-
-            gmsh.option.setNumber("Mesh.CharacteristicLengthMax", actual_element_size)
-            gmsh.option.setNumber("Mesh.Algorithm", algo_map[algorithm])
-
-            dim = 2 if mesh_type == "2D" else 3
-            with log_operation("GMSH mesh.generate", dim=dim, element_size=actual_element_size, algorithm=algorithm):
-                gmsh.model.mesh.generate(dim)
-
-            node_tags, node_coords, _ = gmsh.model.mesh.getNodes()
-            vertices = node_coords.reshape(-1, 3)
-
-            if mesh_type == "2D":
-                elem_types, elem_tags, elem_node_tags = gmsh.model.mesh.getElements(2)
-            else:
-                elem_types, elem_tags, elem_node_tags = gmsh.model.mesh.getElements(3)
-
-            if len(elem_node_tags) == 0:
-                raise RuntimeError("Mesh generation produced no elements")
-
-            faces = elem_node_tags[0].reshape(-1, 3 if mesh_type == "2D" else 4) - 1
-
-            # Convert faces to triangles if needed (for 3D meshes with tets, extract surface)
-            if mesh_type == "3D" and faces.shape[1] == 4:
-                # For tetrahedra, extract triangular surface faces
-                # Each tet has 4 triangular faces
-                triangles = []
-                for tet in faces:
-                    triangles.append([tet[0], tet[1], tet[2]])
-                    triangles.append([tet[0], tet[1], tet[3]])
-                    triangles.append([tet[0], tet[2], tet[3]])
-                    triangles.append([tet[1], tet[2], tet[3]])
-                faces = np.array(triangles)
-                print(f"  Converted 3D tets to surface triangles: {len(faces)} faces")
-
-            # Create trimesh object
-            tm = trimesh.Trimesh(
-                vertices=vertices,
-                faces=faces
-            )
-
-            # Store CADabra-specific metadata in trimesh.metadata
-            tm.metadata['cadabra_type'] = mesh_type
-            tm.metadata['element_size'] = actual_element_size
-            tm.metadata['element_size_input'] = element_size
-            tm.metadata['size_mode'] = size_mode
-            tm.metadata['algorithm'] = algorithm
-
-            # Create separate metadata dict for explicit output
-            metadata = {
-                'type': mesh_type,
-                'element_size': actual_element_size,
-                'element_size_input': element_size,
-                'size_mode': size_mode,
-                'algorithm': algorithm,
-                'vertex_count': len(vertices),
-                'face_count': len(faces),
-            }
-
-            print(f"[CADabra] Generated {mesh_type} mesh: {len(vertices)} vertices, {len(faces)} elements (size: {actual_element_size:.4f})")
-            # Don't finalize gmsh - keep it alive for next operation
-            return (tm, metadata)
-
-        except Exception as e:
-            # Don't finalize gmsh - keep it alive for next operation
-            raise RuntimeError(f"Mesh generation failed: {str(e)}")
-
-
-class CAD_Mesh_Gmsh_Advanced:
-    """Advanced mesh generation with size fields, refinement, and extended algorithms"""
-
-    @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "cad_model": ("CAD_MODEL",),
-                "output_dim": (["2D Surface", "3D Volume"], {
-                    "tooltip": "2D Surface: mesh only surfaces (triangles/quads). 3D Volume: mesh interior with tetrahedra/hexahedra"
-                }),
-                "algorithm_2d": ([
-                    "Delaunay",
-                    "Automatic",
-                    "MeshAdapt",
-                    "Frontal-Delaunay",
-                    "BAMG",
-                    "Frontal-Delaunay for Quads",
-                    "Packing of Parallelograms",
-                    "Quasi-structured Quad"
-                ], {
-                    "tooltip": "2D surface meshing algorithm (always used - surfaces meshed first even for 3D). Automatic: Delaunay for flat, MeshAdapt for curved. MeshAdapt: most robust for complex curves. Delaunay: fastest for large meshes. Frontal-Delaunay: highest quality triangles. BAMG: anisotropic. Quad variants: for quad meshes"
-                }),
-                "size_mode": (["Absolute", "Relative to Bounds", "Curvature Adaptive"], {
-                    "tooltip": "Relative: sizes as fraction of model diagonal. Absolute: sizes in model units. Curvature: adapts element size to geometry curvature"
+                "backend": (["BRepIncremental", "GMSH"], {
+                    "default": "BRepIncremental",
+                    "tooltip": "BRepIncremental: fast OCC tessellation. GMSH: full-featured mesh generation with algorithm control"
                 }),
             },
             "optional": {
-                # 3D Algorithm - FIRST in optional so it appears right after algorithm_2d (shown/hidden by JS)
+                # === BRepIncremental params ===
+                "linear_deflection": ("FLOAT", {
+                    "default": 0.1, "min": 0.001, "max": 100.0, "step": 0.01,
+                    "tooltip": "Max distance between mesh and actual surface (smaller = finer mesh)",
+                    "visible_when": {"backend": ["BRepIncremental"]},
+                }),
+                "angular_deflection": ("FLOAT", {
+                    "default": 0.5, "min": 0.01, "max": 1.57, "step": 0.01,
+                    "tooltip": "Angular deflection in radians (controls curvature sampling)",
+                    "visible_when": {"backend": ["BRepIncremental"]},
+                }),
+                "merge_vertices": ("BOOLEAN", {
+                    "default": True,
+                    "tooltip": "Merge duplicate vertices on shared edges (produces connected mesh)",
+                    "visible_when": {"backend": ["BRepIncremental"]},
+                }),
+                "advanced": ("BOOLEAN", {
+                    "default": False,
+                    "tooltip": "Show advanced BRepIncremental parameters",
+                    "visible_when": {"backend": ["BRepIncremental"]},
+                }),
+                "relative": ("BOOLEAN", {
+                    "default": False,
+                    "tooltip": "If True, deflection values are relative to edge size rather than absolute",
+                    "visible_when": {"backend": ["BRepIncremental"], "advanced": [True]},
+                }),
+                "parallel": ("BOOLEAN", {
+                    "default": False,
+                    "tooltip": "Mesh in parallel using multiple CPU cores",
+                    "visible_when": {"backend": ["BRepIncremental"], "advanced": [True]},
+                }),
+                "min_size": ("FLOAT", {
+                    "default": 0.0, "min": 0.0, "max": 100.0, "step": 0.001,
+                    "tooltip": "Minimum triangle edge length (0 = no minimum)",
+                    "visible_when": {"backend": ["BRepIncremental"], "advanced": [True]},
+                }),
+
+                # === GMSH: Tier 1 — Topology ===
+                "output_dim": (["2D Surface", "3D Volume"], {
+                    "tooltip": "2D Surface: mesh only surfaces. 3D Volume: mesh interior with tetrahedra",
+                    "visible_when": {"backend": ["GMSH"]},
+                }),
                 "algorithm_3d": (["Delaunay", "Frontal (Netgen)", "HXT", "MMG3D"], {
                     "default": "Delaunay",
-                    "tooltip": "3D volume meshing algorithm. Delaunay: most robust, supports size fields. HXT: fastest (parallel) for large meshes. Frontal (Netgen): high quality near boundaries. MMG3D: anisotropic tetrahedra (experimental)"
+                    "tooltip": "3D volume meshing algorithm",
+                    "visible_when": {"backend": ["GMSH"], "output_dim": ["3D Volume"]},
                 }),
 
-                # Target size - in optional because it's hidden in Curvature Adaptive mode
+                # === GMSH: Tier 2 — Algorithm ===
+                "algorithm_2d": ([
+                    "Delaunay", "Automatic", "MeshAdapt", "Frontal-Delaunay",
+                    "BAMG", "Frontal-Delaunay for Quads",
+                    "Packing of Parallelograms", "Quasi-structured Quad"
+                ], {
+                    "tooltip": "2D surface meshing algorithm (always runs — surfaces are meshed first)",
+                    "visible_when": {"backend": ["GMSH"]},
+                }),
+
+                # === GMSH: Tier 3 — Element Sizing ===
+                "size_mode": (["Absolute", "Relative to Bounds", "Curvature Adaptive"], {
+                    "tooltip": "How to interpret mesh sizes",
+                    "visible_when": {"backend": ["GMSH"]},
+                }),
                 "target_size": ("FLOAT", {
-                    "default": 1.0,
-                    "min": 0.0001,
-                    "max": 1000.0,
-                    "step": 0.001,
-                    "tooltip": "Target element size. For Relative mode: 0.05 = 5% of model diagonal"
+                    "default": 1.0, "min": 0.0001, "max": 1000.0, "step": 0.001,
+                    "tooltip": "Target element size. For Relative mode: 0.05 = 5% of model diagonal",
+                    "visible_when": {"backend": ["GMSH"], "size_mode": ["Absolute", "Relative to Bounds"]},
                 }),
-
-                # Size controls
                 "size_factor": ("FLOAT", {
-                    "default": 1.0,
-                    "min": 0.01,
-                    "max": 100.0,
-                    "step": 0.1,
-                    "tooltip": "Global multiplier for all mesh sizes (Mesh.MeshSizeFactor). Values <1 make mesh finer, >1 coarser"
+                    "default": 1.0, "min": 0.01, "max": 100.0, "step": 0.1,
+                    "tooltip": "Global multiplier for all mesh sizes",
+                    "visible_when": {"backend": ["GMSH"], "size_mode": ["Absolute", "Relative to Bounds"]},
                 }),
                 "min_size_factor": ("FLOAT", {
-                    "default": 1.0,
-                    "min": 0.001,
-                    "max": 1.0,
-                    "step": 0.01,
-                    "tooltip": "Minimum size as fraction of target (e.g., 0.1 = min is 10% of target size)"
+                    "default": 1.0, "min": 0.001, "max": 1.0, "step": 0.01,
+                    "tooltip": "Minimum size as fraction of target",
+                    "visible_when": {"backend": ["GMSH"], "size_mode": ["Absolute", "Relative to Bounds"]},
                 }),
                 "max_size_factor": ("FLOAT", {
-                    "default": 10.0,
-                    "min": 1.0,
-                    "max": 100.0,
-                    "step": 0.1,
-                    "tooltip": "Maximum size as multiple of target (e.g., 5.0 = max is 5x target size)"
+                    "default": 10.0, "min": 1.0, "max": 100.0, "step": 0.1,
+                    "tooltip": "Maximum size as multiple of target",
+                    "visible_when": {"backend": ["GMSH"], "size_mode": ["Absolute", "Relative to Bounds"]},
                 }),
-
-                # Curvature Adaptive Settings - only for Curvature Adaptive mode
                 "elements_per_2pi": ("INT", {
-                    "default": 20,
-                    "min": 4,
-                    "max": 100,
-                    "step": 1,
-                    "tooltip": "Number of mesh elements per 2*PI radians of curvature. Higher = finer mesh on curved surfaces"
+                    "default": 20, "min": 4, "max": 100, "step": 1,
+                    "tooltip": "Elements per 2*PI radians of curvature",
+                    "visible_when": {"backend": ["GMSH"], "size_mode": ["Curvature Adaptive"]},
                 }),
                 "extend_from_boundary": ("BOOLEAN", {
                     "default": True,
-                    "tooltip": "(3D Volume + Curvature Adaptive only) Extend curvature-based size field from boundary surfaces into volume interior"
+                    "tooltip": "Extend curvature-based sizing into volume interior",
+                    "visible_when": {"backend": ["GMSH"], "size_mode": ["Curvature Adaptive"]},
                 }),
 
-                # Quality Settings
+                # === GMSH: Tier 4 — Element Quality ===
+                "element_order": (["1", "2"], {
+                    "tooltip": "1 = linear, 2 = quadratic elements",
+                    "visible_when": {"backend": ["GMSH"]},
+                }),
                 "smoothing_steps": ("INT", {
-                    "default": 0,
-                    "min": 0,
-                    "max": 10,
-                    "step": 1,
-                    "tooltip": "Elliptic smoother iterations for mesh regularity (Mesh.Smoothing). 0 = disabled"
+                    "default": 0, "min": 0, "max": 10, "step": 1,
+                    "tooltip": "Elliptic smoother iterations. 0 = disabled",
+                    "visible_when": {"backend": ["GMSH"]},
                 }),
                 "optimize": ("BOOLEAN", {
                     "default": False,
-                    "tooltip": "Run mesh optimization after generation to improve element quality"
+                    "tooltip": "Run mesh optimization after generation",
+                    "visible_when": {"backend": ["GMSH"]},
                 }),
                 "optimization_passes": ("INT", {
-                    "default": 1,
-                    "min": 0,
-                    "max": 10,
-                    "step": 1,
-                    "tooltip": "Number of optimization passes. More passes = better quality but slower"
+                    "default": 1, "min": 0, "max": 10, "step": 1,
+                    "tooltip": "Number of optimization passes",
+                    "visible_when": {"backend": ["GMSH"], "optimize": [True]},
                 }),
-
-                # Recombination
                 "recombine_to_quads": ("BOOLEAN", {
                     "default": False,
-                    "tooltip": "Recombine triangles into quadrangles where possible (Mesh.RecombineAll)"
+                    "tooltip": "Recombine triangles into quadrangles",
+                    "visible_when": {"backend": ["GMSH"]},
                 }),
                 "subdivision": (["None", "All Triangles", "All Quadrangles", "Barycentric"], {
-                    "tooltip": "Mesh refinement by subdivision (splits elements). All Triangles: refine into smaller triangles. All Quads: convert to quad-dominant mesh. Barycentric: split by adding centroid vertex. This increases mesh density, not quality"
+                    "tooltip": "Mesh refinement by subdivision",
+                    "visible_when": {"backend": ["GMSH"]},
                 }),
 
-                # Advanced
-                "element_order": (["1", "2"], {
-                    "tooltip": "Element order. 1 = linear elements. 2 = quadratic elements with mid-edge nodes"
+                # === GMSH: Tier 5 — Advanced ===
+                "gmsh_options": ("STRING", {
+                    "multiline": True, "default": "{}",
+                    "tooltip": "Advanced Gmsh options as JSON",
+                    "visible_when": {"backend": ["GMSH"]},
                 }),
+
+                # === Shared params ===
                 "extract_face_ids": ("BOOLEAN", {
                     "default": True,
-                    "tooltip": "Extract CAD face IDs for each mesh triangle. Stores which CAD surface each mesh element came from as 'cad_face_id' face attribute"
-                }),
-                "gmsh_options": ("STRING", {
-                    "multiline": True,
-                    "default": "{}",
-                    "tooltip": "Advanced Gmsh options as JSON, e.g. {\"Mesh.OptimizeNetgen\": 1}"
+                    "tooltip": "Store CAD face index for each mesh triangle as 'cad_face_id' face attribute"
                 }),
             }
         }
 
     RETURN_TYPES = ("TRIMESH", "MESH_METADATA")
-    FUNCTION = "generate_mesh"
-    CATEGORY = "CADabra/Advanced"
+    FUNCTION = "mesh"
+    CATEGORY = "CADabra"
 
-    def generate_mesh(self, cad_model, output_dim, algorithm_2d, size_mode,
-                     target_size=1.0, algorithm_3d="Delaunay", size_factor=1.0,
-                     min_size_factor=1.0, max_size_factor=10.0,
-                     elements_per_2pi=20, extend_from_boundary=True,
-                     smoothing_steps=0, optimize=False, optimization_passes=1,
-                     recombine_to_quads=False, subdivision="None",
-                     element_order="1", extract_face_ids=True, gmsh_options="{}"):
+    def mesh(self, cad_model, backend, **kwargs):
+        if backend == "BRepIncremental":
+            return self._mesh_brep(cad_model, **kwargs)
+        elif backend == "GMSH":
+            return self._mesh_gmsh(cad_model, **kwargs)
+        else:
+            raise ValueError(f"Unknown backend: {backend}")
+
+    # -------------------------------------------------------------------------
+    # BRepIncremental backend
+    # -------------------------------------------------------------------------
+    def _mesh_brep(self, cad_model, linear_deflection=0.1, angular_deflection=0.5,
+                   relative=False, parallel=False, min_size=0.0,
+                   merge_vertices=True, extract_face_ids=True, **_kwargs):
+        import trimesh
+        from OCC.Core.BRepMesh import BRepMesh_IncrementalMesh
+        from OCC.Core.IMeshTools import IMeshTools_Parameters
+        from OCC.Core.TopExp import TopExp_Explorer
+        from OCC.Core.TopAbs import TopAbs_FACE, TopAbs_REVERSED
+        from OCC.Core.BRep import BRep_Tool
+        from OCC.Core.TopLoc import TopLoc_Location
+        from OCC.Core.TopoDS import topods
+
+        from .utils.brep_cache import get_occ_shape
+        occ_shape = get_occ_shape(cad_model)
+
+        log.info(f"CAD_Mesh [BRepIncremental]: linear_deflection={linear_deflection}, angular_deflection={angular_deflection}, "
+                 f"relative={relative}, parallel={parallel}, min_size={min_size}")
+
+        # 1. Mesh the shape with BRepMesh using IMeshTools_Parameters
+        params = IMeshTools_Parameters()
+        params.Deflection = linear_deflection
+        params.Angle = angular_deflection
+        params.Relative = relative
+        params.InParallel = parallel
+        params.MinSize = min_size
+
+        with log_operation("BRepMesh", linear_deflection=linear_deflection, angular_deflection=angular_deflection,
+                           relative=relative, parallel=parallel, min_size=min_size):
+            mesher = BRepMesh_IncrementalMesh(occ_shape, params)
+            mesher.Perform()
+
+        if not mesher.IsDone():
+            raise RuntimeError("BRepMesh tessellation failed")
+
+        # 2. Collect triangulations from all faces
+        all_verts = []
+        all_faces = []
+        cad_face_ids = []
+        vertex_offset = 0
+        cad_face_idx = 0
+
+        explorer = TopExp_Explorer(occ_shape, TopAbs_FACE)
+        while explorer.More():
+            face = topods.Face(explorer.Current())
+            loc = TopLoc_Location()
+            tri = BRep_Tool.Triangulation(face, loc)
+
+            if tri is not None:
+                trsf = loc.Transformation()
+
+                # Extract vertices with transformation
+                for i in range(1, tri.NbNodes() + 1):
+                    pnt = tri.Node(i)
+                    pnt.Transform(trsf)
+                    all_verts.append([pnt.X(), pnt.Y(), pnt.Z()])
+
+                # Extract triangles with offset, handle face orientation
+                is_reversed = face.Orientation() == TopAbs_REVERSED
+                for i in range(1, tri.NbTriangles() + 1):
+                    triangle = tri.Triangle(i)
+                    n1, n2, n3 = triangle.Get()
+                    if is_reversed:
+                        all_faces.append([
+                            vertex_offset + n1 - 1,
+                            vertex_offset + n3 - 1,
+                            vertex_offset + n2 - 1
+                        ])
+                    else:
+                        all_faces.append([
+                            vertex_offset + n1 - 1,
+                            vertex_offset + n2 - 1,
+                            vertex_offset + n3 - 1
+                        ])
+                    cad_face_ids.append(cad_face_idx)
+
+                vertex_offset += tri.NbNodes()
+
+            cad_face_idx += 1
+            explorer.Next()
+
+        if len(all_verts) == 0:
+            raise RuntimeError("Tessellation produced no vertices")
+
+        # 3. Create trimesh
+        tm = trimesh.Trimesh(
+            vertices=np.array(all_verts, dtype=np.float32),
+            faces=np.array(all_faces, dtype=np.int32)
+        )
+
+        verts_before = len(tm.vertices)
+
+        # 4. Optionally merge duplicate vertices
+        if merge_vertices:
+            tm.merge_vertices()
+
+        # 5. Store CAD face IDs if requested
+        if extract_face_ids and cad_face_ids:
+            cad_face_ids_array = np.array(cad_face_ids, dtype=np.int32)
+            tm.face_attributes['cad_face_id'] = cad_face_ids_array
+            tm.metadata['has_cad_face_ids'] = True
+            tm.metadata['num_cad_faces'] = cad_face_idx
+        else:
+            tm.metadata['has_cad_face_ids'] = False
+
+        # 6. Build metadata
+        file_path = cad_model.get("file_path", "model")
+        metadata = {
+            "backend": "BRepIncremental",
+            "num_vertices": len(tm.vertices),
+            "num_faces": len(tm.faces),
+            "num_cad_faces": cad_face_idx,
+            "linear_deflection": linear_deflection,
+            "angular_deflection": angular_deflection,
+            "relative": relative,
+            "parallel": parallel,
+            "min_size": min_size,
+            "merged": merge_vertices,
+            "vertices_before_merge": verts_before,
+            "has_cad_face_ids": extract_face_ids,
+            "file_path": file_path,
+        }
+
+        tm.metadata['file_path'] = file_path
+
+        log.info(f"CAD_Mesh [BRepIncremental]: {len(tm.vertices)} verts, {len(tm.faces)} faces "
+                 f"from {cad_face_idx} CAD faces (merged={merge_vertices}, before={verts_before})")
+
+        return (tm, metadata)
+
+    # -------------------------------------------------------------------------
+    # GMSH backend
+    # -------------------------------------------------------------------------
+    def _mesh_gmsh(self, cad_model, output_dim="2D Surface", algorithm_2d="Delaunay",
+                   algorithm_3d="Delaunay", size_mode="Absolute",
+                   target_size=1.0, size_factor=1.0,
+                   min_size_factor=1.0, max_size_factor=10.0,
+                   elements_per_2pi=20, extend_from_boundary=True,
+                   smoothing_steps=0, optimize=False, optimization_passes=1,
+                   recombine_to_quads=False, subdivision="None",
+                   element_order="1", extract_face_ids=True, gmsh_options="{}", **_kwargs):
         try:
             import gmsh
             import json
         except ImportError:
             raise ImportError("Gmsh not installed. Run: pip install gmsh")
 
-        # Corrected 2D algorithm mappings (from Gmsh docs)
+        # 2D algorithm mappings (from Gmsh docs)
         algo_2d_map = {
             "Automatic": 2,
             "MeshAdapt": 1,
@@ -630,7 +684,7 @@ class CAD_Mesh_Gmsh_Advanced:
             "Quasi-structured Quad": 11,
         }
 
-        # Corrected 3D algorithm mappings (from Gmsh docs)
+        # 3D algorithm mappings (from Gmsh docs)
         algo_3d_map = {
             "Delaunay": 1,
             "Frontal (Netgen)": 4,
@@ -646,20 +700,19 @@ class CAD_Mesh_Gmsh_Advanced:
         }
 
         try:
-            # Load OCC shape into GMSH for meshing
-            occ_shape = cad_model.get("occ_shape")
-            if occ_shape is None:
-                raise RuntimeError("CAD model has no OCC shape")
-            _load_occ_shape_to_gmsh(occ_shape, "mesh_model_advanced")
+            # Load OCC shape from brep_path
+            from .utils.brep_cache import load_shape
+            occ_shape = load_shape(cad_model.get("brep_path"))
+            _load_occ_shape_to_gmsh(occ_shape, "mesh_model")
 
             # Get model bounding box for size calculations
             try:
                 bbox = gmsh.model.getBoundingBox(-1, -1)
                 xmin, ymin, zmin, xmax, ymax, zmax = bbox
                 diagonal = ((xmax - xmin)**2 + (ymax - ymin)**2 + (zmax - zmin)**2)**0.5
-                print(f"[CADabra] Model diagonal: {diagonal:.2f}")
+                log.info(f" Model diagonal: {diagonal:.2f}")
             except Exception as e:
-                print(f"[CADabra] Warning: Could not get bounding box ({e})")
+                log.warning(f" Could not get bounding box ({e})")
                 diagonal = 1.0  # Fallback
 
             # Calculate actual sizes based on mode
@@ -667,11 +720,9 @@ class CAD_Mesh_Gmsh_Advanced:
                 actual_target_size = diagonal * target_size
                 actual_min_size = actual_target_size * min_size_factor
                 actual_max_size = actual_target_size * max_size_factor
-                print(f"[CADabra] Relative sizing: target={target_size:.3f} * diagonal -> {actual_target_size:.4f}")
+                log.info(f" Relative sizing: target={target_size:.3f} * diagonal -> {actual_target_size:.4f}")
 
-                # Apply global size factor (Mesh.MeshSizeFactor)
                 gmsh.option.setNumber("Mesh.MeshSizeFactor", size_factor)
-                # Apply size constraints
                 gmsh.option.setNumber("Mesh.CharacteristicLengthMin", actual_min_size)
                 gmsh.option.setNumber("Mesh.CharacteristicLengthMax", actual_max_size)
                 gmsh.option.setNumber("Mesh.CharacteristicLengthFromCurvature", 0)
@@ -679,7 +730,7 @@ class CAD_Mesh_Gmsh_Advanced:
             elif size_mode == "Absolute":
                 # Check if target size is dangerously small (< 0.1% of diagonal)
                 size_ratio = target_size / diagonal
-                if size_ratio < 0.001:  # 0.1%
+                if size_ratio < 0.001:
                     raise ValueError(
                         f"Target size {target_size} is too small for this model (diagonal={diagonal:.1f}). "
                         f"Size is {size_ratio*100:.3f}% of diagonal - this would create an extremely dense mesh "
@@ -690,37 +741,29 @@ class CAD_Mesh_Gmsh_Advanced:
                 actual_target_size = target_size
                 actual_min_size = actual_target_size * min_size_factor
                 actual_max_size = actual_target_size * max_size_factor
-                print(f"[CADabra] Absolute sizing: target={actual_target_size}")
+                log.info(f" Absolute sizing: target={actual_target_size}")
 
-                # Apply global size factor (Mesh.MeshSizeFactor)
                 gmsh.option.setNumber("Mesh.MeshSizeFactor", size_factor)
-                # Apply size constraints
                 gmsh.option.setNumber("Mesh.CharacteristicLengthMin", actual_min_size)
                 gmsh.option.setNumber("Mesh.CharacteristicLengthMax", actual_max_size)
                 gmsh.option.setNumber("Mesh.CharacteristicLengthFromCurvature", 0)
 
             elif size_mode == "Curvature Adaptive":
-                # Curvature mode: size is determined ONLY by geometry curvature
-                # Do NOT use target_size - let Gmsh determine sizes automatically
-                print(f"[CADabra] Curvature adaptive: elements_per_2pi={elements_per_2pi}, extend_from_boundary={extend_from_boundary}")
+                log.info(f" Curvature adaptive: elements_per_2pi={elements_per_2pi}, extend_from_boundary={extend_from_boundary}")
 
-                # Enable curvature-based sizing
                 gmsh.option.setNumber("Mesh.CharacteristicLengthFromCurvature", 1)
                 gmsh.option.setNumber("Mesh.MinimumCirclePoints", elements_per_2pi)
 
-                # Set very permissive size bounds - let curvature control everything
-                gmsh.option.setNumber("Mesh.CharacteristicLengthMin", diagonal * 0.0001)  # Very small min
-                gmsh.option.setNumber("Mesh.CharacteristicLengthMax", diagonal * 10.0)    # Very large max
+                gmsh.option.setNumber("Mesh.CharacteristicLengthMin", diagonal * 0.0001)
+                gmsh.option.setNumber("Mesh.CharacteristicLengthMax", diagonal * 10.0)
 
                 if extend_from_boundary:
                     gmsh.option.setNumber("Mesh.CharacteristicLengthExtendFromBoundary", 1)
                 else:
                     gmsh.option.setNumber("Mesh.CharacteristicLengthExtendFromBoundary", 0)
 
-                # Don't use size factor in curvature mode
                 gmsh.option.setNumber("Mesh.MeshSizeFactor", 1.0)
 
-                # Set placeholder values for metadata (not actually used)
                 actual_target_size = 0
                 actual_min_size = 0
                 actual_max_size = 0
@@ -761,10 +804,10 @@ class CAD_Mesh_Gmsh_Advanced:
                     for key, value in options_dict.items():
                         if isinstance(value, (int, float)):
                             gmsh.option.setNumber(key, value)
-                            print(f"[CADabra] Applied gmsh option: {key} = {value}")
+                            log.info(f" Applied gmsh option: {key} = {value}")
                         elif isinstance(value, str):
                             gmsh.option.setString(key, value)
-                            print(f"[CADabra] Applied gmsh option: {key} = '{value}'")
+                            log.info(f" Applied gmsh option: {key} = '{value}'")
                 except json.JSONDecodeError as e:
                     raise ValueError(f"Invalid JSON in gmsh_options: {e}")
 
@@ -775,11 +818,11 @@ class CAD_Mesh_Gmsh_Advanced:
             else:
                 cad_name = "unknown"
             log_file = os.path.join(folder_paths.get_output_directory(), f"gmsh_mesh_{cad_name}.log")
-            gmsh.option.setNumber("General.Terminal", 0)  # Disable terminal output
-            gmsh.option.setNumber("General.Verbosity", 99)  # Maximum verbosity
-            gmsh.logger.start()  # Start capturing logs
+            gmsh.option.setNumber("General.Terminal", 0)
+            gmsh.option.setNumber("General.Verbosity", 99)
+            gmsh.logger.start()
 
-            print(f"[CADabra] Starting mesh generation (log: {log_file})...")
+            log.info(f" Starting mesh generation (log: {log_file})...")
 
             # Generate mesh
             dim = 3 if is_3d else 2
@@ -798,13 +841,13 @@ class CAD_Mesh_Gmsh_Advanced:
                 for line in logs:
                     f.write(line + '\n')
 
-            print(f"[CADabra] Mesh generation complete. Log saved to: {log_file}")
+            log.info(f" Mesh generation complete. Log saved to: {log_file}")
 
             # Apply mesh optimization if requested
             if optimize and optimization_passes > 0:
                 for i in range(optimization_passes):
                     gmsh.model.mesh.optimize("Laplace2D" if not is_3d else "Netgen")
-                print(f"[CADabra] Applied {optimization_passes} optimization passes")
+                log.info(f" Applied {optimization_passes} optimization passes")
 
             # Apply subdivision if requested
             if subdivision != "None":
@@ -829,7 +872,7 @@ class CAD_Mesh_Gmsh_Advanced:
                 }
                 return elem_type_map.get(elem_type, None)
 
-            # Helper function to triangulate a face and return the count of triangles created
+            # Helper function to triangulate a face
             def triangulate_face(face, is_3d_volume):
                 triangles = []
                 if len(face) == 3:
@@ -839,12 +882,10 @@ class CAD_Mesh_Gmsh_Advanced:
                     triangles.append([face[0], face[2], face[3]])
                 elif len(face) > 4:
                     if not is_3d_volume:
-                        # 2D higher-order: extract corner nodes
                         triangles.append([face[0], face[1], face[2]])
-                        if len(face) == 9:  # Higher-order quad
+                        if len(face) == 9:
                             triangles.append([face[0], face[2], face[3]])
                     else:
-                        # 3D volume: extract tet surface faces
                         triangles.append([face[0], face[1], face[2]])
                         if len(face) >= 4:
                             triangles.append([face[0], face[1], face[3]])
@@ -858,12 +899,10 @@ class CAD_Mesh_Gmsh_Advanced:
             original_face_count = 0
 
             if extract_face_ids and not is_3d:
-                # For 2D surface meshing: get elements per CAD surface entity
                 surface_entities = gmsh.model.getEntities(dim=2)
-                print(f"[CADabra] Extracting face IDs from {len(surface_entities)} CAD surfaces")
+                log.info(f" Extracting face IDs from {len(surface_entities)} CAD surfaces")
 
                 for cad_face_idx, (dim, tag) in enumerate(surface_entities):
-                    # Get mesh elements for this specific CAD surface
                     surf_elem_types, surf_elem_tags, surf_elem_node_tags = gmsh.model.mesh.getElements(dim, tag)
 
                     for i, elem_type in enumerate(surf_elem_types):
@@ -881,7 +920,7 @@ class CAD_Mesh_Gmsh_Advanced:
                                 triangulated_faces.append(tri)
                                 cad_face_ids.append(cad_face_idx)
 
-                print(f"[CADabra] Extracted {len(cad_face_ids)} triangles with CAD face IDs")
+                log.info(f" Extracted {len(cad_face_ids)} triangles with CAD face IDs")
 
             else:
                 # Standard extraction (no face IDs, or 3D volume meshing)
@@ -912,7 +951,7 @@ class CAD_Mesh_Gmsh_Advanced:
             triangulated_faces = np.array(triangulated_faces, dtype=np.int32)
 
             if original_face_count != len(triangulated_faces):
-                print(f"  Converted {original_face_count} elements to {len(triangulated_faces)} triangles")
+                log.info(f"Converted {original_face_count} elements to {len(triangulated_faces)} triangles")
 
             # Create trimesh object
             tm = trimesh.Trimesh(
@@ -926,7 +965,7 @@ class CAD_Mesh_Gmsh_Advanced:
                 tm.face_attributes['cad_face_id'] = cad_face_ids_array
                 tm.metadata['has_cad_face_ids'] = True
                 tm.metadata['num_cad_faces'] = len(surface_entities)
-                print(f"[CADabra] Stored cad_face_id attribute ({len(surface_entities)} CAD faces)")
+                log.info(f" Stored cad_face_id attribute ({len(surface_entities)} CAD faces)")
             else:
                 tm.metadata['has_cad_face_ids'] = False
 
@@ -949,6 +988,7 @@ class CAD_Mesh_Gmsh_Advanced:
             # Create separate metadata dict for explicit output
             mesh_type_str = "3D" if is_3d else "2D"
             metadata = {
+                'backend': 'GMSH',
                 'type': mesh_type_str,
                 'output_dim': output_dim,
                 'size_mode': size_mode,
@@ -973,87 +1013,14 @@ class CAD_Mesh_Gmsh_Advanced:
                 'num_cad_faces': tm.metadata.get('num_cad_faces', 0),
             }
 
-            print(f"[CADabra] Generated {mesh_type_str} mesh (Advanced): "
-                  f"{len(vertices)} vertices, {len(triangulated_faces)} triangular faces, "
-                  f"size: {actual_target_size:.4f} ({size_mode}), algo: {algorithm_2d}")
+            log.info(f" CAD_Mesh [GMSH]: {mesh_type_str} mesh, "
+                     f"{len(vertices)} vertices, {len(triangulated_faces)} triangular faces, "
+                     f"size: {actual_target_size:.4f} ({size_mode}), algo: {algorithm_2d}")
 
             return (tm, metadata)
 
         except Exception as e:
-            raise RuntimeError(f"Advanced mesh generation failed: {str(e)}")
-
-
-class ML_SurfaceRecon:
-    """ML-based surface reconstruction (stub for future implementation)"""
-
-    @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "mesh": ("TRIMESH",),
-                "model_name": ([
-                    "hustvl/surface-recon",
-                    "threedvision/point2surf",
-                    "zju3dv/patchnetsurface",
-                    "kaist-3d/point2shape"
-                ],),
-                "smoothness": ("FLOAT", {"default": 0.5, "min": 0.0, "max": 1.0, "step": 0.1}),
-            }
-        }
-
-    RETURN_TYPES = ("SURFACE",)
-    FUNCTION = "reconstruct_surface"
-    CATEGORY = "CADabra/ML"
-
-    def reconstruct_surface(self, mesh, model_name, smoothness):
-        print(f"[CADabra] ML_SurfaceRecon stub called with model: {model_name}")
-        print(f"[CADabra] This is a placeholder - implement with actual HuggingFace model")
-
-        # Stub: return input mesh as-is
-        surface_data = {
-            "vertices": mesh.vertices,
-            "faces": mesh.faces,
-            "model_used": model_name,
-            "smoothness": smoothness,
-            "status": "stub_implementation"
-        }
-
-        return (surface_data,)
-
-
-class ML_FeatureDetection:
-    """ML-based CAD feature detection (stub for future implementation)"""
-
-    @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "mesh": ("TRIMESH",),
-                "model_name": ([
-                    "autodesk/feature-detection-cad",
-                    "hustvl/cad-features"
-                ],),
-                "confidence_threshold": ("FLOAT", {"default": 0.7, "min": 0.0, "max": 1.0, "step": 0.05}),
-            }
-        }
-
-    RETURN_TYPES = ("FEATURES",)
-    FUNCTION = "detect_features"
-    CATEGORY = "CADabra/ML"
-
-    def detect_features(self, mesh, model_name, confidence_threshold):
-        print(f"[CADabra] ML_FeatureDetection stub called with model: {model_name}")
-        print(f"[CADabra] This is a placeholder - implement with actual HuggingFace model")
-
-        # Stub: return empty features
-        features_data = {
-            "features": [],
-            "model_used": model_name,
-            "confidence_threshold": confidence_threshold,
-            "status": "stub_implementation"
-        }
-
-        return (features_data,)
+            raise RuntimeError(f"GMSH mesh generation failed: {str(e)}")
 
 
 # =============================================================================
@@ -1090,7 +1057,7 @@ def parse_axis_igs(filepath):
         status = reader.ReadFile(str(filepath))
 
         if status != IFSelect_RetDone:
-            print(f"[CADabra] Failed to read axis file: {filepath}")
+            log.info(f" Failed to read axis file: {filepath}")
             return None
 
         reader.TransferRoots()
@@ -1118,9 +1085,9 @@ def parse_axis_igs(filepath):
             explorer.Next()
 
         if len(lines_data) < 3:
-            print(f"[CADabra] Warning: Expected 3 lines in axis file, found {len(lines_data)}")
+            log.warning(f" Expected 3 lines in axis file, found {len(lines_data)}")
             if len(lines_data) > 0:
-                print(f"[CADabra]   Found lines: {lines_data}")
+                log.info(f"   Found lines: {lines_data}")
             return None
 
         # All lines should share the same origin (start point)
@@ -1134,10 +1101,10 @@ def parse_axis_igs(filepath):
         y_dir = (y_end[0] - origin[0], y_end[1] - origin[1], y_end[2] - origin[2])
         z_dir = (z_end[0] - origin[0], z_end[1] - origin[1], z_end[2] - origin[2])
 
-        print(f"[CADabra] Axis parsed via OCC: origin={origin}")
-        print(f"[CADabra]   X-dir: {x_dir}")
-        print(f"[CADabra]   Y-dir: {y_dir}")
-        print(f"[CADabra]   Z-dir: {z_dir}")
+        log.info(f" Axis parsed via OCC: origin={origin}")
+        log.info(f"   X-dir: {x_dir}")
+        log.info(f"   Y-dir: {y_dir}")
+        log.info(f"   Z-dir: {z_dir}")
 
         return {
             'origin': origin,
@@ -1147,9 +1114,7 @@ def parse_axis_igs(filepath):
         }
 
     except Exception as e:
-        print(f"[CADabra] Error parsing axis file {filepath}: {e}")
-        import traceback
-        traceback.print_exc()
+        log.error(f"Error parsing axis file {filepath}", exc_info=True)
         return None
 
 
@@ -1185,7 +1150,7 @@ def build_axis_transform(axis_data):
         z_norm = normalize(z_dir)
 
         if x_norm is None or z_norm is None:
-            print("[CADabra] Warning: Axis vectors have zero length")
+            log.warning(" Axis vectors have zero length")
             return None
 
         # Create source coordinate system (from the axis file)
@@ -1204,7 +1169,7 @@ def build_axis_transform(axis_data):
         return trsf
 
     except Exception as e:
-        print(f"[CADabra] Error building axis transform: {e}")
+        log.info(f" Error building axis transform: {e}")
         return None
 
 
@@ -1226,10 +1191,10 @@ def apply_transform_to_shape(shape, trsf):
         if transformer.IsDone():
             return transformer.Shape()
         else:
-            print("[CADabra] Warning: Shape transformation failed")
+            log.warning(" Shape transformation failed")
             return shape
     except Exception as e:
-        print(f"[CADabra] Error applying transform: {e}")
+        log.info(f" Error applying transform: {e}")
         return shape
 
 
@@ -1237,9 +1202,14 @@ def apply_transform_to_shape(shape, trsf):
 MIN_CAD_FILE_SIZE_KB = 5
 
 
-class CAD_Load_From_Folder:
+
+class CAD_Load_From_Glob:
     """
-    Load multiple CAD files from a folder (batch loading).
+    Load multiple CAD files matching a glob pattern (batch loading).
+
+    The glob_pattern can be:
+    - Relative to ComfyUI's input directory (e.g., '**/*.step', 'my_parts/*.stp')
+    - An absolute path glob (e.g., '/data/cad/**/*.step')
 
     Supports single_core (sequential) or parallel execution mode.
     Parallel mode uses subprocesses for crash isolation and OS-level timeout.
@@ -1249,42 +1219,12 @@ class CAD_Load_From_Folder:
     SUPPORTED_EXTENSIONS = ['.step', '.stp', '.iges', '.igs', '.brep']
 
     @classmethod
-    def _get_cad_folders(cls):
-        """Build list of folders: input, output, and all their subfolders recursively."""
-        cad_folders = []
-        input_dir = folder_paths.get_input_directory()
-        output_dir = folder_paths.get_output_directory()
-
-        def add_subfolders(base_name, base_path, depth=0):
-            """Recursively add subfolders up to depth 3."""
-            if depth > 3:
-                return
-            cad_folders.append(base_name)
-            if os.path.isdir(base_path):
-                try:
-                    for item in sorted(os.listdir(base_path)):
-                        subfolder_path = os.path.join(base_path, item)
-                        if os.path.isdir(subfolder_path) and not item.startswith('.'):
-                            add_subfolders(f"{base_name}/{item}", subfolder_path, depth + 1)
-                except OSError:
-                    pass
-
-        add_subfolders("input", input_dir)
-        add_subfolders("output", output_dir)
-
-        return cad_folders if cad_folders else ["input"]
-
-    @classmethod
     def INPUT_TYPES(cls):
-        cad_folders = cls._get_cad_folders()
         return {
             "required": {
-                "folder": (cad_folders, {
-                    "tooltip": "CAD folder to load from"
-                }),
-                "pattern": ("STRING", {
-                    "default": "*.step",
-                    "tooltip": "File pattern (e.g., *.step, *.stp, part_*.igs)"
+                "glob_pattern": ("STRING", {
+                    "default": "**/*.step",
+                    "tooltip": "Glob pattern for CAD files. Relative patterns resolve from ComfyUI input dir (e.g., '**/*.step', 'parts/*.stp'). Absolute paths are used as-is (e.g., '/data/cad/**/*.step')."
                 }),
                 "execution_mode": (["single_core", "parallel"], {
                     "default": "single_core",
@@ -1308,13 +1248,15 @@ class CAD_Load_From_Folder:
                     "default": 4,
                     "min": 1,
                     "max": 32,
-                    "tooltip": "Number of parallel subprocesses (parallel mode only)"
+                    "tooltip": "Number of parallel subprocesses (parallel mode only)",
+                    "visible_when": {"execution_mode": ["parallel"]},
                 }),
                 "timeout": ("INT", {
                     "default": 60,
                     "min": 10,
                     "max": 600,
-                    "tooltip": "Timeout per file in seconds (parallel mode only)"
+                    "tooltip": "Timeout per file in seconds (parallel mode only)",
+                    "visible_when": {"execution_mode": ["parallel"]},
                 }),
                 "recursive": ("BOOLEAN", {
                     "default": True,
@@ -1326,49 +1268,31 @@ class CAD_Load_From_Folder:
     RETURN_TYPES = ("CAD_MODEL",)
     RETURN_NAMES = ("cad_models",)
     OUTPUT_TOOLTIPS = ("Batch of loaded CAD models",)
-    FUNCTION = "load_from_folder"
+    FUNCTION = "load_from_glob"
     CATEGORY = "CADabra/Loading"
     OUTPUT_IS_LIST = (True,)
 
-    def _discover_cad_files(self, folder, pattern, start_index, max_cads, recursive):
-        """Discover CAD files in a folder. Returns (cad_files, full_folder_path)."""
+    def _discover_cad_files(self, glob_pattern, start_index, max_cads, recursive):
+        """Discover CAD files matching a glob pattern. Returns list of cad_files."""
         from pathlib import Path
+        import glob as glob_module
 
-        # Resolve folder path based on format
-        full_folder_path = None
-        input_dir = folder_paths.get_input_directory()
-        output_dir = folder_paths.get_output_directory()
-
-        if folder == "input":
-            full_folder_path = Path(input_dir)
-        elif folder == "output":
-            full_folder_path = Path(output_dir)
-        elif folder.startswith("input/"):
-            # e.g., "input/cad" or "input/cad/subfolder"
-            relative_path = folder[6:]  # Remove "input/" prefix
-            full_folder_path = Path(os.path.join(input_dir, relative_path))
-        elif folder.startswith("output/"):
-            # e.g., "output/cad" or "output/cad/subfolder"
-            relative_path = folder[7:]  # Remove "output/" prefix
-            full_folder_path = Path(os.path.join(output_dir, relative_path))
+        # If pattern starts with / or drive letter, treat as absolute
+        # Otherwise, resolve relative to ComfyUI input directory
+        if os.path.isabs(glob_pattern):
+            base_path = Path("/")
+            pattern = glob_pattern
         else:
-            # Legacy: try in ComfyUI input folder first, then as absolute path
-            input_path = Path(os.path.join(input_dir, folder))
-            if input_path.exists() and input_path.is_dir():
-                full_folder_path = input_path
-            else:
-                full_folder_path = Path(folder)
+            base_path = Path(folder_paths.get_input_directory())
+            pattern = str(base_path / glob_pattern)
 
-        if not full_folder_path.exists() or not full_folder_path.is_dir():
-            raise ValueError(f"Folder not found: '{folder}' (resolved to: {full_folder_path})")
+        log.info(f" Glob pattern: {pattern}")
 
-        print(f"[CADabra] Loading from folder: {full_folder_path}")
-
-        # Search for CAD files
+        # Search for CAD files using glob
         if recursive:
-            files = list(full_folder_path.rglob(pattern))
+            files = sorted(Path(p) for p in glob_module.glob(pattern, recursive=True))
         else:
-            files = list(full_folder_path.glob(pattern))
+            files = sorted(Path(p) for p in glob_module.glob(pattern))
 
         # Filter for valid CAD extensions and exclude small files
         valid_extensions = set(self.SUPPORTED_EXTENSIONS)
@@ -1395,32 +1319,31 @@ class CAD_Load_From_Folder:
             cad_files.append(f)
 
         if skipped_small > 0 or skipped_axis > 0:
-            print(f"[CADabra] Skipped {skipped_axis} axis files and {skipped_small} small files (< {MIN_CAD_FILE_SIZE_KB}KB)")
+            log.info(f" Skipped {skipped_axis} axis files and {skipped_small} small files (< {MIN_CAD_FILE_SIZE_KB}KB)")
 
         cad_files.sort()
 
         if len(cad_files) == 0:
             raise FileNotFoundError(
-                f"No CAD files found in {full_folder_path}\n"
-                f"Pattern: {pattern}\n"
+                f"No CAD files found matching pattern: {pattern}\n"
                 f"Recursive: {recursive}\n"
                 f"Valid extensions: {', '.join(self.SUPPORTED_EXTENSIONS)}"
             )
 
-        print(f"[CADabra] Found {len(cad_files)} CAD files")
+        log.info(f" Found {len(cad_files)} CAD files")
 
         # Apply start_index and max_cads
         if start_index > 0:
             if start_index >= len(cad_files):
                 raise ValueError(f"start_index ({start_index}) is >= number of CAD files ({len(cad_files)})")
             cad_files = cad_files[start_index:]
-            print(f"[CADabra] Skipping first {start_index} files")
+            log.info(f" Skipping first {start_index} files")
 
         if max_cads > 0:
             cad_files = cad_files[:max_cads]
-            print(f"[CADabra] Loading up to {max_cads} CAD files")
+            log.info(f" Loading up to {max_cads} CAD files")
 
-        return cad_files, full_folder_path
+        return cad_files
 
     def _load_sequential(self, cad_files):
         """Load CAD files sequentially (single_core mode)."""
@@ -1491,24 +1414,33 @@ class CAD_Load_From_Folder:
                                 if trsf:
                                     occ_shape = apply_transform_to_shape(occ_shape, trsf)
                                     axis_applied = True
-                                    print(f"[CADabra]   Applied axis transform from {axis_path.name}")
+                                    log.info(f"   Applied axis transform from {axis_path.name}")
 
                 except Exception as occ_error:
-                    print(f"[CADabra] Warning: Could not load OCC shape for {cad_file.name}: {occ_error}")
+                    log.warning(f" Could not load OCC shape for {cad_file.name}: {occ_error}")
+
+                # Save shape to brep file and store path
+                brep_path = None
+                if occ_shape is not None:
+                    try:
+                        from .utils.brep_cache import save_shape
+                    except ImportError:
+                        from .utils.brep_cache import save_shape
+                    brep_path = save_shape(occ_shape, f"batch_{i}")
 
                 cad_data = {
                     "file_path": cad_file_path,
-                    "occ_shape": occ_shape,
+                    "brep_path": brep_path,
                     "format": ext,
                     "model_name": f"cadabra_batch_{i}",
                     "axis_transform_applied": axis_applied
                 }
 
                 loaded_cads.append(cad_data)
-                print(f"[CADabra] [{i+1}/{len(cad_files)}] Loaded {cad_file.name}")
+                log.info(f" [{i+1}/{len(cad_files)}] Loaded {cad_file.name}")
 
             except Exception as e:
-                print(f"[CADabra] Warning: Failed to load {cad_file.name}: {e}")
+                log.warning(f" Failed to load {cad_file.name}: {e}")
                 continue
 
         return loaded_cads
@@ -1525,7 +1457,7 @@ class CAD_Load_From_Folder:
         import json
         import sys
 
-        print(f"[CADabra Parallel] Loading {len(cad_files)} files with {num_workers} workers, timeout={timeout}s")
+        log.info(f"Parallel: Loading {len(cad_files)} files with {num_workers} workers, timeout={timeout}s")
 
         # Create temp directory for output BREP files
         temp_dir = tempfile.mkdtemp(prefix="cadabra_load_")
@@ -1535,7 +1467,7 @@ class CAD_Load_From_Folder:
         output_dir = folder_paths.get_output_directory()
         log_dir = os.path.join(output_dir, "cadabra_logs", f"load_{datetime.now().strftime('%Y%m%d_%H%M%S')}")
         os.makedirs(log_dir, exist_ok=True)
-        print(f"[CADabra Parallel] Logs: {log_dir}")
+        log.info(f"Parallel: Logs: {log_dir}")
 
         # Path to subprocess script
         script_path = os.path.join(os.path.dirname(__file__), "load_subprocess.py")
@@ -1625,19 +1557,16 @@ class CAD_Load_From_Folder:
                 if result is None or not result.get("success", False):
                     failed += 1
                     err = result.get("error", "Unknown") if result else "No result"
-                    print(f"[CADabra Parallel] {filename}: FAILED ({elapsed_str}) - {err} [log: {log_basename}]")
+                    log.info(f"Parallel: {filename}: FAILED ({elapsed_str}) - {err} [log: {log_basename}]")
                     continue
 
                 output_brep = result.get("output_brep", work_items[i]["output_brep"])
                 if os.path.exists(output_brep):
-                    occ_shape = TopoDS_Shape()
-                    builder = BRep_Builder()
-                    breptools.Read(occ_shape, str(output_brep), builder)
-
+                    # Use the output BREP file directly as brep_path
                     cad_data = {
-                        "occ_shape": occ_shape,
+                        "brep_path": output_brep,
                         "file_path": result["file_path"],
-                        "format": result.get("format", "unknown"),
+                        "format": "brep",
                     }
                     if "metadata" in result:
                         cad_data["metadata"] = result["metadata"]
@@ -1645,14 +1574,14 @@ class CAD_Load_From_Folder:
                     loaded_cads.append(cad_data)
                     num_faces = result.get("num_faces", "?")
                     if show_log:
-                        print(f"[CADabra Parallel] {filename}: {num_faces} faces ({elapsed_str}) [log: {log_basename}]")
+                        log.info(f"Parallel: {filename}: {num_faces} faces ({elapsed_str}) [log: {log_basename}]")
                     else:
-                        print(f"[CADabra Parallel] {filename}: {num_faces} faces ({elapsed_str})")
+                        log.info(f"Parallel: {filename}: {num_faces} faces ({elapsed_str})")
                 else:
                     failed += 1
-                    print(f"[CADabra Parallel] {filename}: FAILED ({elapsed_str}) - output file missing [log: {log_basename}]")
+                    log.info(f"Parallel: {filename}: FAILED ({elapsed_str}) - output file missing [log: {log_basename}]")
 
-            print(f"[CADabra Parallel] Successfully loaded {len(loaded_cads)} CAD files ({failed} failed)")
+            log.info(f"Parallel: Successfully loaded {len(loaded_cads)} CAD files ({failed} failed)")
 
         finally:
             # Clean up temp directory
@@ -1660,14 +1589,14 @@ class CAD_Load_From_Folder:
             try:
                 shutil.rmtree(temp_dir)
             except Exception as e:
-                print(f"[CADabra Parallel] Warning: Could not clean temp dir: {e}")
+                log.warning(f"Parallel: Could not clean temp dir: {e}")
 
         return loaded_cads
 
-    def load_from_folder(self, folder, pattern, execution_mode, start_index, max_cads, num_workers=4, timeout=60, recursive=True):
+    def load_from_glob(self, glob_pattern, execution_mode, start_index, max_cads, num_workers=4, timeout=60, recursive=True):
         """Main dispatch method - routes to sequential or parallel loading."""
         # Discover CAD files
-        cad_files, full_folder_path = self._discover_cad_files(folder, pattern, start_index, max_cads, recursive)
+        cad_files = self._discover_cad_files(glob_pattern, start_index, max_cads, recursive)
 
         # Dispatch based on execution mode
         if execution_mode == "parallel":
@@ -1676,11 +1605,12 @@ class CAD_Load_From_Folder:
             loaded_cads = self._load_sequential(cad_files)
 
         if len(loaded_cads) == 0:
-            raise ValueError(f"Failed to load any CAD files from folder: {full_folder_path}")
+            raise ValueError(f"Failed to load any CAD files matching pattern: {glob_pattern}")
 
-        print(f"[CADabra] Successfully loaded {len(loaded_cads)} CAD files")
+        log.info(f" Successfully loaded {len(loaded_cads)} CAD files")
 
         return (loaded_cads,)
+
 
 
 class CAD_Quality_Metrics:
@@ -1716,7 +1646,7 @@ class CAD_Quality_Metrics:
         }
 
     RETURN_TYPES = ("STRING", "STRING")
-    RETURN_NAMES = ("metrics_dict", "report")
+    RETURN_NAMES = ("metrics_dict", "info")
     OUTPUT_TOOLTIPS = ("Metrics as JSON string", "Human-readable report")
     FUNCTION = "analyze_quality"
     CATEGORY = "CADabra/Analysis"
@@ -1749,7 +1679,7 @@ class CAD_Quality_Metrics:
                 'num_vertices': len(vertices)
             }
 
-            print(f"[CADabra] Topology: {len(volumes)} volumes, {len(faces)} faces, "
+            log.info(f" Topology: {len(volumes)} volumes, {len(faces)} faces, "
                   f"{len(edges)} edges, {len(vertices)} vertices")
 
             # Get bounding box
@@ -1797,7 +1727,7 @@ class CAD_Quality_Metrics:
                 }
 
                 if len(boundary_edges) > 0:
-                    print(f"[CADabra] Found {len(boundary_edges)} boundary edges (model has openings)")
+                    log.info(f" Found {len(boundary_edges)} boundary edges (model has openings)")
 
             # Face degeneracy check
             if check_degeneracy and len(faces) > 0:
@@ -1818,7 +1748,8 @@ class CAD_Quality_Metrics:
                                 'area': mass,
                                 'reason': 'zero_area'
                             })
-                    except:
+                    except Exception as e:
+                        log.debug("getMass failed for face tag=%s: %s", tag, e)
                         # If getMass fails, face might be degenerate
                         degenerate_faces.append({
                             'tag': tag,
@@ -1834,7 +1765,7 @@ class CAD_Quality_Metrics:
                 }
 
                 if len(degenerate_faces) > 0:
-                    print(f"[CADabra] Found {len(degenerate_faces)} degenerate faces")
+                    log.info(f" Found {len(degenerate_faces)} degenerate faces")
                     metrics['degeneracy']['degenerate_face_details'] = degenerate_faces[:10]  # Limit output
 
             # Boundary/loop analysis
@@ -1859,8 +1790,8 @@ class CAD_Quality_Metrics:
                                 'tag': tag,
                                 'boundary_edges': num_boundary_edges
                             })
-                    except:
-                        pass
+                    except Exception as e:
+                        log.debug("Boundary edge analysis failed for face tag=%s: %s", tag, e)
 
                 avg_boundary_edges = np.mean(face_loop_counts) if face_loop_counts else 0
 
@@ -1871,7 +1802,7 @@ class CAD_Quality_Metrics:
                 }
 
                 if len(faces_with_multiple_loops) > 0:
-                    print(f"[CADabra] Found {len(faces_with_multiple_loops)} faces with complex boundaries")
+                    log.info(f" Found {len(faces_with_multiple_loops)} faces with complex boundaries")
 
             # Face duplication check (compare centroids and areas)
             if len(faces) > 1 and len(faces) < 1000:  # Only for reasonably sized models
@@ -1885,8 +1816,8 @@ class CAD_Quality_Metrics:
                         com = gmsh.model.occ.getCenterOfMass(dim, tag)
                         centroids.append(com)
                         areas.append(mass)
-                    except:
-                        pass
+                    except Exception as e:
+                        log.debug("Failed to get mass/centroid for entity (%s, %s): %s", dim, tag, e)
 
                 # Find potential duplicates (same centroid + area within tolerance)
                 duplicates = []
@@ -1913,7 +1844,7 @@ class CAD_Quality_Metrics:
                 }
 
                 if len(duplicates) > 0:
-                    print(f"[CADabra] Found {len(duplicates)} potential duplicate face pairs")
+                    log.info(f" Found {len(duplicates)} potential duplicate face pairs")
                     metrics['duplication']['duplicate_pairs'] = duplicates[:5]  # Limit output
 
             # Generate report
@@ -1948,7 +1879,7 @@ class CAD_Quality_Metrics:
             # Watertightness
             if 'watertightness' in metrics:
                 wt = metrics['watertightness']
-                status = "✓ WATERTIGHT" if wt['is_watertight'] else "✗ NOT WATERTIGHT"
+                status = "[x] WATERTIGHT" if wt['is_watertight'] else "[ ] NOT WATERTIGHT"
                 report_lines.append(f"WATERTIGHTNESS: {status}")
                 report_lines.append(f"  Boundary edges: {wt['num_boundary_edges']}")
                 report_lines.append(f"  Orphaned edges: {wt['num_orphaned_edges']}")
@@ -1957,7 +1888,7 @@ class CAD_Quality_Metrics:
             # Degeneracy
             if 'degeneracy' in metrics:
                 deg = metrics['degeneracy']
-                status = "✓ NO DEGENERATE FACES" if not deg['has_degenerate_faces'] else "✗ DEGENERATE FACES FOUND"
+                status = "[x] NO DEGENERATE FACES" if not deg['has_degenerate_faces'] else "[ ] DEGENERATE FACES FOUND"
                 report_lines.append(f"DEGENERACY: {status}")
                 report_lines.append(f"  Degenerate faces: {deg['num_degenerate_faces']}")
                 report_lines.append(f"  Zero-area faces: {deg['num_zero_area_faces']}")
@@ -1976,7 +1907,7 @@ class CAD_Quality_Metrics:
             # Duplication
             if 'duplication' in metrics:
                 dup = metrics['duplication']
-                status = "✓ NO DUPLICATES" if not dup['has_duplicates'] else "✗ DUPLICATE FACES FOUND"
+                status = "[x] NO DUPLICATES" if not dup['has_duplicates'] else "[ ] DUPLICATE FACES FOUND"
                 report_lines.append(f"DUPLICATION: {status}")
                 report_lines.append(f"  Potential duplicate pairs: {dup['num_potential_duplicate_pairs']}")
                 report_lines.append("")
@@ -1986,12 +1917,13 @@ class CAD_Quality_Metrics:
             report = "\n".join(report_lines)
             metrics_json = json.dumps(metrics, indent=2)
 
-            print(f"[CADabra] Quality analysis complete")
+            log.info(f" Quality analysis complete")
 
             return (metrics_json, report)
 
         except Exception as e:
             raise RuntimeError(f"Quality analysis failed: {str(e)}")
+
 
 
 class PreviewCADOCC:
@@ -2018,10 +1950,12 @@ class PreviewCADOCC:
         """Export CAD to VTP mesh for preview."""
         import folder_paths
 
-        # Get OCC shape
-        occ_shape = cad_model.get("occ_shape")
-        if occ_shape is None:
-            raise ValueError("CAD model does not contain occ_shape")
+        # Get OCC shape from brep_path
+        try:
+            from .utils.brep_cache import get_occ_shape
+        except ImportError:
+            from .utils.brep_cache import get_occ_shape
+        occ_shape = get_occ_shape(cad_model)
 
         # Get model info
         from OCC.Core.TopAbs import TopAbs_SOLID, TopAbs_FACE, TopAbs_EDGE
@@ -2046,7 +1980,7 @@ class PreviewCADOCC:
             xmin, ymin, zmin, xmax, ymax, zmax = 0, 0, 0, 0, 0, 0
 
         # Tessellate
-        print(f"[CADabra] Tessellating (linear: {linear_deflection}, angular: {angular_deflection})")
+        log.info(f" Tessellating (linear: {linear_deflection}, angular: {angular_deflection})")
         with log_operation("BRepMesh", linear_deflection=linear_deflection, angular_deflection=angular_deflection):
             mesh = BRepMesh_IncrementalMesh(occ_shape, linear_deflection, False, angular_deflection)
             mesh.Perform()
@@ -2092,7 +2026,7 @@ class PreviewCADOCC:
 
         total_vertices = len(all_vertices) // 3
         total_triangles = len(all_indices) // 3
-        print(f"[CADabra] Mesh: {total_vertices} vertices, {total_triangles} triangles")
+        log.info(f" Mesh: {total_vertices} vertices, {total_triangles} triangles")
 
         # Export VTP
         output_dir = folder_paths.get_output_directory()
@@ -2104,7 +2038,7 @@ class PreviewCADOCC:
         except ImportError:
             raise RuntimeError("VTK not available. Please install vtk: pip install vtk")
 
-        print(f"[CADabra] Entities: {num_volumes} volumes, {num_faces} faces, {num_edges} edges")
+        log.info(f" Entities: {num_volumes} volumes, {num_faces} faces, {num_edges} edges")
 
         return {"ui": {
             "mesh_file": [vtp_filename],
@@ -2163,7 +2097,7 @@ class PreviewCADOCC:
         writer.Write()
 
         file_size = os.path.getsize(vtp_path)
-        print(f"[CADabra] Exported VTP: {vtp_filename} ({file_size:,} bytes)")
+        log.info(f" Exported VTP: {vtp_filename} ({file_size:,} bytes)")
         return vtp_filename
 
 
@@ -2228,480 +2162,6 @@ def tessellate_occ_shape(occ_shape, linear_deflection=0.1, angular_deflection=0.
     return np.array(all_vertices, dtype=np.float32), np.array(all_faces, dtype=np.int32)
 
 
-class CAD_Remesh_OCC:
-    """Tessellate CAD model using BRepMesh and return TRIMESH."""
-
-    @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "cad_model": ("CAD_MODEL",),
-                "linear_deflection": ("FLOAT", {"default": 0.1, "min": 0.001, "max": 10.0, "step": 0.01}),
-                "angular_deflection": ("FLOAT", {"default": 0.5, "min": 0.01, "max": 1.57, "step": 0.01}),
-            }
-        }
-
-    RETURN_TYPES = ("TRIMESH",)
-    FUNCTION = "remesh"
-    CATEGORY = "CADabra"
-
-    def remesh(self, cad_model, linear_deflection, angular_deflection):
-        import trimesh
-
-        occ_shape = cad_model.get("occ_shape")
-        if occ_shape is None:
-            raise ValueError("CAD model does not contain occ_shape")
-
-        print(f"[CAD_Remesh_OCC] Tessellating with linear_deflection={linear_deflection}, angular_deflection={angular_deflection}")
-
-        vertices, faces = tessellate_occ_shape(occ_shape, linear_deflection, angular_deflection)
-
-        if len(vertices) == 0:
-            raise RuntimeError("Tessellation produced no vertices")
-
-        mesh = trimesh.Trimesh(vertices=vertices, faces=faces)
-        print(f"[CAD_Remesh_OCC] Created mesh: {len(vertices)} vertices, {len(faces)} faces")
-
-        return (mesh,)
-
-
-class CAD_Remesh_OCC_Advanced:
-    """
-    Advanced tessellation of CAD model using BRepMesh.
-
-    Supports single_core (sequential) or parallel execution mode.
-    Parallel mode uses subprocesses for crash isolation and OS-level timeout.
-
-    Adds vertex merging option (for connected meshes from sewn shapes)
-    and handles face orientation for consistent normals.
-    """
-
-    INPUT_IS_LIST = True
-
-    @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "cad_model": ("CAD_MODEL",),
-                "linear_deflection": ("FLOAT", {
-                    "default": 0.1,
-                    "min": 0.001,
-                    "max": 100.0,
-                    "step": 0.01,
-                    "tooltip": "Max distance between mesh and actual surface (smaller = finer mesh)"
-                }),
-                "angular_deflection": ("FLOAT", {
-                    "default": 0.5,
-                    "min": 0.01,
-                    "max": 1.57,
-                    "step": 0.01,
-                    "tooltip": "Angular deflection in radians (controls curvature sampling)"
-                }),
-                "merge_vertices": ("BOOLEAN", {
-                    "default": True,
-                    "tooltip": "Merge duplicate vertices on shared edges (produces connected mesh from sewn shapes)"
-                }),
-                "extract_face_ids": ("BOOLEAN", {
-                    "default": True,
-                    "tooltip": "Store CAD face index for each mesh triangle as 'cad_face_id' face attribute"
-                }),
-                "output_folder": ("STRING", {
-                    "default": "cadabra_meshes",
-                    "tooltip": "Folder name in output directory for VTP files (parallel mode)"
-                }),
-            },
-            "optional": {
-                "execution_mode": (["single_core", "parallel"], {
-                    "default": "single_core",
-                    "tooltip": "single_core: process sequentially. parallel: subprocess workers with timeout"
-                }),
-                "num_workers": ("INT", {
-                    "default": 4,
-                    "min": 1,
-                    "max": 32,
-                    "tooltip": "Number of parallel subprocesses (parallel mode only)"
-                }),
-                "timeout": ("INT", {
-                    "default": 120,
-                    "min": 10,
-                    "max": 600,
-                    "tooltip": "Timeout per model in seconds (parallel mode only)"
-                }),
-            }
-        }
-
-    RETURN_TYPES = ("TRIMESH", "MESH_METADATA", "STRING")
-    RETURN_NAMES = ("meshes", "metadata", "vtp_paths")
-    OUTPUT_IS_LIST = (True, True, True)
-    FUNCTION = "remesh_advanced"
-    CATEGORY = "CADabra"
-
-    def _remesh_single(self, cad_model, linear_deflection, angular_deflection, merge_vertices, extract_face_ids):
-        import trimesh
-        from OCC.Core.BRepMesh import BRepMesh_IncrementalMesh
-        from OCC.Core.TopExp import TopExp_Explorer
-        from OCC.Core.TopAbs import TopAbs_FACE, TopAbs_REVERSED
-        from OCC.Core.BRep import BRep_Tool
-        from OCC.Core.TopLoc import TopLoc_Location
-        from OCC.Core.TopoDS import topods
-
-        occ_shape = cad_model.get("occ_shape")
-        if occ_shape is None:
-            raise ValueError("CAD model does not contain occ_shape")
-
-        print(f"[CAD_Remesh_OCC_Advanced] Tessellating with linear_deflection={linear_deflection}, angular_deflection={angular_deflection}")
-
-        # 1. Mesh the shape with BRepMesh
-        with log_operation("BRepMesh", linear_deflection=linear_deflection, angular_deflection=angular_deflection):
-            mesher = BRepMesh_IncrementalMesh(occ_shape, linear_deflection, False, angular_deflection)
-            mesher.Perform()
-
-        if not mesher.IsDone():
-            raise RuntimeError("BRepMesh tessellation failed")
-
-        # 2. Collect triangulations from all faces
-        all_verts = []
-        all_faces = []
-        cad_face_ids = []  # Track which CAD face each triangle came from
-        vertex_offset = 0
-        cad_face_idx = 0
-
-        explorer = TopExp_Explorer(occ_shape, TopAbs_FACE)
-        while explorer.More():
-            face = topods.Face(explorer.Current())
-            loc = TopLoc_Location()
-            tri = BRep_Tool.Triangulation(face, loc)
-
-            if tri is not None:
-                trsf = loc.Transformation()
-
-                # Extract vertices with transformation
-                for i in range(1, tri.NbNodes() + 1):
-                    pnt = tri.Node(i)
-                    pnt.Transform(trsf)
-                    all_verts.append([pnt.X(), pnt.Y(), pnt.Z()])
-
-                # Extract triangles with offset, handle face orientation
-                is_reversed = face.Orientation() == TopAbs_REVERSED
-                for i in range(1, tri.NbTriangles() + 1):
-                    triangle = tri.Triangle(i)
-                    n1, n2, n3 = triangle.Get()
-                    if is_reversed:
-                        # Flip winding order for reversed faces
-                        all_faces.append([
-                            vertex_offset + n1 - 1,
-                            vertex_offset + n3 - 1,
-                            vertex_offset + n2 - 1
-                        ])
-                    else:
-                        all_faces.append([
-                            vertex_offset + n1 - 1,
-                            vertex_offset + n2 - 1,
-                            vertex_offset + n3 - 1
-                        ])
-                    cad_face_ids.append(cad_face_idx)
-
-                vertex_offset += tri.NbNodes()
-
-            cad_face_idx += 1
-            explorer.Next()
-
-        if len(all_verts) == 0:
-            raise RuntimeError("Tessellation produced no vertices")
-
-        # 3. Create trimesh
-        mesh = trimesh.Trimesh(
-            vertices=np.array(all_verts, dtype=np.float32),
-            faces=np.array(all_faces, dtype=np.int32)
-        )
-
-        verts_before = len(mesh.vertices)
-
-        # 4. Optionally merge duplicate vertices
-        if merge_vertices:
-            mesh.merge_vertices()
-
-        # 5. Store CAD face IDs if requested
-        if extract_face_ids and cad_face_ids:
-            cad_face_ids_array = np.array(cad_face_ids, dtype=np.int32)
-            mesh.face_attributes['cad_face_id'] = cad_face_ids_array
-            mesh.metadata['has_cad_face_ids'] = True
-            mesh.metadata['num_cad_faces'] = cad_face_idx
-
-        # 6. Build metadata
-        file_path = cad_model.get("file_path", "model")
-        metadata = {
-            "num_vertices": len(mesh.vertices),
-            "num_faces": len(mesh.faces),
-            "num_cad_faces": cad_face_idx,
-            "backend": "OCC BRepMesh",
-            "linear_deflection": linear_deflection,
-            "angular_deflection": angular_deflection,
-            "merged": merge_vertices,
-            "vertices_before_merge": verts_before,
-            "has_cad_face_ids": extract_face_ids,
-            "file_path": file_path,
-        }
-
-        mesh.metadata['file_path'] = file_path
-
-        print(f"[CAD_Remesh_OCC_Advanced] Created mesh: {len(mesh.vertices)} vertices, {len(mesh.faces)} faces from {cad_face_idx} CAD faces (merged={merge_vertices}, before={verts_before})")
-
-        return mesh, metadata
-
-    def _remesh_sequential(self, cad_models, linear_deflection, angular_deflection, merge_vertices, extract_face_ids):
-        """Process CAD models sequentially (single_core mode)."""
-        meshes = []
-        metadata_list = []
-
-        for i, cm in enumerate(cad_models):
-            try:
-                mesh, metadata = self._remesh_single(cm, linear_deflection, angular_deflection, merge_vertices, extract_face_ids)
-                meshes.append(mesh)
-                metadata_list.append(metadata)
-                filename = os.path.basename(cm.get("file_path", f"model_{i}"))
-                print(f"[CAD_Remesh_OCC_Advanced] [{i+1}/{len(cad_models)}] {filename}: {len(mesh.vertices)} verts, {len(mesh.faces)} tris")
-            except Exception as e:
-                filename = os.path.basename(cm.get("file_path", f"model_{i}"))
-                print(f"[CAD_Remesh_OCC_Advanced] [{i+1}/{len(cad_models)}] {filename}: FAILED - {e}")
-                continue
-
-        return meshes, metadata_list
-
-    def _remesh_parallel(self, cad_models, num_workers, timeout, linear_deflection, angular_deflection, extract_face_ids, output_folder):
-        """Process CAD models in parallel using subprocesses (parallel mode)."""
-        from concurrent.futures import ThreadPoolExecutor, as_completed
-        from OCC.Core.BRepTools import breptools
-        import subprocess
-        import tempfile
-        import time
-        import json
-        import sys
-        import trimesh
-        import pyvista as pv
-
-        print(f"[CADabra Parallel] Processing {len(cad_models)} models with {num_workers} workers, timeout={timeout}s")
-
-        # Create temp directory
-        temp_dir = tempfile.mkdtemp(prefix="cadabra_mesh_")
-
-        # Path to subprocess script
-        script_path = os.path.join(os.path.dirname(__file__), "mesh_subprocess.py")
-
-        # Prepare work items
-        work_items = []
-        skipped = 0
-        for idx, cm in enumerate(cad_models):
-            occ_shape = cm.get("occ_shape")
-            file_path = cm.get("file_path", f"model_{idx}")
-            if occ_shape is None:
-                skipped += 1
-                continue
-
-            input_brep = os.path.join(temp_dir, f"input_{idx}.brep")
-            output_json = os.path.join(temp_dir, f"output_{idx}.json")
-            result_file = os.path.join(temp_dir, f"result_{idx}.json")
-            breptools.Write(occ_shape, input_brep)
-
-            work_items.append({
-                "idx": idx,
-                "input_brep": input_brep,
-                "output_json": output_json,
-                "result_file": result_file,
-                "file_path": file_path,
-            })
-
-        if skipped > 0:
-            print(f"[CADabra Parallel] Warning: Skipped {skipped} models without OCC shape")
-
-        if len(work_items) == 0:
-            raise ValueError("No valid CAD models to process")
-
-        def run_mesh_subprocess(item):
-            """Run meshing in subprocess with timeout."""
-            cmd = [
-                sys.executable,
-                script_path,
-                item["input_brep"],
-                item["output_json"],
-                str(linear_deflection),
-                str(angular_deflection),
-                f"--result-file={item['result_file']}",
-                "--no-merge-vertices",
-            ]
-            if extract_face_ids:
-                cmd.append("--extract-face-ids")
-            else:
-                cmd.append("--no-extract-face-ids")
-
-            item_start = time.time()
-            try:
-                result = subprocess.run(
-                    cmd,
-                    capture_output=True,
-                    text=True,
-                    timeout=timeout + 5
-                )
-                if result.stdout:
-                    for line in result.stdout.strip().split('\n'):
-                        if line.strip():
-                            print(f"  {line}")
-                elapsed = time.time() - item_start
-                if os.path.exists(item["result_file"]):
-                    with open(item["result_file"], 'r') as f:
-                        return {**json.load(f), "file_path": item["file_path"], "output_json": item["output_json"], "elapsed": elapsed}
-                elif result.returncode == 0:
-                    return {"success": True, "file_path": item["file_path"], "output_json": item["output_json"], "elapsed": elapsed}
-                else:
-                    return {"success": False, "error": result.stderr or "Unknown error", "file_path": item["file_path"], "elapsed": elapsed}
-            except subprocess.TimeoutExpired:
-                elapsed = time.time() - item_start
-                return {"success": False, "error": f"Timed out after {timeout}s", "file_path": item["file_path"], "elapsed": elapsed}
-            except Exception as e:
-                elapsed = time.time() - item_start
-                return {"success": False, "error": str(e), "file_path": item["file_path"], "elapsed": elapsed}
-
-        # Process in parallel
-        results = [None] * len(work_items)
-        start_time = time.time()
-        meshes = []
-        metadata_list = []
-        vtp_paths = []
-
-        try:
-            with ThreadPoolExecutor(max_workers=num_workers) as executor:
-                future_to_idx = {
-                    executor.submit(run_mesh_subprocess, item): i
-                    for i, item in enumerate(work_items)
-                }
-
-                completed = 0
-                for future in as_completed(future_to_idx):
-                    idx = future_to_idx[future]
-                    try:
-                        results[idx] = future.result()
-                    except Exception as e:
-                        results[idx] = {"success": False, "error": str(e), "file_path": work_items[idx]["file_path"]}
-                    completed += 1
-                    elapsed = time.time() - start_time
-                    _progress_bar(completed, len(work_items), elapsed, prefix="Meshing: ")
-
-            # Build trimesh objects from results
-            failed = 0
-            output_dir = folder_paths.get_output_directory()
-            vtp_folder = os.path.join(output_dir, output_folder)
-            os.makedirs(vtp_folder, exist_ok=True)
-
-            for i, result in enumerate(results):
-                elapsed_str = f"{result.get('elapsed', 0):.1f}s" if result else "?"
-                filename = os.path.basename(result.get("file_path", work_items[i]["file_path"])) if result else os.path.basename(work_items[i]["file_path"])
-
-                if result is None or not result.get("success", False):
-                    failed += 1
-                    err = result.get("error", "Unknown") if result else "No result"
-                    print(f"[CADabra Parallel] {filename}: FAILED ({elapsed_str}) - {err}")
-                    continue
-
-                output_json = result.get("output_json", work_items[i]["output_json"])
-                if os.path.exists(output_json):
-                    with open(output_json, 'r') as f:
-                        mesh_data = json.load(f)
-
-                    mesh = trimesh.Trimesh(
-                        vertices=np.array(mesh_data["vertices"], dtype=np.float32),
-                        faces=np.array(mesh_data["faces"], dtype=np.int32)
-                    )
-
-                    # Remove degenerate faces
-                    num_faces_before = len(mesh.faces)
-                    nondegen_mask = mesh.nondegenerate_faces()
-                    if not nondegen_mask.all():
-                        if "cad_face_ids" in mesh_data:
-                            mesh_data["cad_face_ids"] = [mesh_data["cad_face_ids"][j] for j, keep in enumerate(nondegen_mask) if keep]
-                        mesh.update_faces(nondegen_mask)
-                        num_removed = num_faces_before - len(mesh.faces)
-                        print(f"  [Degenerate] Removed {num_removed} degenerate faces from {filename}")
-
-                    # Store CAD face IDs if extracted
-                    if extract_face_ids and "cad_face_ids" in mesh_data:
-                        mesh.face_attributes['cad_face_id'] = np.array(mesh_data["cad_face_ids"], dtype=np.int32)
-                        mesh.metadata['has_cad_face_ids'] = True
-                        mesh.metadata['num_cad_faces'] = result.get("num_cad_faces", 0)
-
-                    mesh.metadata['file_path'] = result["file_path"]
-
-                    meshes.append(mesh)
-                    metadata_list.append({
-                        "num_vertices": len(mesh.vertices),
-                        "num_faces": len(mesh.faces),
-                        "num_cad_faces": result.get("num_cad_faces", 0),
-                        "backend": "OCC BRepMesh (Subprocess)",
-                        "linear_deflection": linear_deflection,
-                        "angular_deflection": angular_deflection,
-                        "has_cad_face_ids": extract_face_ids,
-                        "file_path": result["file_path"],
-                    })
-
-                    # Save VTP
-                    base_name = os.path.splitext(os.path.basename(result["file_path"]))[0]
-                    vtp_path = os.path.join(vtp_folder, f"{base_name}.vtp")
-                    verts = np.array(mesh.vertices)
-                    faces = np.array(mesh.faces)
-                    pv_faces = np.column_stack([np.full(len(faces), 3), faces]).flatten()
-                    pv_mesh = pv.PolyData(verts, pv_faces)
-                    if 'cad_face_id' in mesh.face_attributes:
-                        pv_mesh.cell_data['cad_face_id'] = mesh.face_attributes['cad_face_id']
-                    pv_mesh.save(vtp_path)
-                    vtp_paths.append(vtp_path)
-
-                    num_verts = result.get("num_vertices", len(mesh.vertices))
-                    num_tris = result.get("num_faces", len(mesh.faces))
-                    print(f"[CADabra Parallel] {filename}: {num_verts} verts, {num_tris} tris ({elapsed_str})")
-                else:
-                    failed += 1
-                    print(f"[CADabra Parallel] {filename}: FAILED ({elapsed_str}) - output file missing")
-
-            print(f"[CADabra Parallel] Completed: {len(meshes)} meshes from {len(cad_models)} models ({failed} failed)")
-
-        finally:
-            import shutil
-            try:
-                shutil.rmtree(temp_dir)
-            except Exception as e:
-                print(f"[CADabra Parallel] Warning: Could not clean temp dir: {e}")
-
-        return meshes, metadata_list, vtp_paths
-
-    def remesh_advanced(self, cad_model, linear_deflection, angular_deflection, merge_vertices,
-                        extract_face_ids, output_folder, execution_mode="single_core", num_workers=4, timeout=120):
-        """Main dispatch method - routes to sequential or parallel processing."""
-        # Extract scalar values from lists (INPUT_IS_LIST behavior)
-        execution_mode_val = execution_mode[0] if isinstance(execution_mode, list) else execution_mode
-        num_workers_val = num_workers[0] if isinstance(num_workers, list) else num_workers
-        timeout_val = timeout[0] if isinstance(timeout, list) else timeout
-        linear_val = linear_deflection[0] if isinstance(linear_deflection, list) else linear_deflection
-        angular_val = angular_deflection[0] if isinstance(angular_deflection, list) else angular_deflection
-        merge_val = merge_vertices[0] if isinstance(merge_vertices, list) else merge_vertices
-        extract_val = extract_face_ids[0] if isinstance(extract_face_ids, list) else extract_face_ids
-        output_folder_val = output_folder[0] if isinstance(output_folder, list) else output_folder
-
-        # Ensure cad_model is a list
-        cad_models = cad_model if isinstance(cad_model, list) else [cad_model]
-
-        if execution_mode_val == "parallel":
-            meshes, metadata_list, vtp_paths = self._remesh_parallel(
-                cad_models, num_workers_val, timeout_val, linear_val, angular_val, extract_val, output_folder_val
-            )
-        else:
-            meshes, metadata_list = self._remesh_sequential(cad_models, linear_val, angular_val, merge_val, extract_val)
-            vtp_paths = [""] * len(meshes)  # Empty paths for single_core mode
-
-        if len(meshes) == 0:
-            raise ValueError("Failed to process any CAD models")
-
-        return (meshes, metadata_list, vtp_paths)
-
-
 def trimesh_to_glb(trimesh_obj, output_path):
     """
     Export a trimesh object to GLB format.
@@ -2755,6 +2215,7 @@ def trimesh_to_glb(trimesh_obj, output_path):
     gltf.save(output_path)
 
     return len(vertices_array), len(faces_array)
+
 
 
 class PreviewCADBatch:
@@ -2823,7 +2284,7 @@ class PreviewCADBatch:
         # Select current mesh from batch
         current_mesh = trimesh_list[actual_index]
 
-        print(f"[CADabra Batch] TRIMESH mode - Batch size: {batch_size}, showing index: {actual_index + 1}/{batch_size}")
+        log.info(f"Batch: TRIMESH mode - Batch size: {batch_size}, showing index: {actual_index + 1}/{batch_size}")
 
         # Generate unique filename
         base_name = f"preview_batch_{uuid.uuid4().hex[:8]}"
@@ -2843,7 +2304,7 @@ class PreviewCADBatch:
 
         mesh_vertex_count = len(current_mesh.vertices)
         mesh_face_count = len(current_mesh.faces)
-        print(f"[CADabra Batch] Exported TRIMESH to VTP: {vtp_filename} ({mesh_vertex_count} vertices, {mesh_face_count} faces)")
+        log.info(f"Batch: Exported TRIMESH to VTP: {vtp_filename} ({mesh_vertex_count} vertices, {mesh_face_count} faces)")
 
         # Build UI data dictionary
         ui_data = {
@@ -2907,17 +2368,19 @@ class PreviewCADBatch:
         # Select current model from batch
         current_model = cad_model[actual_index]
 
-        print(f"[CADabra Batch] CAD_MODEL mode - Batch size: {batch_size}, showing index: {actual_index + 1}/{batch_size}")
+        log.info(f"Batch: CAD_MODEL mode - Batch size: {batch_size}, showing index: {actual_index + 1}/{batch_size}")
 
         # Generate unique filenames
         base_name = f"preview_batch_{uuid.uuid4().hex[:8]}"
         output_dir = folder_paths.get_output_directory()
 
         try:
-            # Get OCC shape - required for all operations
-            occ_shape = current_model.get("occ_shape")
-            if occ_shape is None:
-                raise ValueError("CAD model does not contain occ_shape")
+            # Get OCC shape from brep_path
+            try:
+                from .utils.brep_cache import get_occ_shape
+            except ImportError:
+                from .utils.brep_cache import get_occ_shape
+            occ_shape = get_occ_shape(current_model)
 
             # Get model info for metadata using OCC
             from OCC.Core.TopAbs import TopAbs_SOLID, TopAbs_FACE, TopAbs_EDGE
@@ -2942,7 +2405,7 @@ class PreviewCADBatch:
                 xmin, ymin, zmin, xmax, ymax, zmax = 0, 0, 0, 0, 0, 0
 
             # Tessellate
-            print(f"[CADabra Batch] Tessellating (linear: {linear_deflection_val}, angular: {angular_deflection_val})")
+            log.info(f"Batch: Tessellating (linear: {linear_deflection_val}, angular: {angular_deflection_val})")
             with log_operation("BRepMesh", linear_deflection=linear_deflection_val, angular_deflection=angular_deflection_val):
                 mesh = BRepMesh_IncrementalMesh(occ_shape, linear_deflection_val, False, angular_deflection_val)
                 mesh.Perform()
@@ -2988,7 +2451,7 @@ class PreviewCADBatch:
 
             total_vertices = len(all_vertices) // 3
             total_triangles = len(all_indices) // 3
-            print(f"[CADabra Batch] Mesh: {total_vertices} vertices, {total_triangles} triangles")
+            log.info(f"Batch: Mesh: {total_vertices} vertices, {total_triangles} triangles")
 
             # Export VTP
             try:
@@ -2997,7 +2460,7 @@ class PreviewCADBatch:
             except ImportError:
                 raise RuntimeError("VTK not available. Please install vtk: pip install vtk")
 
-            print(f"[CADabra Batch] Entities: {num_volumes} volumes, {num_faces} faces, {num_edges} edges")
+            log.info(f"Batch: Entities: {num_volumes} volumes, {num_faces} faces, {num_edges} edges")
 
             # Build UI data dictionary
             ui_data = {
@@ -3065,203 +2528,21 @@ class PreviewCADBatch:
 
         return vtp_filename
 
-
-class CAD_Convert_Format:
-    """Convert between CAD formats using pythonocc-core"""
-
-    def __init__(self):
-        """Initialize and check for pythonocc availability"""
-        self.pythonocc_available = False
-        try:
-            from OCC.Core.STEPControl import STEPControl_Reader, STEPControl_Writer
-            from OCC.Core.IGESControl import IGESControl_Reader, IGESControl_Writer
-            from OCC.Core.BRepTools import BRepTools
-            from OCC.Core.BRep import BRep_Builder
-            from OCC.Core.StlAPI import StlAPI_Writer
-            from OCC.Core.TopoDS import TopoDS_Shape, TopoDS_Compound
-            self.pythonocc_available = True
-        except ImportError:
-            pass  # Will provide helpful error message in convert() method
-
-    @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "input_file": ("STRING", {"default": ""}),
-                "output_format": (["STEP", "IGES", "BREP", "STL"],),
-            },
-            "optional": {
-                "stl_quality": ("FLOAT", {"default": 0.1, "min": 0.01, "max": 1.0, "step": 0.01}),
-                "keep_original_name": ("BOOLEAN", {"default": True}),
-            }
-        }
-
-    RETURN_TYPES = ("STRING", "CAD_MODEL")
-    FUNCTION = "convert"
-    CATEGORY = "CADabra/Conversion"
-
-    def convert(self, input_file, output_format, stl_quality=0.1, keep_original_name=True):
-        """Convert CAD file between formats"""
-
-        # Check if pythonocc is available
-        if not self.pythonocc_available:
-            raise ImportError(
-                "pythonocc-core is required for CAD format conversion.\n\n"
-                "Install with:\n"
-                "  conda install -c conda-forge pythonocc-core=7.9.0\n\n"
-                "See INSTALL.md for detailed installation instructions."
-            )
-
-        # Import pythonocc modules
-        from OCC.Core.STEPControl import STEPControl_Reader, STEPControl_Writer, STEPControl_AsIs
-        from OCC.Core.IGESControl import IGESControl_Reader, IGESControl_Writer
-        from OCC.Core.BRepTools import BRepTools, breptools
-        from OCC.Core.BRep import BRep_Builder
-        from OCC.Core.StlAPI import StlAPI_Writer
-        from OCC.Core.TopoDS import TopoDS_Shape, TopoDS_Compound
-        from OCC.Core.IFSelect import IFSelect_ReturnStatus
-        import folder_paths
-
-        # Validate input file
-        if not os.path.exists(input_file):
-            raise FileNotFoundError(f"Input file not found: {input_file}")
-
-        # Detect input format
-        input_ext = os.path.splitext(input_file)[1].lower()
-
-        # Generate output filename
-        if keep_original_name:
-            base_name = os.path.splitext(os.path.basename(input_file))[0]
-        else:
-            base_name = f"converted_{uuid.uuid4().hex[:8]}"
-
-        output_ext = output_format.lower()
-        if output_ext == "step":
-            output_ext = "stp"
-        output_filename = f"{base_name}.{output_ext}"
-
-        # Use ComfyUI's output directory
-        output_dir = folder_paths.get_output_directory()
-        output_file = os.path.join(output_dir, output_filename)
-
-        try:
-            # Step 1: Read input file
-            print(f"[CADabra] Reading {input_ext} file: {os.path.basename(input_file)}")
-            shape = None
-
-            if input_ext in ['.step', '.stp']:
-                reader = STEPControl_Reader()
-                status = reader.ReadFile(input_file)
-                if status != IFSelect_ReturnStatus.IFSelect_RetDone:
-                    raise RuntimeError(f"Failed to read STEP file: {input_file}")
-                reader.TransferRoots()
-                shape = reader.OneShape()
-
-            elif input_ext in ['.iges', '.igs']:
-                reader = IGESControl_Reader()
-                status = reader.ReadFile(input_file)
-                if status != IFSelect_ReturnStatus.IFSelect_RetDone:
-                    raise RuntimeError(f"Failed to read IGES file: {input_file}")
-                reader.TransferRoots()
-                shape = reader.OneShape()
-
-            elif input_ext == '.brep':
-                builder = BRep_Builder()
-                shape = TopoDS_Shape()
-                breptools.Read(shape, input_file, builder)
-
-            elif input_ext == '.stl':
-                raise NotImplementedError(
-                    "STL to B-rep conversion requires mesh-to-solid reconstruction.\n"
-                    "This feature is not yet implemented. Use STL as final export format only."
-                )
-
-            else:
-                raise ValueError(
-                    f"Unsupported input format: {input_ext}\n\n"
-                    f"Supported formats: .step, .stp, .iges, .igs, .brep\n\n"
-                    f"For proprietary formats (CATIA, SolidWorks, etc.), "
-                    f"please export to STEP from your CAD software first."
-                )
-
-            if shape is None or shape.IsNull():
-                raise RuntimeError("Failed to load shape from file")
-
-            # Step 2: Write output file
-            print(f"[CADabra] Converting to {output_format}...")
-
-            if output_format == "STEP":
-                writer = STEPControl_Writer()
-                writer.Transfer(shape, STEPControl_AsIs)
-                status = writer.Write(output_file)
-                if status != IFSelect_ReturnStatus.IFSelect_RetDone:
-                    raise RuntimeError("Failed to write STEP file")
-
-            elif output_format == "IGES":
-                writer = IGESControl_Writer()
-                writer.AddShape(shape)
-                writer.ComputeModel()
-                if not writer.Write(output_file):
-                    raise RuntimeError("Failed to write IGES file")
-
-            elif output_format == "BREP":
-                if not breptools.Write(shape, output_file):
-                    raise RuntimeError("Failed to write BREP file")
-
-            elif output_format == "STL":
-                writer = StlAPI_Writer()
-                writer.SetASCIIMode(False)  # Binary STL
-                # stl_quality is linear deflection (smaller = higher quality)
-                writer.Write(shape, output_file, stl_quality)
-
-            # Verify output file was created
-            if not os.path.exists(output_file):
-                raise RuntimeError("Output file was not created")
-
-            file_size = os.path.getsize(output_file) / 1024  # KB
-            print(f"[CADabra] ✓ Conversion successful: {output_filename} ({file_size:.1f} KB)")
-
-            # Create CAD_MODEL data structure for chaining
-            cad_model = {
-                "file_path": output_file,
-                "format": output_ext,
-                "original_file": input_file,
-                "conversion": f"{input_ext} → {output_format}"
-            }
-
-            return (output_file, cad_model)
-
-        except Exception as e:
-            raise RuntimeError(f"CAD conversion failed: {str(e)}")
-
-
 # Node registration
 NODE_CLASS_MAPPINGS = {
     "CAD_Load": CAD_Load,
-    "CAD_Load_From_Folder": CAD_Load_From_Folder,
-    "CAD_Mesh_Gmsh": CAD_Mesh_Gmsh,
-    "CAD_Mesh_Gmsh_Advanced": CAD_Mesh_Gmsh_Advanced,
-    "CAD_Convert_Format": CAD_Convert_Format,
+    "CAD_Load_From_Glob": CAD_Load_From_Glob,
+    "CAD_Mesh": CAD_Mesh,
     "CAD_Quality_Metrics": CAD_Quality_Metrics,
-    "ML_SurfaceRecon": ML_SurfaceRecon,
-    "ML_FeatureDetection": ML_FeatureDetection,
     "PreviewCADOCC": PreviewCADOCC,
     "PreviewCADBatch": PreviewCADBatch,
-    "CAD_Remesh_OCC": CAD_Remesh_OCC,
-    "CAD_Remesh_OCC_Advanced": CAD_Remesh_OCC_Advanced,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
     "CAD_Load": "Load CAD",
-    "CAD_Load_From_Folder": "Load CADs from Folder",
-    "CAD_Mesh_Gmsh": "Generate Mesh (Gmsh)",
-    "CAD_Mesh_Gmsh_Advanced": "Advanced Mesh Generation (Gmsh)",
-    "CAD_Convert_Format": "Convert CAD Format",
+    "CAD_Load_From_Glob": "Load CADs from Glob",
+    "CAD_Mesh": "Mesh CAD",
     "CAD_Quality_Metrics": "CAD Quality Metrics",
-    "ML_SurfaceRecon": "ML Surface Reconstruction",
-    "ML_FeatureDetection": "ML Feature Detection",
     "PreviewCADOCC": "Preview CAD",
     "PreviewCADBatch": "Preview CAD Batch",
-    "CAD_Remesh_OCC": "CAD to Mesh (OCC)",
-    "CAD_Remesh_OCC_Advanced": "CAD to Mesh (OCC) Advanced",
 }

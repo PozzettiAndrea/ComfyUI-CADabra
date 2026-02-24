@@ -1,5 +1,7 @@
 """CADabra Transform Nodes - Rotate/Translate/Scale CAD shapes"""
+from __future__ import annotations
 import math
+
 from OCC.Core.gp import gp_Ax1, gp_Pnt, gp_Dir, gp_Trsf, gp_Vec
 from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_Transform
 from OCC.Core.Bnd import Bnd_Box
@@ -34,9 +36,9 @@ class CADTransform:
 
     def transform(self, cad_model, translate_x, translate_y, translate_z,
                   rotate_x, rotate_y, rotate_z, scale):
-        shape = cad_model.get("occ_shape")
-        if shape is None:
-            raise RuntimeError("CAD model has no OCC shape")
+        # Get OCC shape from brep_path
+        from .utils.brep_cache import get_occ_shape, make_cad_model
+        shape = get_occ_shape(cad_model)
 
         # Build combined transformation
         trsf = gp_Trsf()
@@ -71,12 +73,7 @@ class CADTransform:
         if not transformer.IsDone():
             raise RuntimeError("Transform failed")
 
-        result = {
-            "occ_shape": transformer.Shape(),
-            "format": "occ",
-        }
-        if "file_path" in cad_model:
-            result["file_path"] = cad_model["file_path"]
+        result = make_cad_model(transformer.Shape(), cad_model, "transformed")
 
         return (result,)
 
@@ -98,9 +95,9 @@ class CADBoundingBox:
     CATEGORY = "CADabra/Transform"
 
     def get_bbox(self, cad_model):
-        shape = cad_model.get("occ_shape")
-        if shape is None:
-            raise RuntimeError("CAD model has no OCC shape")
+        # Get OCC shape from brep_path
+        from .utils.brep_cache import get_occ_shape
+        shape = get_occ_shape(cad_model)
 
         bbox = Bnd_Box()
         brepbndlib.Add(shape, bbox)

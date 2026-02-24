@@ -22,11 +22,14 @@ Exit codes:
     1 - Error (details in stderr or result file)
 """
 
+import logging
 import sys
 import argparse
 import json
 import os
 import time
+
+log = logging.getLogger("cadabra")
 
 
 def count_faces(shape):
@@ -224,7 +227,7 @@ def merge_edges_to_bspline(edges):
             adaptor = BRepAdaptor_Curve(edge)
             bspline = geomconvert.CurveToBSplineCurve(adaptor.Curve().Curve(), GeomAbs_C2)
             if not converter.Add(bspline, 1e-6):
-                print(f"[WARNING] Failed to add edge to composite curve")
+                log.warning(f" Failed to add edge to composite curve")
                 return None
 
         # Get merged B-spline
@@ -235,11 +238,11 @@ def merge_edges_to_bspline(edges):
         if builder.IsDone():
             return builder.Edge()
         else:
-            print(f"[WARNING] Failed to create edge from merged B-spline")
+            log.warning(f" Failed to create edge from merged B-spline")
             return None
 
     except Exception as e:
-        print(f"[WARNING] merge_edges_to_bspline failed: {e}")
+        log.warning(f" merge_edges_to_bspline failed: {e}")
         return None
 
 
@@ -310,13 +313,13 @@ def merge_g2_continuous_edges(shape, curvature_tolerance=0.01, preserve_quads=Tr
                         for edge in group[1:]:
                             reshaper.Remove(edge)
                         total_merged += len(group) - 1
-                        print(f"  Merged {len(group)} edges into 1")
+                        log.info(f"  Merged {len(group)} edges into 1")
 
             wire_explorer.Next()
 
         face_explorer.Next()
 
-    print(f"[G2 Merge] Processed {faces_processed} faces, skipped {faces_skipped} quad faces, merged {total_merged} edges")
+    log.info(f"G2 Merge: Processed {faces_processed} faces, skipped {faces_skipped} quad faces, merged {total_merged} edges")
 
     # Apply all replacements
     result = reshaper.Apply(shape)
@@ -362,23 +365,23 @@ def main():
         log_handle = open(args.log_file, 'w')
         sys.stdout = log_handle
         sys.stderr = log_handle
-        print(f"[CADabra Heal Subprocess]")
-        print(f"Input: {args.input_brep}")
-        print(f"Output: {args.output_brep}")
-        print(f"Precision: {args.precision}")
-        print(f"Max Tolerance: {args.max_tolerance}")
-        print(f"Fix small faces: {fix_small_faces} (precision: {args.small_face_precision})")
-        print(f"Fix small edges: {fix_small_edges}")
-        print(f"Fix wire gaps: {fix_wire_gaps}")
-        print(f"Merge colinear: {merge_colinear}")
-        print(f"Unify faces: {unify_faces}")
-        print(f"Angular tolerance: {args.angular_tolerance}")
-        print(f"Linear tolerance: {args.linear_tolerance}")
-        print(f"Merge G2 edges: {merge_g2_edges}")
-        print(f"G2 tolerance: {args.g2_tolerance}")
-        print(f"Preserve quad faces: {preserve_quad_faces}")
-        print(f"Started: {time.strftime('%Y-%m-%d %H:%M:%S')}")
-        print("=" * 60)
+        log.info(f"[CADabra Heal Subprocess]")
+        log.info(f"Input: {args.input_brep}")
+        log.info(f"Output: {args.output_brep}")
+        log.info(f"Precision: {args.precision}")
+        log.info(f"Max Tolerance: {args.max_tolerance}")
+        log.info(f"Fix small faces: {fix_small_faces} (precision: {args.small_face_precision})")
+        log.info(f"Fix small edges: {fix_small_edges}")
+        log.info(f"Fix wire gaps: {fix_wire_gaps}")
+        log.info(f"Merge colinear: {merge_colinear}")
+        log.info(f"Unify faces: {unify_faces}")
+        log.info(f"Angular tolerance: {args.angular_tolerance}")
+        log.info(f"Linear tolerance: {args.linear_tolerance}")
+        log.info(f"Merge G2 edges: {merge_g2_edges}")
+        log.info(f"G2 tolerance: {args.g2_tolerance}")
+        log.info(f"Preserve quad faces: {preserve_quad_faces}")
+        log.info(f"Started: {time.strftime('%Y-%m-%d %H:%M:%S')}")
+        log.info("=" * 60)
         sys.stdout.flush()
 
     try:
@@ -406,17 +409,17 @@ def main():
 
         # Write final status to log
         if log_handle:
-            print("=" * 60)
+            log.info("=" * 60)
             if result['success']:
-                print(f"SUCCESS: {result['faces_before']}->{result['faces_after']} faces, "
+                log.info(f"SUCCESS: {result['faces_before']}->{result['faces_after']} faces, "
                       f"edges: {result.get('edges_before', '?')}->{result.get('edges_after', '?')}")
                 if 'timings' in result:
-                    print("\nTimings:")
+                    log.info("\nTimings:")
                     for step, duration in result['timings'].items():
-                        print(f"  {step}: {duration:.3f}s")
+                        log.info(f"  {step}: {duration:.3f}s")
             else:
-                print(f"FAILED: {result['error']}")
-            print(f"Finished: {time.strftime('%Y-%m-%d %H:%M:%S')}")
+                log.info(f"FAILED: {result['error']}")
+            log.info(f"Finished: {time.strftime('%Y-%m-%d %H:%M:%S')}")
             sys.stdout.flush()
 
         # Restore stdout/stderr
@@ -427,16 +430,16 @@ def main():
 
         if result['success']:
             # Print summary to stdout
-            print(f"OK: faces={result['faces_before']}->{result['faces_after']}, "
+            log.info(f"OK: faces={result['faces_before']}->{result['faces_after']}, "
                   f"edges={result.get('edges_before', '?')}->{result.get('edges_after', '?')}")
             sys.exit(0)
         else:
-            print(f"ERROR: {result['error']}", file=sys.stderr)
+            log.info(f"ERROR: {result['error']}", file=sys.stderr)
             sys.exit(1)
 
     except Exception as e:
         if log_handle:
-            print(f"\nEXCEPTION: {e}")
+            log.info(f"\nEXCEPTION: {e}")
             import traceback
             traceback.print_exc()
             sys.stdout = original_stdout
@@ -453,8 +456,7 @@ def heal_brep(input_path, output_path, precision, max_tolerance,
     """Perform healing on BREP file with detailed timing."""
     timings = {}
 
-    print(f"\n[Healing CAD file: {os.path.basename(input_path)}]")
-    sys.stdout.flush()
+    log.info(f"Healing CAD file: {os.path.basename(input_path)}")
 
     try:
         from OCC.Core.TopoDS import TopoDS_Shape
@@ -463,29 +465,29 @@ def heal_brep(input_path, output_path, precision, max_tolerance,
         from OCC.Core.ShapeFix import ShapeFix_Shape, ShapeFix_Wireframe, ShapeFix_FixSmallFace
 
         # --- Read input BREP ---
-        print(f"Reading BREP file...")
+        log.info(f"Reading BREP file...")
         sys.stdout.flush()
         t0 = time.time()
         shape = TopoDS_Shape()
         builder = BRep_Builder()
         breptools.Read(shape, str(input_path), builder)
         timings['read_brep'] = time.time() - t0
-        print(f"[TIMING] read_brep: {timings['read_brep']:.3f}s")
+        log.info(f"[TIMING] read_brep: {timings['read_brep']:.3f}s")
 
         # --- Count entities before ---
-        print(f"Counting entities before healing...")
+        log.info(f"Counting entities before healing...")
         t0 = time.time()
         faces_before = count_faces(shape)
         edges_before = count_edges(shape)
         timings['count_before'] = time.time() - t0
-        print(f"[TIMING] count_before: {timings['count_before']:.3f}s ({faces_before} faces, {edges_before} edges)")
+        log.info(f"[TIMING] count_before: {timings['count_before']:.3f}s ({faces_before} faces, {edges_before} edges)")
 
         result_shape = shape
         operations_applied = []
 
         # --- 1. Fix small faces ---
         if fix_small_faces:
-            print(f"Fixing small faces (precision={small_face_precision})...")
+            log.info(f"Fixing small faces (precision={small_face_precision})...")
             sys.stdout.flush()
             t0 = time.time()
             try:
@@ -497,15 +499,15 @@ def heal_brep(input_path, output_path, precision, max_tolerance,
                 timings['fix_small_faces'] = time.time() - t0
                 faces_after_small = count_faces(result_shape)
                 removed = faces_before - faces_after_small
-                print(f"[TIMING] fix_small_faces: {timings['fix_small_faces']:.3f}s (removed {removed} faces)")
+                log.info(f"[TIMING] fix_small_faces: {timings['fix_small_faces']:.3f}s (removed {removed} faces)")
                 operations_applied.append(f"small_faces: removed {removed}")
             except Exception as e:
                 timings['fix_small_faces'] = time.time() - t0
-                print(f"[WARNING] fix_small_faces error: {e}")
+                log.warning(f" fix_small_faces error: {e}")
 
         # --- 2. Fix wireframe (small edges, gaps) ---
         if fix_small_edges or fix_wire_gaps:
-            print(f"Fixing wireframe (small_edges={fix_small_edges}, wire_gaps={fix_wire_gaps})...")
+            log.info(f"Fixing wireframe (small_edges={fix_small_edges}, wire_gaps={fix_wire_gaps})...")
             sys.stdout.flush()
             t0 = time.time()
             try:
@@ -521,17 +523,17 @@ def heal_brep(input_path, output_path, precision, max_tolerance,
 
                 result_shape = wireframe_fix.Shape()
                 timings['fix_wireframe'] = time.time() - t0
-                print(f"[TIMING] fix_wireframe: {timings['fix_wireframe']:.3f}s")
+                log.info(f"[TIMING] fix_wireframe: {timings['fix_wireframe']:.3f}s")
                 if fix_small_edges:
                     operations_applied.append("small_edges")
                 if fix_wire_gaps:
                     operations_applied.append("wire_gaps")
             except Exception as e:
                 timings['fix_wireframe'] = time.time() - t0
-                print(f"[WARNING] fix_wireframe error: {e}")
+                log.warning(f" fix_wireframe error: {e}")
 
         # --- 3. General shape fix ---
-        print(f"Applying general shape fix (precision={precision}, max_tol={max_tolerance})...")
+        log.info(f"Applying general shape fix (precision={precision}, max_tol={max_tolerance})...")
         sys.stdout.flush()
         t0 = time.time()
         try:
@@ -541,15 +543,15 @@ def heal_brep(input_path, output_path, precision, max_tolerance,
             shape_fix.Perform()
             result_shape = shape_fix.Shape()
             timings['fix_shape'] = time.time() - t0
-            print(f"[TIMING] fix_shape: {timings['fix_shape']:.3f}s")
+            log.info(f"[TIMING] fix_shape: {timings['fix_shape']:.3f}s")
             operations_applied.append("general_fix")
         except Exception as e:
             timings['fix_shape'] = time.time() - t0
-            print(f"[WARNING] fix_shape error: {e}")
+            log.warning(f" fix_shape error: {e}")
 
         # --- 4. Merge colinear edges (optional) ---
         if merge_colinear:
-            print(f"Merging colinear edges (unify_faces={unify_faces}, "
+            log.info(f"Merging colinear edges (unify_faces={unify_faces}, "
                   f"angular_tol={angular_tolerance}, linear_tol={linear_tolerance})...")
             sys.stdout.flush()
             t0 = time.time()
@@ -576,21 +578,21 @@ def heal_brep(input_path, output_path, precision, max_tolerance,
                 edge_reduction = edges_mid - edges_merged
                 face_reduction = faces_mid - faces_merged
 
-                print(f"[TIMING] merge_colinear: {timings['merge_colinear']:.3f}s "
+                log.info(f"[TIMING] merge_colinear: {timings['merge_colinear']:.3f}s "
                       f"(edges: {edges_mid}->{edges_merged}, merged {edge_reduction})")
                 if unify_faces and face_reduction > 0:
-                    print(f"[TIMING]   faces unified: {faces_mid}->{faces_merged}, merged {face_reduction}")
+                    log.info(f"[TIMING]   faces unified: {faces_mid}->{faces_merged}, merged {face_reduction}")
                 operations_applied.append(f"merge_colinear: edges-{edge_reduction}, faces-{face_reduction}")
             except ImportError:
                 timings['merge_colinear'] = time.time() - t0
-                print(f"[WARNING] ShapeUpgrade_UnifySameDomain not available")
+                log.warning(f" ShapeUpgrade_UnifySameDomain not available")
             except Exception as e:
                 timings['merge_colinear'] = time.time() - t0
-                print(f"[WARNING] merge_colinear error: {e}")
+                log.warning(f" merge_colinear error: {e}")
 
         # --- 5. Merge G2-continuous edges (optional) ---
         if merge_g2_edges:
-            print(f"Merging G2-continuous edges (g2_tol={g2_tolerance}, preserve_quads={preserve_quad_faces})...")
+            log.info(f"Merging G2-continuous edges (g2_tol={g2_tolerance}, preserve_quads={preserve_quad_faces})...")
             sys.stdout.flush()
             t0 = time.time()
             try:
@@ -601,41 +603,41 @@ def heal_brep(input_path, output_path, precision, max_tolerance,
                 edges_after_g2 = count_edges(result_shape)
                 timings['merge_g2'] = time.time() - t0
                 edge_reduction = edges_before_g2 - edges_after_g2
-                print(f"[TIMING] merge_g2: {timings['merge_g2']:.3f}s "
+                log.info(f"[TIMING] merge_g2: {timings['merge_g2']:.3f}s "
                       f"(edges: {edges_before_g2}->{edges_after_g2}, merged {edge_reduction})")
                 operations_applied.append(f"merge_g2: edges-{edge_reduction}")
             except Exception as e:
                 timings['merge_g2'] = time.time() - t0
-                print(f"[WARNING] merge_g2 error: {e}")
+                log.warning(f" merge_g2 error: {e}")
                 import traceback
                 traceback.print_exc()
 
         # --- Count entities after ---
-        print(f"Counting entities after healing...")
+        log.info(f"Counting entities after healing...")
         t0 = time.time()
         faces_after = count_faces(result_shape)
         edges_after = count_edges(result_shape)
         timings['count_after'] = time.time() - t0
-        print(f"[TIMING] count_after: {timings['count_after']:.3f}s ({faces_after} faces, {edges_after} edges)")
+        log.info(f"[TIMING] count_after: {timings['count_after']:.3f}s ({faces_after} faces, {edges_after} edges)")
 
         # --- Write output ---
-        print(f"Writing output BREP...")
+        log.info(f"Writing output BREP...")
         sys.stdout.flush()
         t0 = time.time()
         breptools.Write(result_shape, str(output_path))
         timings['write_brep'] = time.time() - t0
-        print(f"[TIMING] write_brep: {timings['write_brep']:.3f}s")
+        log.info(f"[TIMING] write_brep: {timings['write_brep']:.3f}s")
 
         # --- Calculate total ---
         total = sum(timings.values())
         timings['total'] = total
 
         # --- Summary ---
-        print(f"\n[Summary]")
-        print(f"  Faces: {faces_before} -> {faces_after} (removed: {faces_before - faces_after})")
-        print(f"  Edges: {edges_before} -> {edges_after} (removed: {edges_before - edges_after})")
-        print(f"  Operations: {', '.join(operations_applied)}")
-        print(f"  Total time: {total:.3f}s")
+        log.info(f"\n[Summary]")
+        log.info(f"  Faces: {faces_before} -> {faces_after} (removed: {faces_before - faces_after})")
+        log.info(f"  Edges: {edges_before} -> {edges_after} (removed: {edges_before - edges_after})")
+        log.info(f"  Operations: {', '.join(operations_applied)}")
+        log.info(f"  Total time: {total:.3f}s")
 
         return {
             "success": True,
@@ -650,7 +652,7 @@ def heal_brep(input_path, output_path, precision, max_tolerance,
         }
 
     except Exception as e:
-        print(f"\n[ERROR] {str(e)}")
+        log.info(f"\n[ERROR] {str(e)}")
         import traceback
         traceback.print_exc()
         return {

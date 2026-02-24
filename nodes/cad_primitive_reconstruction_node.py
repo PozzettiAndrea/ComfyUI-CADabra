@@ -1,15 +1,9 @@
-"""
-CAD Primitive Reconstruction Node
-
-Detects B-spline edges that are geometrically circles or lines,
-and replaces them with true OCC primitives for cleaner geometry.
-"""
+from __future__ import annotations
 
 import json
 import numpy as np
 from typing import Dict, List, Tuple, Optional, Any
 
-# OCC imports
 from OCC.Core.TopoDS import TopoDS_Shape, TopoDS_Edge, topods
 from OCC.Core.TopExp import TopExp_Explorer
 from OCC.Core.TopAbs import TopAbs_EDGE
@@ -21,8 +15,7 @@ from OCC.Core.gp import gp_Pnt, gp_Dir, gp_Ax2, gp_Circ, gp_Vec
 from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_MakeEdge
 from OCC.Core.BRepTools import BRepTools_ReShape
 from OCC.Core.ShapeAnalysis import ShapeAnalysis_Curve
-
-from ..utils.occ_logging import logger
+from .utils.occ_logging import logger
 
 
 def _sample_curve_points(edge: TopoDS_Edge, n_samples: int = 20) -> np.ndarray:
@@ -302,7 +295,7 @@ def _create_circle_edge(circle_info: Dict, edge: TopoDS_Edge) -> Optional[TopoDS
         angle_tolerance = 0.01  # ~0.5 degrees
         angle_diff = abs(angle_start - angle_end)
         if angle_diff < angle_tolerance or angle_diff > (2 * pi - angle_tolerance):
-            logger.warning(f"[CircleEdge] Degenerate arc (start≈end, diff={degrees(angle_diff):.2f}°), skipping replacement")
+            logger.warning(f"[CircleEdge] Degenerate arc (start~end, diff={degrees(angle_diff):.2f}°), skipping replacement")
             return None
 
         # Determine correct arc direction by checking if midpoint is on the path
@@ -371,7 +364,6 @@ def _create_line_edge(line_info: Dict) -> Optional[TopoDS_Edge]:
         logger.warning(f"Failed to create line edge: {e}")
         return None
 
-
 class CADPrimitiveReconstruction:
     """
     Detect B-spline edges that are geometrically circles or lines,
@@ -411,7 +403,7 @@ class CADPrimitiveReconstruction:
         }
 
     RETURN_TYPES = ("CAD_MODEL", "STRING")
-    RETURN_NAMES = ("cad_model", "report")
+    RETURN_NAMES = ("cad_model", "info")
     FUNCTION = "reconstruct_primitives"
     CATEGORY = "CADabra/Processing"
 
@@ -428,7 +420,16 @@ class CADPrimitiveReconstruction:
         Detect and optionally replace B-spline primitives.
         """
         logger.info(f"[PrimitiveReconstruction] Received cad_model keys: {list(cad_model.keys())}")
-        shape = cad_model.get("occ_shape")
+        # Get OCC shape from brep_path
+        try:
+            from .utils.brep_cache import get_occ_shape
+        except ImportError:
+            from .utils.brep_cache import get_occ_shape
+        try:
+            shape = get_occ_shape(cad_model)
+        except Exception as e:
+            logger.error(f"[PrimitiveReconstruction] Failed to load shape: {e}")
+            return cad_model, json.dumps({"error": str(e)})
         logger.info(f"[PrimitiveReconstruction] Shape type: {type(shape)}, is None: {shape is None}")
         if shape is None or not isinstance(shape, TopoDS_Shape):
             return cad_model, json.dumps({"error": "Invalid CAD model"})
@@ -537,7 +538,7 @@ class CADPrimitiveReconstruction:
             summary_lines.append("")
             summary_lines.append("Detected Circles:")
             for c in detected_circles[:10]:  # Limit output
-                status = "✓ replaced" if c.get("replaced") else "detected only"
+                status = "[x] replaced" if c.get("replaced") else "detected only"
                 summary_lines.append(
                     f"  Edge #{c['edge_id']}: R={c['radius']:.3f}, "
                     f"center=({c['center'][0]:.2f}, {c['center'][1]:.2f}, {c['center'][2]:.2f}), "
@@ -550,7 +551,7 @@ class CADPrimitiveReconstruction:
             summary_lines.append("")
             summary_lines.append("Detected Lines:")
             for l in detected_lines[:10]:
-                status = "✓ replaced" if l.get("replaced") else "detected only"
+                status = "[x] replaced" if l.get("replaced") else "detected only"
                 summary_lines.append(
                     f"  Edge #{l['edge_id']}: dev={l['deviation']:.2e} [{status}]"
                 )
@@ -559,9 +560,12 @@ class CADPrimitiveReconstruction:
 
         report_text = "\n".join(summary_lines)
 
-        # Update CAD model with new shape
-        new_cad_model = cad_model.copy()
-        new_cad_model["occ_shape"] = new_shape
+        # Create new CAD model with new shape (saves to brep_path)
+        try:
+            from .utils.brep_cache import make_cad_model
+        except ImportError:
+            from .utils.brep_cache import make_cad_model
+        new_cad_model = make_cad_model(new_shape, cad_model, "primitive_recon")
 
         return new_cad_model, report_text
 
