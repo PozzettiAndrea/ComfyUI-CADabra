@@ -14,10 +14,13 @@ NOTE: CAD_MODEL now stores OCC shapes directly (no GMSH model).
 All operations work on OCC shapes, preserving topology.
 """
 
+import logging
 import os
 import sys
 
-from ..utils.occ_logging import log_operation
+from .utils.occ_logging import log_operation
+
+log = logging.getLogger("cadabra")
 
 
 def _progress_bar(completed, total, elapsed, width=30, prefix=""):
@@ -26,7 +29,7 @@ def _progress_bar(completed, total, elapsed, width=30, prefix=""):
         return
     pct = completed / total
     filled = int(width * pct)
-    bar = "█" * filled + "░" * (width - filled)
+    bar = "=" * filled + "-" * (width - filled)
     rate = completed / elapsed if elapsed > 0 else 0
     eta = (total - completed) / rate if rate > 0 else 0
     # Use \r to overwrite the line
@@ -37,44 +40,27 @@ def _progress_bar(completed, total, elapsed, width=30, prefix=""):
         sys.stdout.flush()
 
 
-# Check for OCC availability
-try:
-    from OCC.Core.BRep import BRep_Builder
-    from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_Sewing
-    from OCC.Core.BRepAdaptor import BRepAdaptor_Curve
-    from OCC.Core.TopAbs import TopAbs_FACE, TopAbs_EDGE, TopAbs_SHELL, TopAbs_VERTEX
-    from OCC.Core.TopExp import TopExp_Explorer, topexp
-    from OCC.Core.TopoDS import TopoDS_Compound, topods
-    from OCC.Core.TopTools import TopTools_IndexedMapOfShape
-    from OCC.Core.ShapeFix import ShapeFix_Shape, ShapeFix_FixSmallFace, ShapeFix_Wireframe
-    HAS_OCC = True
-except ImportError:
-    HAS_OCC = False
-    print("[CADabra] Warning: pythonocc-core not available. Some CAD utility nodes will be disabled.")
+from OCC.Core.BRep import BRep_Builder
+from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_Sewing
+from OCC.Core.BRepAdaptor import BRepAdaptor_Curve
+from OCC.Core.TopAbs import TopAbs_FACE, TopAbs_EDGE, TopAbs_SHELL, TopAbs_VERTEX
+from OCC.Core.TopExp import TopExp_Explorer, topexp
+from OCC.Core.TopoDS import TopoDS_Compound, topods
+from OCC.Core.TopTools import TopTools_IndexedMapOfShape
+from OCC.Core.ShapeFix import ShapeFix_Shape, ShapeFix_FixSmallFace, ShapeFix_Wireframe
 
 
 
 def _get_occ_shape(cad_model):
-    """Get OCC shape from CAD_MODEL dict."""
-    shape = cad_model.get("occ_shape")
-    if shape is None:
-        raise RuntimeError("CAD model has no OCC shape")
-    return shape
+    """Get OCC shape from CAD_MODEL dict (loads from brep_path)."""
+    from .utils.brep_cache import get_occ_shape
+    return get_occ_shape(cad_model)
 
 
-def _make_cad_model(occ_shape, original_cad_model=None):
-    """Create new CAD_MODEL dict with OCC shape."""
-    result = {
-        "occ_shape": occ_shape,
-        "format": "occ",
-    }
-    # Preserve original file path and metadata if available
-    if original_cad_model:
-        if "file_path" in original_cad_model:
-            result["file_path"] = original_cad_model["file_path"]
-        if "metadata" in original_cad_model:
-            result["metadata"] = original_cad_model["metadata"]
-    return result
+def _make_cad_model(occ_shape, original_cad_model=None, name_hint="shape"):
+    """Create new CAD_MODEL dict (saves shape to brep_path)."""
+    from .utils.brep_cache import make_cad_model
+    return make_cad_model(occ_shape, original_cad_model, name_hint)
 
 
 class CADExtractFaces:
@@ -101,9 +87,6 @@ class CADExtractFaces:
 
     def extract_faces(self, cad_model):
         """Extract only faces using OCC."""
-        if not HAS_OCC:
-            raise ImportError("pythonocc-core is required for CAD Extract Faces. Install with: conda install -c conda-forge pythonocc-core")
-
         shape = _get_occ_shape(cad_model)
 
         # Create new compound with only faces
@@ -119,7 +102,7 @@ class CADExtractFaces:
             face_count += 1
             explorer.Next()
 
-        print(f"[CADabra] Extracted {face_count} faces from CAD model")
+        log.info(f"Extracted {face_count} faces from CAD model")
 
         # Return new CAD_MODEL with OCC shape (no STEP round-trip!)
         result = _make_cad_model(face_compound, cad_model)
@@ -168,19 +151,21 @@ class CADSewFaces:
                     "default": 4,
                     "min": 1,
                     "max": 32,
-                    "tooltip": "Number of parallel subprocesses (parallel mode only)"
+                    "tooltip": "Number of parallel subprocesses (parallel mode only)",
+                    "visible_when": {"execution_mode": ["parallel"]},
                 }),
                 "timeout": ("INT", {
                     "default": 120,
                     "min": 10,
                     "max": 600,
-                    "tooltip": "Timeout per model in seconds (parallel mode only)"
+                    "tooltip": "Timeout per model in seconds (parallel mode only)",
+                    "visible_when": {"execution_mode": ["parallel"]},
                 }),
             }
         }
 
     RETURN_TYPES = ("CAD_MODEL", "STRING",)
-    RETURN_NAMES = ("sewn_models", "report",)
+    RETURN_NAMES = ("sewn_models", "info",)
     OUTPUT_IS_LIST = (True, False,)
     FUNCTION = "sew_faces"
     CATEGORY = "CADabra/Utility"
@@ -207,9 +192,6 @@ class CADSewFaces:
         from datetime import datetime
         import folder_paths
 
-        if not HAS_OCC:
-            raise ImportError("pythonocc-core is required for CAD Sew Faces. Install with: conda install -c conda-forge pythonocc-core")
-
         results = []
         all_report_lines = []
 
@@ -231,9 +213,6 @@ class CADSewFaces:
         from datetime import datetime
         import folder_paths
 
-        if not HAS_OCC:
-            raise ImportError("pythonocc-core is required for CAD Sew Faces. Install with: conda install -c conda-forge pythonocc-core")
-
         # Create persistent log file
         output_dir = folder_paths.get_output_directory()
         log_dir = os.path.join(output_dir, "cadabra_logs")
@@ -243,96 +222,96 @@ class CADSewFaces:
         # Collect log messages for report output
         report_lines = []
 
-        def log(msg):
-            """Print, write to log file, and collect for report."""
-            print(msg, flush=True)
+        def _log_msg(msg):
+            """Log, write to log file, and collect for report."""
+            log.info(msg)
             report_lines.append(msg)
             with open(log_file, 'a') as f:
                 f.write(msg + '\n')
                 f.flush()
 
-        log(f"[CADabra] Log file: {log_file}")
+        _log_msg(f"[CADabra] Log file: {log_file}")
 
         shape = _get_occ_shape(cad_model)
 
         # Count faces before sewing
-        log(f"[CADabra] Counting faces before sewing...")
+        _log_msg(f"[CADabra] Counting faces before sewing...")
         t0 = time.time()
         face_count_before = 0
         explorer = TopExp_Explorer(shape, TopAbs_FACE)
         while explorer.More():
             face_count_before += 1
             explorer.Next()
-        log(f"[CADabra] [TIMING] count_faces_before: {time.time() - t0:.3f}s ({face_count_before} faces)")
+        _log_msg(f"[CADabra] [TIMING] count_faces_before: {time.time() - t0:.3f}s ({face_count_before} faces)")
 
         # Count connected components before sewing
-        log(f"[CADabra] Counting connected components before sewing...")
+        _log_msg(f"[CADabra] Counting connected components before sewing...")
         t0 = time.time()
         components_before = self._count_connected_components(shape)
-        log(f"[CADabra] [TIMING] count_components_before: {time.time() - t0:.3f}s ({components_before} components)")
+        _log_msg(f"[CADabra] [TIMING] count_components_before: {time.time() - t0:.3f}s ({components_before} components)")
 
         # Count free edges before sewing
-        log(f"[CADabra] Counting free edges before sewing...")
+        _log_msg(f"[CADabra] Counting free edges before sewing...")
         t0 = time.time()
         free_edges_before = self._count_free_edges(shape)
-        log(f"[CADabra] [TIMING] count_free_edges_before: {time.time() - t0:.3f}s ({free_edges_before} free edges)")
+        _log_msg(f"[CADabra] [TIMING] count_free_edges_before: {time.time() - t0:.3f}s ({free_edges_before} free edges)")
 
         # Count edges before sewing
-        log(f"[CADabra] Counting edges before sewing...")
+        _log_msg(f"[CADabra] Counting edges before sewing...")
         t0 = time.time()
         edge_count_before = 0
         explorer = TopExp_Explorer(shape, TopAbs_EDGE)
         while explorer.More():
             edge_count_before += 1
             explorer.Next()
-        log(f"[CADabra] [TIMING] count_edges_before: {time.time() - t0:.3f}s ({edge_count_before} edges)")
+        _log_msg(f"[CADabra] [TIMING] count_edges_before: {time.time() - t0:.3f}s ({edge_count_before} edges)")
 
         # Count vertices before sewing
-        log(f"[CADabra] Counting vertices before sewing...")
+        _log_msg(f"[CADabra] Counting vertices before sewing...")
         t0 = time.time()
         vertex_count_before = 0
         explorer = TopExp_Explorer(shape, TopAbs_VERTEX)
         while explorer.More():
             vertex_count_before += 1
             explorer.Next()
-        log(f"[CADabra] [TIMING] count_vertices_before: {time.time() - t0:.3f}s ({vertex_count_before} vertices)")
+        _log_msg(f"[CADabra] [TIMING] count_vertices_before: {time.time() - t0:.3f}s ({vertex_count_before} vertices)")
 
-        log(f"[CADabra] ========================================")
-        log(f"[CADabra] INPUT SUMMARY:")
-        log(f"[CADabra]   Faces: {face_count_before}")
-        log(f"[CADabra]   Edges: {edge_count_before}")
-        log(f"[CADabra]   Vertices: {vertex_count_before}")
-        log(f"[CADabra]   Connected components: {components_before}")
-        log(f"[CADabra]   Free edges (open): {free_edges_before}")
-        log(f"[CADabra]   Tolerance: {tolerance}")
-        log(f"[CADabra] ========================================")
+        _log_msg(f"[CADabra] ========================================")
+        _log_msg(f"[CADabra] INPUT SUMMARY:")
+        _log_msg(f"[CADabra]   Faces: {face_count_before}")
+        _log_msg(f"[CADabra]   Edges: {edge_count_before}")
+        _log_msg(f"[CADabra]   Vertices: {vertex_count_before}")
+        _log_msg(f"[CADabra]   Connected components: {components_before}")
+        _log_msg(f"[CADabra]   Free edges (open): {free_edges_before}")
+        _log_msg(f"[CADabra]   Tolerance: {tolerance}")
+        _log_msg(f"[CADabra] ========================================")
 
         # Complexity analysis
-        log(f"[CADabra] ========================================")
-        log(f"[CADabra] COMPLEXITY ANALYSIS:")
+        _log_msg(f"[CADabra] ========================================")
+        _log_msg(f"[CADabra] COMPLEXITY ANALYSIS:")
 
         # Check if all faces are disconnected (typical IGES import)
         if components_before == face_count_before and face_count_before > 1:
-            log(f"[CADabra]   WARNING: Every face is disconnected (typical IGES import)")
-            log(f"[CADabra]   No topology - sewing must find matching edges by geometry")
+            _log_msg(f"[CADabra]   WARNING: Every face is disconnected (typical IGES import)")
+            _log_msg(f"[CADabra]   No topology - sewing must find matching edges by geometry")
 
         # Calculate sewing complexity - O(n²) edge comparisons
         if free_edges_before > 0:
             edge_pairs = free_edges_before * (free_edges_before - 1) // 2
-            log(f"[CADabra]   Edge pairs to compare: {edge_pairs:,}")
+            _log_msg(f"[CADabra]   Edge pairs to compare: {edge_pairs:,}")
 
             if free_edges_before > 50000:
-                log(f"[CADabra]   DANGER: >50k free edges - sewing will likely hang!")
-                log(f"[CADabra]   SUGGESTION: Split model into parts or use CADSewFacesParallel")
+                _log_msg(f"[CADabra]   DANGER: >50k free edges - sewing will likely hang!")
+                _log_msg(f"[CADabra]   SUGGESTION: Split model into parts or use CADSewFacesParallel")
             elif free_edges_before > 10000:
                 estimated_minutes = edge_pairs / 50_000_000  # rough: 50M comparisons/minute
-                log(f"[CADabra]   WARNING: Very slow sewing expected (~{estimated_minutes:.0f}+ minutes)")
-                log(f"[CADabra]   SUGGESTION: Consider using CADSewFacesParallel with timeout")
+                _log_msg(f"[CADabra]   WARNING: Very slow sewing expected (~{estimated_minutes:.0f}+ minutes)")
+                _log_msg(f"[CADabra]   SUGGESTION: Consider using CADSewFacesParallel with timeout")
             elif free_edges_before > 1000:
-                log(f"[CADabra]   NOTE: Moderate complexity - may take a few minutes")
+                _log_msg(f"[CADabra]   NOTE: Moderate complexity - may take a few minutes")
 
         # Analyze face areas to detect tiny faces that can hang sewing
-        log(f"[CADabra] Analyzing face areas...")
+        _log_msg(f"[CADabra] Analyzing face areas...")
         t0 = time.time()
         try:
             from OCC.Core.GProp import GProp_GProps
@@ -351,27 +330,27 @@ class CADSewFaces:
                 min_area = min(face_areas)
                 max_area = max(face_areas)
                 avg_area = sum(face_areas) / len(face_areas)
-                log(f"[CADabra]   Face area range: {min_area:.6g} to {max_area:.6g} (avg: {avg_area:.6g})")
+                _log_msg(f"[CADabra]   Face area range: {min_area:.6g} to {max_area:.6g} (avg: {avg_area:.6g})")
 
                 # Check for tiny faces relative to tolerance
                 tol_squared = tolerance * tolerance
                 tiny_faces = sum(1 for a in face_areas if a < tol_squared)
                 if tiny_faces > 0:
-                    log(f"[CADabra]   WARNING: {tiny_faces} faces have area < tolerance² ({tol_squared:.6g})")
-                    log(f"[CADabra]   Tiny faces can cause sewing to hang or fail!")
+                    _log_msg(f"[CADabra]   WARNING: {tiny_faces} faces have area < tolerance² ({tol_squared:.6g})")
+                    _log_msg(f"[CADabra]   Tiny faces can cause sewing to hang or fail!")
 
                 # Check for huge area variation (sign of mixed-scale geometry)
                 if max_area > 0 and min_area > 0:
                     scale_ratio = max_area / min_area
                     if scale_ratio > 1e6:
-                        log(f"[CADabra]   WARNING: Extreme scale variation ({scale_ratio:.0e}x)")
-                        log(f"[CADabra]   This can cause numerical issues in sewing!")
+                        _log_msg(f"[CADabra]   WARNING: Extreme scale variation ({scale_ratio:.0e}x)")
+                        _log_msg(f"[CADabra]   This can cause numerical issues in sewing!")
         except Exception as e:
-            log(f"[CADabra]   Could not analyze face areas: {e}")
-        log(f"[CADabra] [TIMING] analyze_areas: {time.time() - t0:.3f}s")
+            _log_msg(f"[CADabra]   Could not analyze face areas: {e}")
+        _log_msg(f"[CADabra] [TIMING] analyze_areas: {time.time() - t0:.3f}s")
 
         # Per-face edge analysis - understand why there are so many edges
-        log(f"[CADabra] Analyzing edges per face...")
+        _log_msg(f"[CADabra] Analyzing edges per face...")
         t0 = time.time()
         try:
             edges_per_face = []
@@ -390,17 +369,17 @@ class CADSewFaces:
                 min_edges = min(edges_per_face)
                 max_edges = max(edges_per_face)
                 avg_edges = sum(edges_per_face) / len(edges_per_face)
-                log(f"[CADabra]   Edges per face: min={min_edges}, max={max_edges}, avg={avg_edges:.1f}")
+                _log_msg(f"[CADabra]   Edges per face: min={min_edges}, max={max_edges}, avg={avg_edges:.1f}")
 
                 # Identify faces with abnormally high edge counts
                 high_edge_faces = [(i, e) for i, e in enumerate(edges_per_face) if e > 100]
                 if high_edge_faces:
-                    log(f"[CADabra]   WARNING: {len(high_edge_faces)} faces have >100 edges!")
-                    log(f"[CADabra]   This suggests fragmented trim curves from IGES import")
+                    _log_msg(f"[CADabra]   WARNING: {len(high_edge_faces)} faces have >100 edges!")
+                    _log_msg(f"[CADabra]   This suggests fragmented trim curves from IGES import")
                     for face_idx, edge_count in sorted(high_edge_faces, key=lambda x: -x[1])[:5]:
-                        log(f"[CADabra]     Face {face_idx}: {edge_count} edges")
+                        _log_msg(f"[CADabra]     Face {face_idx}: {edge_count} edges")
                     if len(high_edge_faces) > 5:
-                        log(f"[CADabra]     ... and {len(high_edge_faces) - 5} more")
+                        _log_msg(f"[CADabra]     ... and {len(high_edge_faces) - 5} more")
 
                 # Distribution summary
                 edge_ranges = [0, 0, 0, 0, 0]  # 1-10, 11-50, 51-100, 101-500, 500+
@@ -410,20 +389,20 @@ class CADSewFaces:
                     elif e <= 100: edge_ranges[2] += 1
                     elif e <= 500: edge_ranges[3] += 1
                     else: edge_ranges[4] += 1
-                log(f"[CADabra]   Edge distribution: 1-10: {edge_ranges[0]}, 11-50: {edge_ranges[1]}, 51-100: {edge_ranges[2]}, 101-500: {edge_ranges[3]}, 500+: {edge_ranges[4]}")
+                _log_msg(f"[CADabra]   Edge distribution: 1-10: {edge_ranges[0]}, 11-50: {edge_ranges[1]}, 51-100: {edge_ranges[2]}, 101-500: {edge_ranges[3]}, 500+: {edge_ranges[4]}")
         except Exception as e:
-            log(f"[CADabra]   Could not analyze edges per face: {e}")
-        log(f"[CADabra] [TIMING] analyze_edges_per_face: {time.time() - t0:.3f}s")
+            _log_msg(f"[CADabra]   Could not analyze edges per face: {e}")
+        _log_msg(f"[CADabra] [TIMING] analyze_edges_per_face: {time.time() - t0:.3f}s")
 
-        log(f"[CADabra] ========================================")
+        _log_msg(f"[CADabra] ========================================")
 
         # Initialize sewing tool and add faces
-        log(f"[CADabra] Creating BRepBuilderAPI_Sewing with tolerance={tolerance}...")
+        _log_msg(f"[CADabra] Creating BRepBuilderAPI_Sewing with tolerance={tolerance}...")
         t0 = time.time()
         sewer = BRepBuilderAPI_Sewing(tolerance)
-        log(f"[CADabra] [TIMING] create_sewer: {time.time() - t0:.3f}s")
+        _log_msg(f"[CADabra] [TIMING] create_sewer: {time.time() - t0:.3f}s")
 
-        log(f"[CADabra] Adding {face_count_before} faces to sewer...")
+        _log_msg(f"[CADabra] Adding {face_count_before} faces to sewer...")
         t0 = time.time()
         explorer = TopExp_Explorer(shape, TopAbs_FACE)
         face_idx = 0
@@ -432,15 +411,15 @@ class CADSewFaces:
             sewer.Add(face)
             face_idx += 1
             if face_idx % 100 == 0:
-                log(f"[CADabra]   Added {face_idx}/{face_count_before} faces...")
+                _log_msg(f"[CADabra]   Added {face_idx}/{face_count_before} faces...")
             explorer.Next()
-        log(f"[CADabra] [TIMING] add_faces: {time.time() - t0:.3f}s (added {face_idx} faces)")
+        _log_msg(f"[CADabra] [TIMING] add_faces: {time.time() - t0:.3f}s (added {face_idx} faces)")
 
         # Perform sewing with progress indicator if available
-        log(f"[CADabra] ========================================")
-        log(f"[CADabra] STARTING sewer.Perform() - this may take a while or hang...")
-        log(f"[CADabra] If this is the last message, sewing is stuck!")
-        log(f"[CADabra] ========================================")
+        _log_msg(f"[CADabra] ========================================")
+        _log_msg(f"[CADabra] STARTING sewer.Perform() - this may take a while or hang...")
+        _log_msg(f"[CADabra] If this is the last message, sewing is stuck!")
+        _log_msg(f"[CADabra] ========================================")
 
         # Try to use OCC progress indicator for real-time progress
         progress_available = False
@@ -467,11 +446,11 @@ class CADSewFaces:
 
             progress = SewingProgress(log)
             progress_range = progress.Start()
-            log(f"[CADabra] Progress indicator active - will report every 5%")
+            _log_msg(f"[CADabra] Progress indicator active - will report every 5%")
             progress_available = True
         except Exception as e:
-            log(f"[CADabra] Progress indicator not available: {e}")
-            log(f"[CADabra] Sewing will run without progress updates")
+            _log_msg(f"[CADabra] Progress indicator not available: {e}")
+            _log_msg(f"[CADabra] Sewing will run without progress updates")
 
         t0 = time.time()
         with log_operation("Sewing", faces=face_count_before, tolerance=tolerance):
@@ -480,104 +459,104 @@ class CADSewFaces:
                     sewer.Perform(progress_range)
                 except TypeError:
                     # Fallback if Perform doesn't accept progress
-                    log(f"[CADabra] Perform(progress) not supported, using Perform()")
+                    _log_msg(f"[CADabra] Perform(progress) not supported, using Perform()")
                     sewer.Perform()
             else:
                 sewer.Perform()
         sew_time = time.time() - t0
-        log(f"[CADabra] ========================================")
-        log(f"[CADabra] sewer.Perform() COMPLETED!")
-        log(f"[CADabra] [TIMING] perform_sew: {sew_time:.3f}s")
-        log(f"[CADabra] ========================================")
+        _log_msg(f"[CADabra] ========================================")
+        _log_msg(f"[CADabra] sewer.Perform() COMPLETED!")
+        _log_msg(f"[CADabra] [TIMING] perform_sew: {sew_time:.3f}s")
+        _log_msg(f"[CADabra] ========================================")
 
         # Get sewing diagnostics
-        log(f"[CADabra] Getting sewing diagnostics...")
+        _log_msg(f"[CADabra] Getting sewing diagnostics...")
         n_free_edges = sewer.NbFreeEdges()
         n_multiple_edges = sewer.NbMultipleEdges()
         n_degenerated = sewer.NbDegeneratedShapes()
         n_deleted = sewer.NbDeletedFaces()
         n_contig_edges = sewer.NbContigousEdges()
 
-        log(f"[CADabra] SEWING DIAGNOSTICS:")
-        log(f"[CADabra]   Free edges (not sewn): {n_free_edges}")
-        log(f"[CADabra]   Contiguous edges (sewn): {n_contig_edges}")
-        log(f"[CADabra]   Multiple edges (>2 faces share edge): {n_multiple_edges}")
-        log(f"[CADabra]   Degenerated shapes: {n_degenerated}")
-        log(f"[CADabra]   Deleted faces: {n_deleted}")
+        _log_msg(f"[CADabra] SEWING DIAGNOSTICS:")
+        _log_msg(f"[CADabra]   Free edges (not sewn): {n_free_edges}")
+        _log_msg(f"[CADabra]   Contiguous edges (sewn): {n_contig_edges}")
+        _log_msg(f"[CADabra]   Multiple edges (>2 faces share edge): {n_multiple_edges}")
+        _log_msg(f"[CADabra]   Degenerated shapes: {n_degenerated}")
+        _log_msg(f"[CADabra]   Deleted faces: {n_deleted}")
 
-        log(f"[CADabra] Getting sewn shape...")
+        _log_msg(f"[CADabra] Getting sewn shape...")
         t0 = time.time()
         sewn_shape = sewer.SewedShape()
-        log(f"[CADabra] [TIMING] get_sewn_shape: {time.time() - t0:.3f}s")
+        _log_msg(f"[CADabra] [TIMING] get_sewn_shape: {time.time() - t0:.3f}s")
 
         # Check if shape is null
         if sewn_shape.IsNull():
-            log(f"[CADabra] ERROR: SewedShape() returned a NULL shape!")
+            _log_msg(f"[CADabra] ERROR: SewedShape() returned a NULL shape!")
 
         # Get shape type
         shape_type = sewn_shape.ShapeType()
         shape_type_names = {0: "COMPOUND", 1: "COMPSOLID", 2: "SOLID", 3: "SHELL", 4: "FACE", 5: "WIRE", 6: "EDGE", 7: "VERTEX", 8: "SHAPE"}
-        log(f"[CADabra] Sewn shape type: {shape_type_names.get(shape_type, f'UNKNOWN({shape_type})')}")
+        _log_msg(f"[CADabra] Sewn shape type: {shape_type_names.get(shape_type, f'UNKNOWN({shape_type})')}")
 
         # Count faces after sewing
-        log(f"[CADabra] Counting faces after sewing...")
+        _log_msg(f"[CADabra] Counting faces after sewing...")
         t0 = time.time()
         face_count_after = 0
         explorer = TopExp_Explorer(sewn_shape, TopAbs_FACE)
         while explorer.More():
             face_count_after += 1
             explorer.Next()
-        log(f"[CADabra] [TIMING] count_faces_after: {time.time() - t0:.3f}s ({face_count_after} faces)")
+        _log_msg(f"[CADabra] [TIMING] count_faces_after: {time.time() - t0:.3f}s ({face_count_after} faces)")
 
         # Count connected components after sewing
-        log(f"[CADabra] Counting connected components after sewing...")
+        _log_msg(f"[CADabra] Counting connected components after sewing...")
         t0 = time.time()
         components_after = self._count_connected_components(sewn_shape)
-        log(f"[CADabra] [TIMING] count_components_after: {time.time() - t0:.3f}s ({components_after} components)")
+        _log_msg(f"[CADabra] [TIMING] count_components_after: {time.time() - t0:.3f}s ({components_after} components)")
 
         # Count edges and shells for more insight
-        log(f"[CADabra] Counting edges after sewing...")
+        _log_msg(f"[CADabra] Counting edges after sewing...")
         t0 = time.time()
         edge_count = 0
         explorer = TopExp_Explorer(sewn_shape, TopAbs_EDGE)
         while explorer.More():
             edge_count += 1
             explorer.Next()
-        log(f"[CADabra] [TIMING] count_edges_after: {time.time() - t0:.3f}s ({edge_count} edges)")
+        _log_msg(f"[CADabra] [TIMING] count_edges_after: {time.time() - t0:.3f}s ({edge_count} edges)")
 
-        log(f"[CADabra] Counting shells after sewing...")
+        _log_msg(f"[CADabra] Counting shells after sewing...")
         t0 = time.time()
         shell_count = 0
         explorer = TopExp_Explorer(sewn_shape, TopAbs_SHELL)
         while explorer.More():
             shell_count += 1
             explorer.Next()
-        log(f"[CADabra] [TIMING] count_shells_after: {time.time() - t0:.3f}s ({shell_count} shells)")
+        _log_msg(f"[CADabra] [TIMING] count_shells_after: {time.time() - t0:.3f}s ({shell_count} shells)")
 
         # Count free edges after sewing
-        log(f"[CADabra] Counting free edges after sewing...")
+        _log_msg(f"[CADabra] Counting free edges after sewing...")
         t0 = time.time()
         free_edges_after = self._count_free_edges(sewn_shape)
-        log(f"[CADabra] [TIMING] count_free_edges_after: {time.time() - t0:.3f}s ({free_edges_after} free edges)")
+        _log_msg(f"[CADabra] [TIMING] count_free_edges_after: {time.time() - t0:.3f}s ({free_edges_after} free edges)")
 
         # Print summary
-        log(f"[CADabra] ========================================")
-        log(f"[CADabra] SEWING COMPLETE - SUMMARY:")
-        log(f"[CADabra]   Faces: {face_count_before} -> {face_count_after}")
-        log(f"[CADabra]   Edges: {edge_count_before} -> {edge_count}")
-        log(f"[CADabra]   Components: {components_before} -> {components_after}")
-        log(f"[CADabra]   Free edges: {free_edges_before} -> {free_edges_after}")
-        log(f"[CADabra]   Shells created: {shell_count}")
-        log(f"[CADabra]   Sewing time: {sew_time:.3f}s")
-        log(f"[CADabra]   Tolerance used: {tolerance}")
+        _log_msg(f"[CADabra] ========================================")
+        _log_msg(f"[CADabra] SEWING COMPLETE - SUMMARY:")
+        _log_msg(f"[CADabra]   Faces: {face_count_before} -> {face_count_after}")
+        _log_msg(f"[CADabra]   Edges: {edge_count_before} -> {edge_count}")
+        _log_msg(f"[CADabra]   Components: {components_before} -> {components_after}")
+        _log_msg(f"[CADabra]   Free edges: {free_edges_before} -> {free_edges_after}")
+        _log_msg(f"[CADabra]   Shells created: {shell_count}")
+        _log_msg(f"[CADabra]   Sewing time: {sew_time:.3f}s")
+        _log_msg(f"[CADabra]   Tolerance used: {tolerance}")
         if components_after == 1 and free_edges_after == 0:
-            log(f"[CADabra]   STATUS: SUCCESS - watertight shell created!")
+            _log_msg(f"[CADabra]   STATUS: SUCCESS - watertight shell created!")
         elif components_after == 1:
-            log(f"[CADabra]   STATUS: PARTIAL - single component but {free_edges_after} open edges")
+            _log_msg(f"[CADabra]   STATUS: PARTIAL - single component but {free_edges_after} open edges")
         else:
-            log(f"[CADabra]   STATUS: INCOMPLETE - {components_after} disconnected components")
-        log(f"[CADabra] ========================================")
-        log(f"[CADabra] Log saved to: {log_file}")
+            _log_msg(f"[CADabra]   STATUS: INCOMPLETE - {components_after} disconnected components")
+        _log_msg(f"[CADabra] ========================================")
+        _log_msg(f"[CADabra] Log saved to: {log_file}")
 
         # Return new CAD_MODEL with OCC shape (no STEP round-trip!)
         result = _make_cad_model(sewn_shape, cad_model)
@@ -672,7 +651,7 @@ class CADSewFaces:
         import sys
         import json
 
-        print(f"[CADabra Sew Parallel] Processing {len(cad_models)} models with {num_workers} workers, "
+        log.info(f"Sew Parallel: Processing {len(cad_models)} models with {num_workers} workers, "
               f"tolerance={tolerance}, timeout={timeout}s")
 
         # Create temp directory
@@ -684,7 +663,7 @@ class CADSewFaces:
         output_dir = folder_paths.get_output_directory()
         log_dir = os.path.join(output_dir, "cadabra_logs", f"sew_{datetime.now().strftime('%Y%m%d_%H%M%S')}")
         os.makedirs(log_dir, exist_ok=True)
-        print(f"[CADabra Sew Parallel] Logs: {log_dir}")
+        log.info(f"Sew Parallel: Logs: {log_dir}")
 
         # Path to the subprocess script
         script_path = os.path.join(os.path.dirname(__file__), "sew_subprocess.py")
@@ -694,19 +673,19 @@ class CADSewFaces:
         skipped = 0
 
         for idx, cm in enumerate(cad_models):
-            occ_shape = cm.get("occ_shape")
+            brep_path = cm.get("brep_path")
             file_path = cm.get("file_path", f"model_{idx}")
-            if occ_shape is None:
+            if brep_path is None:
                 skipped += 1
                 continue
 
-            input_brep = os.path.join(temp_dir, f"input_{idx}.brep")
+            # Use the existing brep_path as input
+            input_brep = brep_path
             output_brep = os.path.join(temp_dir, f"output_{idx}.brep")
             result_file = os.path.join(temp_dir, f"result_{idx}.json")
             # Get filename stem for log file
             filename_stem = os.path.splitext(os.path.basename(file_path))[0]
             log_file = os.path.join(log_dir, f"{filename_stem}.log")
-            breptools.Write(occ_shape, input_brep)
 
             work_items.append({
                 "idx": idx,
@@ -718,7 +697,7 @@ class CADSewFaces:
             })
 
         if skipped > 0:
-            print(f"[CADabra Sew Parallel] Warning: Skipped {skipped} models without OCC shape")
+            log.warning(f"Sew Parallel: Skipped {skipped} models without OCC shape")
 
         if len(work_items) == 0:
             raise ValueError("No valid CAD models to process")
@@ -798,22 +777,19 @@ class CADSewFaces:
                     failed += 1
                     err = result.get("error", "Unknown") if result else "No result"
                     msg = f"{filename}: FAILED ({elapsed_str}) - {err}"
-                    print(f"[CADabra Sew Parallel] {msg}")
+                    log.info(f"Sew Parallel: {msg}")
                     report_lines.append(msg)
                     if log_path:
-                        print(f"[CADabra Sew Parallel]   Log: {log_path}")
+                        log.info(f"Sew Parallel:   Log: {log_path}")
                     continue
 
                 output_brep = result.get("output_brep", work_items[i]["output_brep"])
                 if os.path.exists(output_brep):
-                    sewn_shape = TopoDS_Shape()
-                    builder = BRep_Builder()
-                    breptools.Read(sewn_shape, str(output_brep), builder)
-
+                    # Use the output BREP file directly as brep_path
                     original_cm = cad_models[work_items[i]["idx"]] if work_items[i]["idx"] < len(cad_models) else {}
                     cad_result = {
-                        "occ_shape": sewn_shape,
-                        "format": "occ",
+                        "brep_path": output_brep,
+                        "format": "brep",
                         "file_path": result["file_path"],
                     }
                     if "metadata" in original_cm:
@@ -833,7 +809,7 @@ class CADSewFaces:
                     msg = (f"{filename}: faces={faces_before}->{faces_after}, "
                            f"components={comp_before}->{comp_after}, "
                            f"free_edges={free_before}->{free_after} ({elapsed_str})")
-                    print(f"[CADabra Sew Parallel] {msg}")
+                    log.info(f"Sew Parallel: {msg}")
                     report_lines.append(msg)
 
                     # Print detailed timings if available
@@ -841,21 +817,21 @@ class CADSewFaces:
                     if timings:
                         perform_time = timings.get("perform_sew", 0)
                         total_time = timings.get("total", 0)
-                        print(f"[CADabra Sew Parallel]   sew={perform_time:.1f}s, total={total_time:.1f}s")
+                        log.info(f"Sew Parallel:   sew={perform_time:.1f}s, total={total_time:.1f}s")
 
                     # Print log path for slow operations
                     if elapsed_val > SLOW_THRESHOLD and log_path:
-                        print(f"[CADabra Sew Parallel]   Log: {log_path}")
+                        log.info(f"Sew Parallel:   Log: {log_path}")
                 else:
                     failed += 1
                     msg = f"{filename}: FAILED ({elapsed_str}) - output file missing"
-                    print(f"[CADabra Sew Parallel] {msg}")
+                    log.info(f"Sew Parallel: {msg}")
                     report_lines.append(msg)
                     if log_path:
-                        print(f"[CADabra Sew Parallel]   Log: {log_path}")
+                        log.info(f"Sew Parallel:   Log: {log_path}")
 
             summary = f"Completed: {len(sewn_models)} sewn, {failed} failed"
-            print(f"[CADabra Sew Parallel] {summary}")
+            log.info(f"Sew Parallel: {summary}")
             report_lines.append(summary)
 
         finally:
@@ -863,9 +839,9 @@ class CADSewFaces:
             import shutil
             try:
                 shutil.rmtree(temp_dir)
-                print(f"[CADabra Sew Parallel] Cleaned up temp dir")
+                log.info(f"Sew Parallel: Cleaned up temp dir")
             except Exception as e:
-                print(f"[CADabra Sew Parallel] Warning: Could not clean temp dir: {e}")
+                log.warning(f"Sew Parallel: Could not clean temp dir: {e}")
 
         report = "\n".join(report_lines)
         return (sewn_models, report)
@@ -913,7 +889,7 @@ class CADGetFilename:
             else:
                 filenames.append("unknown")
 
-        print(f"[CADabra] Extracted {len(filenames)} filename(s)")
+        log.info(f" Extracted {len(filenames)} filename(s)")
         return (filenames,)
 
 
@@ -951,7 +927,7 @@ class CADCheckOverlappingFaces:
         }
 
     RETURN_TYPES = ("CAD_MODEL", "INT", "STRING")
-    RETURN_NAMES = ("cad_model", "overlapping_count", "report")
+    RETURN_NAMES = ("cad_model", "overlapping_count", "info")
     FUNCTION = "check_overlapping"
     CATEGORY = "CADabra/Utility"
 
@@ -960,12 +936,9 @@ class CADCheckOverlappingFaces:
         import time
         from math import sqrt
 
-        if not HAS_OCC:
-            raise ImportError("pythonocc-core is required for CAD Check Overlapping Faces.")
-
         shape = _get_occ_shape(cad_model)
 
-        print(f"[CADabra] Checking for overlapping faces using method: {method}, tolerance: {tolerance}")
+        log.info(f" Checking for overlapping faces using method: {method}, tolerance: {tolerance}")
         t0 = time.time()
 
         if method == "bbox_centroid":
@@ -976,7 +949,7 @@ class CADCheckOverlappingFaces:
             overlaps = self._check_mesh_distance(shape, tolerance)
 
         elapsed = time.time() - t0
-        print(f"[CADabra] Overlap detection completed in {elapsed:.3f}s, found {len(overlaps)} overlapping pairs")
+        log.info(f" Overlap detection completed in {elapsed:.3f}s, found {len(overlaps)} overlapping pairs")
 
         # Build detailed report
         report = self._build_report(method, tolerance, overlaps, elapsed)
@@ -1018,7 +991,7 @@ class CADCheckOverlappingFaces:
             face_idx += 1
             explorer.Next()
 
-        print(f"[CADabra]   Collected {len(faces)} faces for comparison")
+        log.info(f"   Collected {len(faces)} faces for comparison")
 
         # Compare all pairs
         overlaps = []
@@ -1062,12 +1035,8 @@ class CADCheckOverlappingFaces:
 
     def _check_self_intersect(self, shape, tolerance):
         """Use OCCT's built-in self-intersection checker."""
-        try:
-            from OCC.Core.BOPAlgo import BOPAlgo_CheckerSI
-            from OCC.Core.TopTools import TopTools_ListOfShape
-        except ImportError:
-            print("[CADabra] Warning: BOPAlgo_CheckerSI not available, falling back to bbox_centroid")
-            return self._check_bbox_centroid(shape, tolerance)
+        from OCC.Core.BOPAlgo import BOPAlgo_CheckerSI
+        from OCC.Core.TopTools import TopTools_ListOfShape
 
         # First collect faces for indexing
         faces = []
@@ -1076,7 +1045,7 @@ class CADCheckOverlappingFaces:
             faces.append(topods.Face(explorer.Current()))
             explorer.Next()
 
-        print(f"[CADabra]   Running BOPAlgo_CheckerSI on {len(faces)} faces...")
+        log.info(f"   Running BOPAlgo_CheckerSI on {len(faces)} faces...")
 
         checker = BOPAlgo_CheckerSI()
         args = TopTools_ListOfShape()
@@ -1096,7 +1065,7 @@ class CADCheckOverlappingFaces:
             if ds is not None:
                 # Get number of interferences
                 n_interf = ds.NbInterfs()
-                print(f"[CADabra]   Found {n_interf} interferences")
+                log.info(f"   Found {n_interf} interferences")
 
                 # Iterate through shape indices to find face-face intersections
                 for i in range(ds.NbSourceShapes()):
@@ -1114,10 +1083,10 @@ class CADCheckOverlappingFaces:
                                         'method': 'self_intersect'
                                     })
         except Exception as e:
-            print(f"[CADabra]   Warning: Could not extract interference details: {e}")
+            log.warning(f" Could not extract interference details: {e}")
             # Fall back to simpler approach - just report that self-intersection was detected
             if checker.HasErrors():
-                print(f"[CADabra]   Checker reported errors (self-intersection likely)")
+                log.info(f"   Checker reported errors (self-intersection likely)")
                 overlaps.append({
                     'face1_idx': -1,
                     'face2_idx': -1,
@@ -1135,7 +1104,7 @@ class CADCheckOverlappingFaces:
         from OCC.Core.Bnd import Bnd_Box
 
         # First triangulate the shape
-        print(f"[CADabra]   Triangulating shape...")
+        log.info(f"   Triangulating shape...")
         mesh = BRepMesh_IncrementalMesh(shape, tolerance * 10)  # coarse mesh for speed
         mesh.Perform()
 
@@ -1153,7 +1122,7 @@ class CADCheckOverlappingFaces:
             })
             explorer.Next()
 
-        print(f"[CADabra]   Checking distances between {len(faces)} faces...")
+        log.info(f"   Checking distances between {len(faces)} faces...")
 
         overlaps = []
         comparisons = 0
@@ -1190,9 +1159,9 @@ class CADCheckOverlappingFaces:
 
             # Progress indicator for large models
             if (i + 1) % 100 == 0:
-                print(f"[CADabra]   Processed {i + 1}/{len(faces)} faces ({comparisons} precise comparisons)...")
+                log.info(f"   Processed {i + 1}/{len(faces)} faces ({comparisons} precise comparisons)...")
 
-        print(f"[CADabra]   Performed {comparisons} precise distance calculations")
+        log.info(f"   Performed {comparisons} precise distance calculations")
         return overlaps
 
     def _build_report(self, method, tolerance, overlaps, elapsed):
@@ -1246,7 +1215,7 @@ class CADSave:
     """
     Save a CAD model to file in various formats.
 
-    Supports STEP, IGES, and BREP formats. Files are saved to the ComfyUI
+    Supports STEP, IGES, BREP, and STL formats. Files are saved to the ComfyUI
     output directory with the specified filename.
     """
 
@@ -1261,9 +1230,18 @@ class CADSave:
                     "default": "output",
                     "tooltip": "Output filename (without extension)"
                 }),
-                "format": (["step", "iges", "brep"], {
+                "format": (["step", "iges", "brep", "stl"], {
                     "default": "step",
-                    "tooltip": "Output format: STEP (.stp), IGES (.igs), or BREP (.brep)"
+                    "tooltip": "Output format: STEP (.stp), IGES (.igs), BREP (.brep), or STL (.stl)"
+                }),
+            },
+            "optional": {
+                "stl_linear_deflection": ("FLOAT", {
+                    "default": 0.1,
+                    "min": 0.001,
+                    "max": 1.0,
+                    "step": 0.001,
+                    "tooltip": "Linear deflection for STL tessellation (lower = finer mesh)"
                 }),
             }
         }
@@ -1274,11 +1252,8 @@ class CADSave:
     CATEGORY = "CADabra/IO"
     OUTPUT_NODE = True
 
-    def save_cad(self, cad_model, filename, format):
+    def save_cad(self, cad_model, filename, format, stl_linear_deflection=0.1):
         """Save CAD model to file."""
-        if not HAS_OCC:
-            raise ImportError("pythonocc-core is required for CAD Save.")
-
         from OCC.Core.BRepTools import breptools
         from OCC.Core.STEPControl import STEPControl_Writer, STEPControl_AsIs
         from OCC.Core.IGESControl import IGESControl_Writer
@@ -1317,7 +1292,7 @@ class CADSave:
             if not success:
                 raise RuntimeError(f"Failed to write IGES file: {output_path}")
 
-        else:  # brep
+        elif format == "brep":
             ext = ".brep"
             output_path = os.path.join(cad_dir, f"{filename}{ext}")
 
@@ -1326,7 +1301,23 @@ class CADSave:
             if not success:
                 raise RuntimeError(f"Failed to write BREP file: {output_path}")
 
-        print(f"[CADabra] Saved CAD model to: {output_path}")
+        else:  # stl
+            ext = ".stl"
+            output_path = os.path.join(cad_dir, f"{filename}{ext}")
+
+            # STL requires tessellation first
+            from OCC.Core.BRepMesh import BRepMesh_IncrementalMesh
+            from OCC.Core.StlAPI import StlAPI_Writer
+
+            mesh = BRepMesh_IncrementalMesh(shape, stl_linear_deflection, False, 0.5)
+            mesh.Perform()
+
+            writer = StlAPI_Writer()
+            writer.SetASCIIMode(False)  # Binary STL
+            if not writer.Write(shape, output_path):
+                raise RuntimeError(f"Failed to write STL file: {output_path}")
+
+        log.info(f" Saved CAD model to: {output_path}")
 
         return (output_path,)
 
@@ -1351,16 +1342,13 @@ class CADSplitComponents:
         }
 
     RETURN_TYPES = ("CAD_MODEL", "INT", "STRING", "STRING")
-    RETURN_NAMES = ("components", "num_components", "face_counts", "report")
+    RETURN_NAMES = ("components", "num_components", "face_counts", "info")
     OUTPUT_IS_LIST = (True, False, False, False)
     FUNCTION = "split_components"
     CATEGORY = "CADabra/Utility"
 
     def split_components(self, cad_model):
         """Split CAD model into separate models per connected component."""
-        if not HAS_OCC:
-            raise ImportError("pythonocc-core is required for CAD Split Components.")
-
         shape = _get_occ_shape(cad_model)
 
         # Get all faces
@@ -1371,7 +1359,7 @@ class CADSplitComponents:
             explorer.Next()
 
         if len(faces) == 0:
-            print("[CADabra] No faces found in CAD model")
+            log.info(" No faces found in CAD model")
             return ([], 0, "")
 
         # Build adjacency using shared edges
@@ -1439,7 +1427,7 @@ class CADSplitComponents:
             face_counts.append(len(face_indices))
 
         face_counts_str = ", ".join(str(c) for c in face_counts)
-        print(f"[CADabra] Split into {len(components_face_indices)} components: [{face_counts_str}] faces")
+        log.info(f" Split into {len(components_face_indices)} components: [{face_counts_str}] faces")
 
         # Build detailed report
         report_lines = [
@@ -1556,7 +1544,7 @@ class CADHealShape:
         }
 
     RETURN_TYPES = ("CAD_MODEL", "STRING")
-    RETURN_NAMES = ("healed_models", "report")
+    RETURN_NAMES = ("healed_models", "info")
     OUTPUT_IS_LIST = (True, False)
     FUNCTION = "heal_shape"
     CATEGORY = "CADabra/Utility"
@@ -1639,12 +1627,7 @@ class CADHealShape:
         """
         Apply OCCT ShapeFix healing to the CAD model.
         """
-        if not HAS_OCC:
-            return (cad_model, "Error: pythonocc-core not available")
-
-        shape = cad_model.get("occ_shape") or cad_model.get("shape")
-        if shape is None:
-            return (cad_model, "Error: No shape in CAD model")
+        shape = _get_occ_shape(cad_model)
 
         report_lines = ["CAD Healing Report", "=" * 50]
 
@@ -1713,9 +1696,9 @@ class CADHealShape:
 
         # 4. Merge colinear edges (fixes fragmented IGES trim curves)
         if merge_colinear_edges:
-            try:
-                from OCC.Core.ShapeUpgrade import ShapeUpgrade_UnifySameDomain
+            from OCC.Core.ShapeUpgrade import ShapeUpgrade_UnifySameDomain
 
+            try:
                 # Count edges before
                 def count_edges(shp):
                     count = 0
@@ -1749,15 +1732,13 @@ class CADHealShape:
                 if unify_faces:
                     report_lines.append(f"  Unified faces: {faces_mid} -> {faces_after_merge} (merged {face_reduction})")
                 report_lines.append(f"  Tolerances: angular={angular_tolerance} rad, linear={linear_tolerance}")
-            except ImportError:
-                report_lines.append("Merge colinear edges: ShapeUpgrade not available")
             except Exception as e:
                 report_lines.append(f"Merge colinear edges error: {e}")
 
         # 5. Merge G2-continuous edges
-        print(f"[CADabra] merge_g2_edges={merge_g2_edges}, g2_tolerance={g2_tolerance}, preserve_quad_faces={preserve_quad_faces}")
+        log.info(f" merge_g2_edges={merge_g2_edges}, g2_tolerance={g2_tolerance}, preserve_quad_faces={preserve_quad_faces}")
         if merge_g2_edges:
-            print("[CADabra] Starting G2 edge merge...")
+            log.info(" Starting G2 edge merge...")
             try:
                 from OCC.Core.BRepAdaptor import BRepAdaptor_Curve
                 from OCC.Core.BRepLProp import BRepLProp_CLProps
@@ -1884,12 +1865,13 @@ class CADHealShape:
                         if builder.IsDone():
                             return builder.Edge()
                         return None
-                    except:
+                    except Exception as e:
+                        log.debug("G2 BSpline merge failed: %s", e)
                         return None
 
                 edges_before_g2 = count_edges_shape(result_shape)
                 total_faces = count_faces(result_shape)
-                print(f"[CADabra] G2 merge: scanning {total_faces} faces, {edges_before_g2} edges...")
+                log.info(f" G2 merge: scanning {total_faces} faces, {edges_before_g2} edges...")
                 reshaper = BRepTools_ReShape()
                 total_merged = 0
                 faces_processed = 0
@@ -1900,7 +1882,7 @@ class CADHealShape:
                 while face_explorer.More():
                     face_idx += 1
                     if face_idx % 100 == 0:
-                        print(f"[CADabra] G2 merge: face {face_idx}/{total_faces}, merged {total_merged} edges so far...")
+                        log.info(f" G2 merge: face {face_idx}/{total_faces}, merged {total_merged} edges so far...")
                     face = topods.Face(face_explorer.Current())
 
                     edge_count = 0
@@ -1937,19 +1919,18 @@ class CADHealShape:
 
                     face_explorer.Next()
 
-                print(f"[CADabra] G2 merge: applying changes...")
+                log.info(f" G2 merge: applying changes...")
                 result_shape = reshaper.Apply(result_shape)
                 edges_after_g2 = count_edges_shape(result_shape)
-                print(f"[CADabra] G2 merge done: {edges_before_g2} -> {edges_after_g2} edges")
+                log.info(f" G2 merge done: {edges_before_g2} -> {edges_after_g2} edges")
 
                 report_lines.append(f"Merge G2 edges: {edges_before_g2} -> {edges_after_g2} edges (merged {total_merged})")
                 report_lines.append(f"  Processed {faces_processed} faces, skipped {faces_skipped} quad faces")
                 report_lines.append(f"  G2 tolerance: {g2_tolerance}")
 
             except Exception as e:
-                import traceback
                 report_lines.append(f"Merge G2 edges error: {e}")
-                traceback.print_exc()
+                log.error("Failed to merge G2 edges during shape healing", exc_info=True)
 
         # Count faces after
         faces_after = count_faces(result_shape)
@@ -1957,13 +1938,11 @@ class CADHealShape:
         report_lines.append(f"Faces after: {faces_after}")
         report_lines.append(f"Total faces removed: {faces_before - faces_after}")
 
-        # Build output model
-        result_model = dict(cad_model)
-        result_model["occ_shape"] = result_shape
-        result_model["shape"] = result_shape  # Keep both for compatibility
+        # Build output model - save to brep file
+        result_model = _make_cad_model(result_shape, cad_model, "healed")
 
         report = "\n".join(report_lines)
-        print(f"[CADabra] heal_shape: before={faces_before}, after={faces_after}, removed={faces_before - faces_after}")
+        log.info(f" heal_shape: before={faces_before}, after={faces_after}, removed={faces_before - faces_after}")
 
         return (result_model, report)
 
@@ -1982,13 +1961,13 @@ class CADHealShape:
         import sys
         import json
 
-        print(f"[CADabra Heal Parallel] Processing {len(cad_models)} models with {num_workers} workers, timeout={timeout}s")
-        print(f"[CADabra Heal Parallel] Healing settings: precision={precision}, max_tolerance={max_tolerance}, "
+        log.info(f"Heal Parallel: Processing {len(cad_models)} models with {num_workers} workers, timeout={timeout}s")
+        log.info(f"Heal Parallel: Healing settings: precision={precision}, max_tolerance={max_tolerance}, "
               f"fix_small_faces={fix_small_faces} (precision={small_face_precision}), "
               f"fix_small_edges={fix_small_edges}, fix_wire_gaps={fix_wire_gaps}")
-        print(f"[CADabra Heal Parallel] Edge merging: merge_colinear={merge_colinear_edges}, unify_faces={unify_faces}, "
+        log.info(f"Heal Parallel: Edge merging: merge_colinear={merge_colinear_edges}, unify_faces={unify_faces}, "
               f"angular_tolerance={angular_tolerance}, linear_tolerance={linear_tolerance}")
-        print(f"[CADabra Heal Parallel] G2 merging: merge_g2={merge_g2_edges}, g2_tolerance={g2_tolerance}, "
+        log.info(f"Heal Parallel: G2 merging: merge_g2={merge_g2_edges}, g2_tolerance={g2_tolerance}, "
               f"preserve_quads={preserve_quad_faces}")
 
         # Create temp directory
@@ -2000,7 +1979,7 @@ class CADHealShape:
         output_dir = folder_paths.get_output_directory()
         log_dir = os.path.join(output_dir, "cadabra_logs", f"heal_{datetime.now().strftime('%Y%m%d_%H%M%S')}")
         os.makedirs(log_dir, exist_ok=True)
-        print(f"[CADabra Heal Parallel] Logs: {log_dir}")
+        log.info(f"Heal Parallel: Logs: {log_dir}")
 
         # Path to the subprocess script
         script_path = os.path.join(os.path.dirname(__file__), "heal_subprocess.py")
@@ -2010,19 +1989,19 @@ class CADHealShape:
         skipped = 0
 
         for idx, cm in enumerate(cad_models):
-            occ_shape = cm.get("occ_shape")
+            brep_path = cm.get("brep_path")
             file_path = cm.get("file_path", f"model_{idx}")
-            if occ_shape is None:
+            if brep_path is None:
                 skipped += 1
                 continue
 
-            input_brep = os.path.join(temp_dir, f"input_{idx}.brep")
+            # Use the existing brep_path as input
+            input_brep = brep_path
             output_brep = os.path.join(temp_dir, f"output_{idx}.brep")
             result_file = os.path.join(temp_dir, f"result_{idx}.json")
             # Get filename stem for log file
             filename_stem = os.path.splitext(os.path.basename(file_path))[0]
             log_file = os.path.join(log_dir, f"{filename_stem}.log")
-            breptools.Write(occ_shape, input_brep)
 
             work_items.append({
                 "idx": idx,
@@ -2034,7 +2013,7 @@ class CADHealShape:
             })
 
         if skipped > 0:
-            print(f"[CADabra Heal Parallel] Warning: Skipped {skipped} models without OCC shape")
+            log.warning(f"Heal Parallel: Skipped {skipped} models without OCC shape")
 
         if len(work_items) == 0:
             raise ValueError("No valid CAD models to process")
@@ -2126,22 +2105,19 @@ class CADHealShape:
                     failed += 1
                     err = result.get("error", "Unknown") if result else "No result"
                     msg = f"{filename}: FAILED ({elapsed_str}) - {err}"
-                    print(f"[CADabra Heal Parallel] {msg}")
+                    log.info(f"Heal Parallel: {msg}")
                     report_lines.append(msg)
                     if log_path:
-                        print(f"[CADabra Heal Parallel]   Log: {log_path}")
+                        log.info(f"Heal Parallel:   Log: {log_path}")
                     continue
 
                 output_brep = result.get("output_brep", work_items[i]["output_brep"])
                 if os.path.exists(output_brep):
-                    healed_shape = TopoDS_Shape()
-                    builder = BRep_Builder()
-                    breptools.Read(healed_shape, str(output_brep), builder)
-
+                    # Use the output BREP file directly as brep_path
                     original_cm = cad_models[work_items[i]["idx"]] if work_items[i]["idx"] < len(cad_models) else {}
                     cad_result = {
-                        "occ_shape": healed_shape,
-                        "format": "occ",
+                        "brep_path": output_brep,
+                        "format": "brep",
                         "file_path": result["file_path"],
                     }
                     if "metadata" in original_cm:
@@ -2157,28 +2133,28 @@ class CADHealShape:
 
                     msg = (f"{filename}: faces={faces_before}->{faces_after}, "
                            f"edges={edges_before}->{edges_after} ({elapsed_str})")
-                    print(f"[CADabra Heal Parallel] {msg}")
+                    log.info(f"Heal Parallel: {msg}")
                     report_lines.append(msg)
 
                     # Print detailed timings if available
                     timings = result.get("timings", {})
                     if timings:
                         total_time = timings.get("total", 0)
-                        print(f"[CADabra Heal Parallel]   total={total_time:.1f}s")
+                        log.info(f"Heal Parallel:   total={total_time:.1f}s")
 
                     # Print log path for slow operations
                     if elapsed_val > SLOW_THRESHOLD and log_path:
-                        print(f"[CADabra Heal Parallel]   Log: {log_path}")
+                        log.info(f"Heal Parallel:   Log: {log_path}")
                 else:
                     failed += 1
                     msg = f"{filename}: FAILED ({elapsed_str}) - output file missing"
-                    print(f"[CADabra Heal Parallel] {msg}")
+                    log.info(f"Heal Parallel: {msg}")
                     report_lines.append(msg)
                     if log_path:
-                        print(f"[CADabra Heal Parallel]   Log: {log_path}")
+                        log.info(f"Heal Parallel:   Log: {log_path}")
 
             summary = f"Completed: {len(healed_models)} healed, {failed} failed"
-            print(f"[CADabra Heal Parallel] {summary}")
+            log.info(f"Heal Parallel: {summary}")
             report_lines.append(summary)
 
         finally:
@@ -2186,9 +2162,9 @@ class CADHealShape:
             import shutil
             try:
                 shutil.rmtree(temp_dir)
-                print(f"[CADabra Heal Parallel] Cleaned up temp dir")
+                log.info(f"Heal Parallel: Cleaned up temp dir")
             except Exception as e:
-                print(f"[CADabra Heal Parallel] Warning: Could not clean temp dir: {e}")
+                log.warning(f"Heal Parallel: Could not clean temp dir: {e}")
 
         report = "\n".join(report_lines)
         return (healed_models, report)
@@ -2248,7 +2224,7 @@ class CADMergeVertices:
         tol = tolerance[0] if isinstance(tolerance, list) else tolerance
         min_comp_ratio = min_component_ratio[0] if isinstance(min_component_ratio, list) else min_component_ratio
 
-        print(f"[CADMergeVertices] Merging vertices with tolerance={tol}, min_component_ratio={min_comp_ratio}")
+        log.info(f"MergeVertices: Merging vertices with tolerance={tol}, min_component_ratio={min_comp_ratio}")
 
         results = []
         for i, mesh in enumerate(meshes):
@@ -2313,7 +2289,7 @@ class CADMergeVertices:
                 new_mesh.update_faces(degenerate_mask)
                 if cad_face_ids is not None:
                     cad_face_ids = cad_face_ids[degenerate_mask]
-                print(f"[CADMergeVertices] {mesh_name}: removed {num_degenerate} degenerate faces")
+                log.info(f"MergeVertices: {mesh_name}: removed {num_degenerate} degenerate faces")
 
             # Remove duplicate faces created by vertex merging
             unique_mask = new_mesh.unique_faces()
@@ -2322,7 +2298,7 @@ class CADMergeVertices:
                 new_mesh.update_faces(unique_mask)
                 if cad_face_ids is not None:
                     cad_face_ids = cad_face_ids[unique_mask]
-                print(f"[CADMergeVertices] {mesh_name}: removed {num_duplicates} duplicate faces")
+                log.info(f"MergeVertices: {mesh_name}: removed {num_duplicates} duplicate faces")
 
             # Filter small disconnected components (if enabled)
             if min_comp_ratio > 0 and len(new_mesh.faces) > 0:
@@ -2358,7 +2334,7 @@ class CADMergeVertices:
                         new_mesh.update_faces(keep_mask)
                         if cad_face_ids is not None:
                             cad_face_ids = cad_face_ids[keep_mask]
-                        print(f"[CADMergeVertices] {mesh_name}: removed {removed_comps} small components "
+                        log.info(f"MergeVertices: {mesh_name}: removed {removed_comps} small components "
                               f"(kept {kept_comps} components, {keep_mask.sum()} faces)")
 
             # Store filtered cad_face_ids
@@ -2373,7 +2349,7 @@ class CADMergeVertices:
                         new_mesh.metadata[key] = value
 
             verts_after = cleaned.n_points
-            print(f"[CADMergeVertices] {mesh_name}: {verts_before} -> {verts_after} vertices "
+            log.info(f"MergeVertices: {mesh_name}: {verts_before} -> {verts_after} vertices "
                   f"(merged {verts_before - verts_after})")
 
             results.append(new_mesh)
@@ -2516,7 +2492,7 @@ class CADFixDegenerateFaces:
         }
 
     RETURN_TYPES = ("CAD_MODEL", "STRING")
-    RETURN_NAMES = ("cad_model", "report")
+    RETURN_NAMES = ("cad_model", "info")
     OUTPUT_IS_LIST = (True, False)
     FUNCTION = "fix_degenerate_faces"
     CATEGORY = "CADabra/Utility"
@@ -2541,9 +2517,6 @@ class CADFixDegenerateFaces:
 
     def _fix_sequential(self, cad_models, iterations, max_degree, sew_tolerance):
         """Process all CAD models, replacing degenerate faces."""
-        if not HAS_OCC:
-            raise ImportError("pythonocc-core is required. Install with: conda install -c conda-forge pythonocc-core")
-
         from OCC.Core.BRep import BRep_Tool
 
         # Handle batch input and list params
@@ -2592,7 +2565,7 @@ class CADFixDegenerateFaces:
 
             # If no degenerate faces, pass through unchanged
             if len(degen_faces) == 0:
-                print(f"[CADFixDegenerateFaces] {file_name}: No degenerate faces found")
+                log.info(f"FixDegenerateFaces: {file_name}: No degenerate faces found")
                 table_data.append((file_name, total_faces, 0, 0, 0))
                 results.append(cm)
                 continue
@@ -2611,7 +2584,7 @@ class CADFixDegenerateFaces:
                     # Keep original face if replacement fails
                     replacement_faces.append(degen_face)
                     failed_count += 1
-                    print(f"[CADFixDegenerateFaces] {file_name}: Failed to fix face: {status}")
+                    log.info(f"FixDegenerateFaces: {file_name}: Failed to fix face: {status}")
 
             # Rebuild shape with replaced faces
             all_result_faces = normal_faces + replacement_faces
@@ -2627,7 +2600,7 @@ class CADFixDegenerateFaces:
             result_cm = _make_cad_model(result_shape, cm)
             results.append(result_cm)
 
-            print(f"[CADFixDegenerateFaces] {file_name}: {len(degen_faces)} degenerate -> "
+            log.info(f"FixDegenerateFaces: {file_name}: {len(degen_faces)} degenerate -> "
                   f"{fixed_count} fixed, {failed_count} failed")
             table_data.append((file_name, total_faces, len(degen_faces), fixed_count, failed_count))
 
@@ -2643,7 +2616,7 @@ class CADFixDegenerateFaces:
             )
 
         report = "\n".join(report_lines)
-        print(f"[CADFixDegenerateFaces] Processed {len(cad_models)} model(s)")
+        log.info(f"FixDegenerateFaces: Processed {len(cad_models)} model(s)")
 
         return (results, report)
 
@@ -2659,8 +2632,8 @@ class CADFixDegenerateFaces:
         import json
         import sys
 
-        print(f"[CADFixDegenerateFaces Parallel] Processing {len(cad_models)} models with {num_workers} workers, timeout={timeout}s")
-        print(f"[CADFixDegenerateFaces Parallel] Settings: iterations={iterations}, max_degree={max_degree}, sew_tolerance={sew_tolerance}")
+        log.info(f"FixDegenerateFaces Parallel: Processing {len(cad_models)} models with {num_workers} workers, timeout={timeout}s")
+        log.info(f"FixDegenerateFaces Parallel: Settings: iterations={iterations}, max_degree={max_degree}, sew_tolerance={sew_tolerance}")
 
         # Create temp directory
         temp_dir = tempfile.mkdtemp(prefix="cadabra_fixdegen_sub_")
@@ -2671,7 +2644,7 @@ class CADFixDegenerateFaces:
         output_dir = folder_paths.get_output_directory()
         log_dir = os.path.join(output_dir, "cadabra_logs", f"fixdegen_{datetime.now().strftime('%Y%m%d_%H%M%S')}")
         os.makedirs(log_dir, exist_ok=True)
-        print(f"[CADFixDegenerateFaces Parallel] Logs: {log_dir}")
+        log.info(f"FixDegenerateFaces Parallel: Logs: {log_dir}")
 
         # Path to the subprocess script
         script_path = os.path.join(os.path.dirname(__file__), "fix_degen_subprocess.py")
@@ -2681,18 +2654,18 @@ class CADFixDegenerateFaces:
         skipped = 0
 
         for idx, cm in enumerate(cad_models):
-            occ_shape = cm.get("occ_shape")
+            brep_path = cm.get("brep_path")
             file_path = cm.get("file_path", f"model_{idx}")
-            if occ_shape is None:
+            if brep_path is None:
                 skipped += 1
                 continue
 
-            input_brep = os.path.join(temp_dir, f"input_{idx}.brep")
+            # Use the existing brep_path as input
+            input_brep = brep_path
             output_brep = os.path.join(temp_dir, f"output_{idx}.brep")
             result_file = os.path.join(temp_dir, f"result_{idx}.json")
             filename_stem = os.path.splitext(os.path.basename(file_path))[0]
             log_file = os.path.join(log_dir, f"{filename_stem}.log")
-            breptools.Write(occ_shape, input_brep)
 
             work_items.append({
                 "idx": idx,
@@ -2704,7 +2677,7 @@ class CADFixDegenerateFaces:
             })
 
         if skipped > 0:
-            print(f"[CADFixDegenerateFaces Parallel] Warning: Skipped {skipped} models without OCC shape")
+            log.warning(f"FixDegenerateFaces Parallel: Skipped {skipped} models without OCC shape")
 
         if len(work_items) == 0:
             raise ValueError("No valid CAD models to process")
@@ -2783,22 +2756,19 @@ class CADFixDegenerateFaces:
                 if result is None or not result.get("success", False):
                     failed += 1
                     err = result.get("error", "Unknown") if result else "No result"
-                    print(f"[CADFixDegenerateFaces Parallel] {filename}: FAILED ({elapsed_str}) - {err}")
+                    log.info(f"FixDegenerateFaces Parallel: {filename}: FAILED ({elapsed_str}) - {err}")
                     if log_path:
-                        print(f"[CADFixDegenerateFaces Parallel]   Log: {log_path}")
+                        log.info(f"FixDegenerateFaces Parallel:   Log: {log_path}")
                     table_data.append((filename_stem, "?", "?", 0, 1))
                     continue
 
                 output_brep = result.get("output_brep", work_items[i]["output_brep"])
                 if os.path.exists(output_brep):
-                    fixed_shape = TopoDS_Shape()
-                    builder = BRep_Builder()
-                    breptools.Read(fixed_shape, str(output_brep), builder)
-
+                    # Use the output BREP file directly as brep_path
                     original_cm = cad_models[work_items[i]["idx"]] if work_items[i]["idx"] < len(cad_models) else {}
                     cad_result = {
-                        "occ_shape": fixed_shape,
-                        "format": "occ",
+                        "brep_path": output_brep,
+                        "format": "brep",
                         "file_path": result["file_path"],
                     }
                     if "metadata" in original_cm:
@@ -2811,19 +2781,19 @@ class CADFixDegenerateFaces:
                     fixed_count = result.get("fixed", 0)
                     failed_count = result.get("failed", 0)
 
-                    print(f"[CADFixDegenerateFaces Parallel] {filename}: "
+                    log.info(f"FixDegenerateFaces Parallel: {filename}: "
                           f"degen={degen_before}, fixed={fixed_count}, failed={failed_count} ({elapsed_str})")
 
                     if elapsed_val > SLOW_THRESHOLD and log_path:
-                        print(f"[CADFixDegenerateFaces Parallel]   Log: {log_path}")
+                        log.info(f"FixDegenerateFaces Parallel:   Log: {log_path}")
 
                     table_data.append((filename_stem, faces_before, degen_before, fixed_count, failed_count))
                 else:
                     failed += 1
-                    print(f"[CADFixDegenerateFaces Parallel] {filename}: FAILED ({elapsed_str}) - output file missing")
+                    log.info(f"FixDegenerateFaces Parallel: {filename}: FAILED ({elapsed_str}) - output file missing")
                     table_data.append((filename_stem, "?", "?", 0, 1))
 
-            print(f"[CADFixDegenerateFaces Parallel] Completed: {len(fixed_models)} fixed, {failed} failed")
+            log.info(f"FixDegenerateFaces Parallel: Completed: {len(fixed_models)} fixed, {failed} failed")
 
             # Create report
             name_width = max(len("Model"), max(len(str(d[0])) for d in table_data)) if table_data else 5
@@ -2841,9 +2811,9 @@ class CADFixDegenerateFaces:
             import shutil
             try:
                 shutil.rmtree(temp_dir)
-                print(f"[CADFixDegenerateFaces Parallel] Cleaned up temp dir")
+                log.info(f"FixDegenerateFaces Parallel: Cleaned up temp dir")
             except Exception as e:
-                print(f"[CADFixDegenerateFaces Parallel] Warning: Could not clean temp dir: {e}")
+                log.warning(f"FixDegenerateFaces Parallel: Could not clean temp dir: {e}")
 
         return (fixed_models, report)
 

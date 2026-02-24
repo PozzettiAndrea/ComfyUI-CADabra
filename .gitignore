@@ -40,3 +40,13 @@ htmlcov/
 
 # Build artifacts
 _micromamba/
+.pixi/
+pixi.toml
+pixi.lock
+_env_*
+
+# Runtime-generated web directory (copied from comfy-3d-viewers at startup)
+web/
+
+# comfy-test output
+.comfy-test-logs/

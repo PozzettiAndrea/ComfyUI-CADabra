@@ -18,11 +18,14 @@ Exit codes:
     1 - Error (details in stderr or result file)
 """
 
+import logging
 import sys
 import argparse
 import json
 import numpy as np
 from collections import defaultdict
+
+log = logging.getLogger("cadabra")
 
 
 def filter_small_components(vertices, faces, cad_face_ids, min_ratio):
@@ -165,10 +168,10 @@ def main():
             json.dump(result, f)
 
     if result['success']:
-        print(f"OK: {result.get('num_vertices', '?')} vertices, {result.get('num_faces', '?')} triangles")
+        log.info(f"OK: {result.get('num_vertices', '?')} vertices, {result.get('num_faces', '?')} triangles")
         sys.exit(0)
     else:
-        print(f"ERROR: {result['error']}", file=sys.stderr)
+        log.error(f"{result['error']}")
         sys.exit(1)
 
 
@@ -246,7 +249,7 @@ def mesh_brep(input_path, output_path, linear_deflection, angular_deflection, me
                 all_verts, all_faces, cad_face_ids if extract_face_ids else None, min_component_ratio
             )
             if num_removed > 0:
-                print(f"[mesh_subprocess] Removed {num_removed} small disconnected components")
+                log.info(f" Removed {num_removed} small disconnected components")
 
         # Write output JSON
         mesh_data = {

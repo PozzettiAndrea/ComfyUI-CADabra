@@ -13,11 +13,14 @@ Exit codes:
     1 - Error (details in stderr or result file)
 """
 
+import logging
 import sys
 import argparse
 import json
 import os
 import time
+
+log = logging.getLogger("cadabra")
 
 
 def count_connected_components(shape):
@@ -142,12 +145,12 @@ def main():
         log_handle = open(args.log_file, 'w')
         sys.stdout = log_handle
         sys.stderr = log_handle
-        print(f"[CADabra Sew Subprocess]")
-        print(f"Input: {args.input_brep}")
-        print(f"Output: {args.output_brep}")
-        print(f"Tolerance: {args.tolerance}")
-        print(f"Started: {time.strftime('%Y-%m-%d %H:%M:%S')}")
-        print("=" * 60)
+        log.info(f"[CADabra Sew Subprocess]")
+        log.info(f"Input: {args.input_brep}")
+        log.info(f"Output: {args.output_brep}")
+        log.info(f"Tolerance: {args.tolerance}")
+        log.info(f"Started: {time.strftime('%Y-%m-%d %H:%M:%S')}")
+        log.info("=" * 60)
         sys.stdout.flush()
 
     try:
@@ -159,18 +162,18 @@ def main():
 
         # Write final status to log
         if log_handle:
-            print("=" * 60)
+            log.info("=" * 60)
             if result['success']:
-                print(f"SUCCESS: {result['faces_before']}->{result['faces_after']} faces, "
+                log.info(f"SUCCESS: {result['faces_before']}->{result['faces_after']} faces, "
                       f"components: {result.get('components_before', '?')}->{result.get('components_after', '?')}, "
                       f"free_edges: {result.get('free_edges_before', '?')}->{result['diagnostics']['free_edges']}")
                 if 'timings' in result:
-                    print("\nTimings:")
+                    log.info("\nTimings:")
                     for step, duration in result['timings'].items():
-                        print(f"  {step}: {duration:.3f}s")
+                        log.info(f"  {step}: {duration:.3f}s")
             else:
-                print(f"FAILED: {result['error']}")
-            print(f"Finished: {time.strftime('%Y-%m-%d %H:%M:%S')}")
+                log.info(f"FAILED: {result['error']}")
+            log.info(f"Finished: {time.strftime('%Y-%m-%d %H:%M:%S')}")
             sys.stdout.flush()
 
         # Restore stdout/stderr
@@ -181,17 +184,17 @@ def main():
 
         if result['success']:
             # Print summary to stdout
-            print(f"OK: {result['faces_before']}->{result['faces_after']} faces, "
+            log.info(f"OK: {result['faces_before']}->{result['faces_after']} faces, "
                   f"components={result.get('components_before', '?')}->{result.get('components_after', '?')}, "
                   f"free_edges={result.get('free_edges_before', '?')}->{result['diagnostics']['free_edges']}")
             sys.exit(0)
         else:
-            print(f"ERROR: {result['error']}", file=sys.stderr)
+            log.info(f"ERROR: {result['error']}", file=sys.stderr)
             sys.exit(1)
 
     except Exception as e:
         if log_handle:
-            print(f"\nEXCEPTION: {e}")
+            log.info(f"\nEXCEPTION: {e}")
             import traceback
             traceback.print_exc()
             sys.stdout = original_stdout
@@ -204,7 +207,7 @@ def sew_brep(input_path, output_path, tolerance):
     """Perform sewing on BREP file with detailed timing."""
     timings = {}
 
-    print(f"\n[Sewing CAD file: {os.path.basename(input_path)}]")
+    log.info(f"\n[Sewing CAD file: {os.path.basename(input_path)}]")
     sys.stdout.flush()
 
     try:
@@ -216,17 +219,17 @@ def sew_brep(input_path, output_path, tolerance):
         from OCC.Core.BRep import BRep_Builder
 
         # --- Read input BREP ---
-        print(f"Reading BREP file...")
+        log.info(f"Reading BREP file...")
         sys.stdout.flush()
         t0 = time.time()
         shape = TopoDS_Shape()
         builder = BRep_Builder()
         breptools.Read(shape, str(input_path), builder)
         timings['read_brep'] = time.time() - t0
-        print(f"[TIMING] read_brep: {timings['read_brep']:.3f}s")
+        log.info(f"[TIMING] read_brep: {timings['read_brep']:.3f}s")
 
         # --- Count faces before ---
-        print(f"Counting faces before sewing...")
+        log.info(f"Counting faces before sewing...")
         t0 = time.time()
         face_count_before = 0
         explorer = TopExp_Explorer(shape, TopAbs_FACE)
@@ -234,26 +237,26 @@ def sew_brep(input_path, output_path, tolerance):
             face_count_before += 1
             explorer.Next()
         timings['count_faces_before'] = time.time() - t0
-        print(f"[TIMING] count_faces_before: {timings['count_faces_before']:.3f}s ({face_count_before} faces)")
+        log.info(f"[TIMING] count_faces_before: {timings['count_faces_before']:.3f}s ({face_count_before} faces)")
 
         # --- Count connected components before ---
-        print(f"Counting connected components before sewing...")
+        log.info(f"Counting connected components before sewing...")
         sys.stdout.flush()
         t0 = time.time()
         components_before = count_connected_components(shape)
         timings['count_components_before'] = time.time() - t0
-        print(f"[TIMING] count_components_before: {timings['count_components_before']:.3f}s ({components_before} components)")
+        log.info(f"[TIMING] count_components_before: {timings['count_components_before']:.3f}s ({components_before} components)")
 
         # --- Count free edges before ---
-        print(f"Counting free edges before sewing...")
+        log.info(f"Counting free edges before sewing...")
         sys.stdout.flush()
         t0 = time.time()
         free_edges_before = count_free_edges(shape)
         timings['count_free_edges_before'] = time.time() - t0
-        print(f"[TIMING] count_free_edges_before: {timings['count_free_edges_before']:.3f}s ({free_edges_before} free edges)")
+        log.info(f"[TIMING] count_free_edges_before: {timings['count_free_edges_before']:.3f}s ({free_edges_before} free edges)")
 
         # --- Initialize and add faces to sewer ---
-        print(f"Adding {face_count_before} faces to sewer...")
+        log.info(f"Adding {face_count_before} faces to sewer...")
         sys.stdout.flush()
         t0 = time.time()
         sewer = BRepBuilderAPI_Sewing(tolerance)
@@ -263,15 +266,15 @@ def sew_brep(input_path, output_path, tolerance):
             sewer.Add(face)
             explorer.Next()
         timings['add_faces'] = time.time() - t0
-        print(f"[TIMING] add_faces: {timings['add_faces']:.3f}s")
+        log.info(f"[TIMING] add_faces: {timings['add_faces']:.3f}s")
 
         # --- Perform sewing (main operation) ---
-        print(f"Performing sewing (tolerance={tolerance})...")
+        log.info(f"Performing sewing (tolerance={tolerance})...")
         sys.stdout.flush()
         t0 = time.time()
         sewer.Perform()
         timings['perform_sew'] = time.time() - t0
-        print(f"[TIMING] perform_sew: {timings['perform_sew']:.3f}s")
+        log.info(f"[TIMING] perform_sew: {timings['perform_sew']:.3f}s")
 
         # --- Get sewing diagnostics ---
         t0 = time.time()
@@ -282,8 +285,8 @@ def sew_brep(input_path, output_path, tolerance):
             "deleted_faces": sewer.NbDeletedFaces(),
         }
         timings['get_diagnostics'] = time.time() - t0
-        print(f"[TIMING] get_diagnostics: {timings['get_diagnostics']:.3f}s")
-        print(f"Sewer diagnostics: free_edges={diagnostics['free_edges']}, "
+        log.info(f"[TIMING] get_diagnostics: {timings['get_diagnostics']:.3f}s")
+        log.info(f"Sewer diagnostics: free_edges={diagnostics['free_edges']}, "
               f"multiple_edges={diagnostics['multiple_edges']}, "
               f"degenerated={diagnostics['degenerated']}, "
               f"deleted_faces={diagnostics['deleted_faces']}")
@@ -291,7 +294,7 @@ def sew_brep(input_path, output_path, tolerance):
         sewn_shape = sewer.SewedShape()
 
         # --- Count faces after ---
-        print(f"Counting faces after sewing...")
+        log.info(f"Counting faces after sewing...")
         t0 = time.time()
         face_count_after = 0
         explorer = TopExp_Explorer(sewn_shape, TopAbs_FACE)
@@ -299,34 +302,34 @@ def sew_brep(input_path, output_path, tolerance):
             face_count_after += 1
             explorer.Next()
         timings['count_faces_after'] = time.time() - t0
-        print(f"[TIMING] count_faces_after: {timings['count_faces_after']:.3f}s ({face_count_after} faces)")
+        log.info(f"[TIMING] count_faces_after: {timings['count_faces_after']:.3f}s ({face_count_after} faces)")
 
         # --- Count connected components after ---
-        print(f"Counting connected components after sewing...")
+        log.info(f"Counting connected components after sewing...")
         sys.stdout.flush()
         t0 = time.time()
         components_after = count_connected_components(sewn_shape)
         timings['count_components_after'] = time.time() - t0
-        print(f"[TIMING] count_components_after: {timings['count_components_after']:.3f}s ({components_after} components)")
+        log.info(f"[TIMING] count_components_after: {timings['count_components_after']:.3f}s ({components_after} components)")
 
         # --- Write output ---
-        print(f"Writing output BREP...")
+        log.info(f"Writing output BREP...")
         sys.stdout.flush()
         t0 = time.time()
         breptools.Write(sewn_shape, str(output_path))
         timings['write_brep'] = time.time() - t0
-        print(f"[TIMING] write_brep: {timings['write_brep']:.3f}s")
+        log.info(f"[TIMING] write_brep: {timings['write_brep']:.3f}s")
 
         # --- Calculate total ---
         total = sum(timings.values())
         timings['total'] = total
 
         # --- Summary ---
-        print(f"\n[Summary]")
-        print(f"  Faces: {face_count_before} -> {face_count_after}")
-        print(f"  Components: {components_before} -> {components_after}")
-        print(f"  Free edges: {free_edges_before} -> {diagnostics['free_edges']}")
-        print(f"  Total time: {total:.3f}s")
+        log.info(f"\n[Summary]")
+        log.info(f"  Faces: {face_count_before} -> {face_count_after}")
+        log.info(f"  Components: {components_before} -> {components_after}")
+        log.info(f"  Free edges: {free_edges_before} -> {diagnostics['free_edges']}")
+        log.info(f"  Total time: {total:.3f}s")
 
         return {
             "success": True,
@@ -340,7 +343,7 @@ def sew_brep(input_path, output_path, tolerance):
         }
 
     except Exception as e:
-        print(f"\n[ERROR] {str(e)}")
+        log.info(f"\n[ERROR] {str(e)}")
         import traceback
         traceback.print_exc()
         return {

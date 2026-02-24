@@ -2,11 +2,14 @@
 CAD ROI Selector Node
 Interactive node for selecting a Region of Interest on a CAD model.
 """
+from __future__ import annotations
 
+import logging
 import os
 import numpy as np
 import folder_paths
 
+log = logging.getLogger("cadabra")
 from OCC.Core.BRepMesh import BRepMesh_IncrementalMesh
 from OCC.Core.TopExp import TopExp_Explorer
 from OCC.Core.TopAbs import TopAbs_FACE
@@ -14,9 +17,8 @@ from OCC.Core.BRep import BRep_Tool
 from OCC.Core.TopLoc import TopLoc_Location
 from OCC.Core.Bnd import Bnd_Box
 from OCC.Core.BRepBndLib import brepbndlib
-
 from .cad_common import get_occ_shape
-from ..utils.occ_logging import log_operation
+from .utils.occ_logging import log_operation
 
 
 def generate_face_colors(num_faces, seed=42):
@@ -49,6 +51,7 @@ def generate_face_colors(num_faces, seed=42):
     rng.shuffle(colors)
 
     return colors
+
 
 
 class CADROISelector:
@@ -92,7 +95,7 @@ class CADROISelector:
     OUTPUT_NODE = True
 
     def select_roi(self, cad_model, linear_deflection, angular_deflection, roi_value=""):
-        print(f"[CADabra ROI] select_roi called with roi_value='{roi_value}'")
+        log.info(f"select_roi called with roi_value='{roi_value}'")
         shape = get_occ_shape(cad_model)
 
         # Get bounding box
@@ -188,7 +191,7 @@ class CADROISelector:
         mesh_vertex_count = len(vertices_array)
         mesh_face_count = len(faces_array)
 
-        print(f"[CADabra] ROI Selector: {mesh_vertex_count} vertices, {mesh_face_count} triangles, {face_count} CAD faces")
+        log.info(f"ROI Selector: {mesh_vertex_count} vertices, {mesh_face_count} triangles, {face_count} CAD faces")
 
         # Export to GLB for viewer (with vertex colors)
         glb_filename = f"roi_selector_{id(cad_model)}.glb"
@@ -197,7 +200,7 @@ class CADROISelector:
         self._export_glb_with_colors(vertices_array, faces_array, colors_array, glb_filepath)
 
         file_size_kb = os.path.getsize(glb_filepath) / 1024
-        print(f"[CADabra] ROI Selector mesh exported: {glb_filename} ({file_size_kb:.1f} KB)")
+        log.info(f"ROI Selector mesh exported: {glb_filename} ({file_size_kb:.1f} KB)")
 
         # Build UI data
         ui_data = {
@@ -211,7 +214,7 @@ class CADROISelector:
             "triangle_face_ids": [triangle_face_ids],  # Map triangle index -> CAD face ID
         }
 
-        print(f"[CADabra ROI] Returning roi_value='{roi_value}'")
+        log.info(f"Returning roi_value='{roi_value}'")
 
         return {"ui": ui_data, "result": (roi_value,)}
 

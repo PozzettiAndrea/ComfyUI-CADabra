@@ -1,0 +1,24 @@
+python = "3.12"  # Required by OCC
+
+[workspace]
+channels = ["cadquery", "conda-forge", "pozzettiandrea"]
+
+[dependencies]
+pythonocc-core = "7.8.1"
+cadquery = "2.6.1"
+occt-rt = ">=1.1.0"
+sqlite = "*"
+
+[target.linux-64.dependencies]
+libstdcxx-ng = ">=12.0"
+
+[pypi-dependencies]
+gmsh = ">=4.11.0"
+trimesh = ">=3.20.0"
+pygltflib = ">=1.15.0"
+open3d = ">=0.17.0"
+pyvista = ">=0.43.0"
+scipy = ">=1.11.0"
+scikit-learn = ">=1.3.0"
+scikit-image = ">=0.21.0"
+pyransac3d = ">=0.5.0"

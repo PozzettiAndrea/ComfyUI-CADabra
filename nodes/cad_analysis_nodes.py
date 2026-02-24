@@ -1,17 +1,15 @@
-"""
-CAD Analysis nodes for ComfyUI-CADabra
-Unified face analysis with B-rep inspection, topology diagnostics, and sewing complexity.
-"""
+from __future__ import annotations
 
 import json
+import logging
 import os
 import time
 import folder_paths
 
-from ..utils.occ_logging import log_operation
-
-# OCC imports for direct analysis
+from .utils.occ_logging import log_operation
 from OCC.Core.TopExp import TopExp_Explorer, topexp
+
+log = logging.getLogger("cadabra")
 from OCC.Core.TopAbs import TopAbs_FACE, TopAbs_EDGE, TopAbs_SOLID, TopAbs_WIRE, TopAbs_VERTEX
 from OCC.Core.TopTools import TopTools_IndexedMapOfShape
 from OCC.Core.TopoDS import topods
@@ -30,28 +28,27 @@ from OCC.Core.gp import gp_Pnt, gp_Vec
 from OCC.Core.BRepMesh import BRepMesh_IncrementalMesh
 from OCC.Core.TopLoc import TopLoc_Location
 from OCC.Core.BRep import BRep_Tool
+import vtk
 
-# VTK for mesh export
-try:
-    import vtk
-    HAS_VTK = True
-except ImportError:
-    HAS_VTK = False
-    print("[CADabra] Warning: VTK not available. CADFaceAnalysis will use JSON mesh export.")
-
-# Surface type names for OCC
-OCC_SURFACE_TYPE_NAMES = {
-    GeomAbs_Plane: "Plane",
-    GeomAbs_Cylinder: "Cylinder",
-    GeomAbs_Cone: "Cone",
-    GeomAbs_Sphere: "Sphere",
-    GeomAbs_Torus: "Torus",
-    GeomAbs_BezierSurface: "Bezier",
-    GeomAbs_BSplineSurface: "BSpline",
-    GeomAbs_SurfaceOfRevolution: "Revolution",
-    GeomAbs_SurfaceOfExtrusion: "Extrusion",
-    GeomAbs_OtherSurface: "Other",
-}
+def _get_surface_type_names():
+    """Get surface type names dict - called at runtime when OCC is available."""
+    from OCC.Core.GeomAbs import (
+        GeomAbs_Plane, GeomAbs_Cylinder, GeomAbs_Cone, GeomAbs_Sphere,
+        GeomAbs_Torus, GeomAbs_BezierSurface, GeomAbs_BSplineSurface,
+        GeomAbs_SurfaceOfRevolution, GeomAbs_SurfaceOfExtrusion, GeomAbs_OtherSurface
+    )
+    return {
+        GeomAbs_Plane: "Plane",
+        GeomAbs_Cylinder: "Cylinder",
+        GeomAbs_Cone: "Cone",
+        GeomAbs_Sphere: "Sphere",
+        GeomAbs_Torus: "Torus",
+        GeomAbs_BezierSurface: "Bezier",
+        GeomAbs_BSplineSurface: "BSpline",
+        GeomAbs_SurfaceOfRevolution: "Revolution",
+        GeomAbs_SurfaceOfExtrusion: "Extrusion",
+        GeomAbs_OtherSurface: "Other",
+    }
 
 
 class CADFaceAnalysis:
@@ -100,7 +97,7 @@ class CADFaceAnalysis:
         }
 
     RETURN_TYPES = ("CAD_MODEL", "STRING", "STRING", "STRING", "STRING", "STRING")
-    RETURN_NAMES = ("cad_model", "vtp_filepath", "json_filepath", "report", "top_30_by_edges", "top_30_smallest_area")
+    RETURN_NAMES = ("cad_model", "vtp_filepath", "json_filepath", "info", "top_30_by_edges", "top_30_smallest_area")
     OUTPUT_NODE = True
     FUNCTION = "analyze_cad"
     CATEGORY = "CADabra/Analysis"
@@ -145,7 +142,7 @@ class CADFaceAnalysis:
             file_path = cm.get("file_path", f"model_{model_idx}")
             filename = os.path.basename(file_path)
 
-            print(f"[CADabra] Analyzing model {model_idx + 1}/{len(cad_models)}: {filename}")
+            log.info(f"Analyzing model {model_idx + 1}/{len(cad_models)}: {filename}")
 
             vtp_path, json_path, report, top_30_edges, top_30_smallest = self._analyze_single(
                 cm, linear_deflection_val, angular_deflection_val, tolerance_val, extract_control_points_val, filename
@@ -166,10 +163,12 @@ class CADFaceAnalysis:
         """
         Analyze a single CAD model and return results.
         """
-        # Get OCC shape
-        occ_shape = cad_model.get("occ_shape") or cad_model.get("shape")
-        if occ_shape is None:
-            raise RuntimeError(f"CAD model has no OCC shape: {filename}")
+        # Get OCC shape from brep_path
+        try:
+            from .utils.brep_cache import get_occ_shape
+        except ImportError:
+            from .utils.brep_cache import get_occ_shape
+        occ_shape = get_occ_shape(cad_model)
 
         output_dir = folder_paths.get_output_directory()
         timestamp = int(time.time() * 1000)
@@ -195,7 +194,7 @@ class CADFaceAnalysis:
         bounds_max = [xmax, ymax, zmax]
         extents = [xmax - xmin, ymax - ymin, zmax - zmin]
 
-        print(f"[CADabra] OCC Analysis: {num_faces} faces, {num_edges} edges, {num_volumes} volumes")
+        log.info(f"OCC Analysis: {num_faces} faces, {num_edges} edges, {num_volumes} volumes")
 
         # Analyze each face
         face_data = []
@@ -207,7 +206,7 @@ class CADFaceAnalysis:
                 face_data.append(face_info)
 
         # Build face adjacency graph and count free edges
-        print(f"[CADabra] Building face adjacency graph...")
+        log.info("Building face adjacency graph...")
         with log_operation("CAD Adjacency Graph", faces=num_faces):
             adjacency, free_edge_count, edge_to_faces = self._build_adjacency_with_free_edges(occ_shape, faces_list)
 
@@ -223,8 +222,8 @@ class CADFaceAnalysis:
         avg_neighbors = sum(len(v) for v in adjacency.values()) / len(adjacency) if adjacency else 0
         isolated_faces = sum(1 for v in adjacency.values() if len(v) == 0)
 
-        print(f"[CADabra] Adjacency: {total_adjacencies} shared edges, avg {avg_neighbors:.1f} neighbors/face, {isolated_faces} isolated")
-        print(f"[CADabra] Topology: {component_count} components, {free_edge_count} free edges")
+        log.info(f"Adjacency: {total_adjacencies} shared edges, avg {avg_neighbors:.1f} neighbors/face, {isolated_faces} isolated")
+        log.info(f"Topology: {component_count} components, {free_edge_count} free edges")
 
         # Compute surface type distribution
         surface_type_counts = {}
@@ -250,11 +249,11 @@ class CADFaceAnalysis:
         )
 
         # Extract edge geometry for visualization
-        print(f"[CADabra] Extracting edge geometry...")
+        log.info("Extracting edge geometry...")
         edges_geometry = self._extract_edge_geometry(occ_shape, edge_to_faces, linear_deflection)
         free_edges_count = sum(1 for e in edges_geometry if e["is_free"])
         shared_edges_count = len(edges_geometry) - free_edges_count
-        print(f"[CADabra] Extracted {len(edges_geometry)} edges ({free_edges_count} free, {shared_edges_count} shared)")
+        log.info(f"Extracted {len(edges_geometry)} edges ({free_edges_count} free, {shared_edges_count} shared)")
 
         # Build JSON metadata
         analysis_data = {
@@ -285,10 +284,10 @@ class CADFaceAnalysis:
         with open(json_path, 'w') as f:
             json.dump(analysis_data, f, indent=2)
 
-        print(f"[CADabra] OCC Analysis complete: {json_filename}")
+        log.info(f"OCC Analysis complete: {json_filename}")
 
         # Tessellate shape for mesh export
-        print(f"[CADabra] Tessellating with linear_deflection={linear_deflection}, angular_deflection={angular_deflection}")
+        log.info(f"Tessellating with linear_deflection={linear_deflection}, angular_deflection={angular_deflection}")
         mesh = BRepMesh_IncrementalMesh(occ_shape, linear_deflection, False, angular_deflection, True)
         mesh.Perform()
 
@@ -345,7 +344,7 @@ class CADFaceAnalysis:
             # Get surface type
             adaptor = BRepAdaptor_Surface(topods.Face(face))
             surface_type = adaptor.GetType()
-            face_info["surface_type"] = OCC_SURFACE_TYPE_NAMES.get(surface_type, f"Unknown({surface_type})")
+            face_info["surface_type"] = _get_surface_type_names().get(surface_type, f"Unknown({surface_type})")
 
             # Get bounding box
             bbox = Bnd_Box()
@@ -686,19 +685,12 @@ class CADFaceAnalysis:
 
         total_vertices = len(all_vertices) // 3
         total_triangles = len(all_indices) // 3
-        print(f"[CADabra] Mesh: {total_vertices} vertices, {total_triangles} triangles")
+        log.info(f"Mesh: {total_vertices} vertices, {total_triangles} triangles")
 
-        # Export as VTP if VTK available, otherwise JSON
-        if HAS_VTK:
-            return self._export_vtp(
-                all_vertices, all_indices, face_ranges,
-                base_filename, output_dir, face_edge_counts
-            )
-        else:
-            return self._export_mesh_json(
-                all_vertices, all_indices, face_ranges,
-                base_filename, output_dir, face_edge_counts
-            )
+        return self._export_vtp(
+            all_vertices, all_indices, face_ranges,
+            base_filename, output_dir, face_edge_counts
+        )
 
     def _export_vtp(self, vertices, indices, face_ranges, base_filename, output_dir, face_edge_counts=None):
         """Export mesh as VTP with FaceID and EdgeCount cell data."""
@@ -751,7 +743,7 @@ class CADFaceAnalysis:
         writer.Write()
 
         file_size = os.path.getsize(vtp_path)
-        print(f"[CADabra] Exported VTP mesh: {vtp_filename} ({file_size:,} bytes)")
+        log.info(f"Exported VTP mesh: {vtp_filename} ({file_size:,} bytes)")
         return vtp_filename
 
     def _export_mesh_json(self, vertices, indices, face_ranges, base_filename, output_dir, face_edge_counts=None):
@@ -771,7 +763,7 @@ class CADFaceAnalysis:
             json.dump(mesh_data, f)
 
         file_size = os.path.getsize(json_path)
-        print(f"[CADabra] Exported mesh JSON: {json_filename} ({file_size:,} bytes)")
+        log.info(f"Exported mesh JSON: {json_filename} ({file_size:,} bytes)")
         return json_filename
 
 
@@ -847,7 +839,7 @@ class CADAnalysisViewer:
         vtp_filename = os.path.basename(current_vtp)
         json_filename = os.path.basename(current_json)
 
-        print(f"[CADabra] Analysis Viewer: showing {actual_index + 1}/{batch_size}: {vtp_filename}")
+        log.info(f"Analysis Viewer: showing {actual_index + 1}/{batch_size}: {vtp_filename}")
 
         # Load JSON to get metadata for the info panel
         try:
@@ -862,7 +854,7 @@ class CADAnalysisViewer:
             extents = analysis_data.get("extents", [0, 0, 0])
             linear_deflection = analysis_data.get("linear_deflection", 0.1)
         except Exception as e:
-            print(f"[CADabra] Warning: Could not load analysis JSON: {e}")
+            log.warning(f"Could not load analysis JSON: {e}")
             num_faces = num_edges = num_volumes = 0
             bounds_min = bounds_max = extents = [0, 0, 0]
             linear_deflection = 0.1
