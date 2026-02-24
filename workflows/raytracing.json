@@ -1,0 +1,671 @@
+{
+  "id": "7ce76f3a-c400-44d0-9ab9-6d1a8f375962",
+  "revision": 0,
+  "last_node_id": 17,
+  "last_link_id": 36,
+  "nodes": [
+    {
+      "id": 13,
+      "type": "CADBoundingBox",
+      "pos": [
+        277.66167244877306,
+        -152.6920105982852
+      ],
+      "size": [
+        160.526953125,
+        206
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "cad_model",
+          "type": "CAD_MODEL",
+          "link": 23
+        }
+      ],
+      "outputs": [
+        {
+          "name": "x_min",
+          "type": "FLOAT",
+          "links": null
+        },
+        {
+          "name": "x_max",
+          "type": "FLOAT",
+          "links": null
+        },
+        {
+          "name": "y_min",
+          "type": "FLOAT",
+          "links": null
+        },
+        {
+          "name": "y_max",
+          "type": "FLOAT",
+          "links": null
+        },
+        {
+          "name": "z_min",
+          "type": "FLOAT",
+          "links": [
+            27
+          ]
+        },
+        {
+          "name": "z_max",
+          "type": "FLOAT",
+          "links": null
+        },
+        {
+          "name": "width",
+          "type": "FLOAT",
+          "links": null
+        },
+        {
+          "name": "height",
+          "type": "FLOAT",
+          "links": null
+        },
+        {
+          "name": "depth",
+          "type": "FLOAT",
+          "links": null
+        },
+        {
+          "name": "info",
+          "type": "STRING",
+          "links": null
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfyui-cadabra",
+        "ver": "2ed8e674fd790b4503193c10502457276061b9d0",
+        "Node name for S&R": "CADBoundingBox"
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 14,
+      "type": "FloatMath",
+      "pos": [
+        562.7981125477264,
+        -187.80620516938947
+      ],
+      "size": [
+        270,
+        82
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "value",
+          "type": "FLOAT",
+          "link": 27
+        }
+      ],
+      "outputs": [
+        {
+          "name": "result",
+          "type": "FLOAT",
+          "links": [
+            28
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfyui-cadabra",
+        "ver": "2ed8e674fd790b4503193c10502457276061b9d0",
+        "Node name for S&R": "FloatMath"
+      },
+      "widgets_values": [
+        "negate",
+        1
+      ]
+    },
+    {
+      "id": 12,
+      "type": "CADTransform",
+      "pos": [
+        970.3568642030091,
+        -130.18679543722328
+      ],
+      "size": [
+        270,
+        202
+      ],
+      "flags": {
+        "collapsed": false
+      },
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "cad_model",
+          "type": "CAD_MODEL",
+          "link": 24
+        },
+        {
+          "name": "translate_z",
+          "type": "FLOAT",
+          "widget": {
+            "name": "translate_z"
+          },
+          "link": 28
+        }
+      ],
+      "outputs": [
+        {
+          "name": "cad_model",
+          "type": "CAD_MODEL",
+          "links": [
+            26
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfyui-cadabra",
+        "ver": "2ed8e674fd790b4503193c10502457276061b9d0",
+        "Node name for S&R": "CADTransform"
+      },
+      "widgets_values": [
+        0.12109375,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1
+      ]
+    },
+    {
+      "id": 11,
+      "type": "MaskAnalyzer",
+      "pos": [
+        1712.2899599002812,
+        -107.54387755235312
+      ],
+      "size": [
+        270,
+        346
+      ],
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "mask",
+          "type": "MASK",
+          "link": 31
+        }
+      ],
+      "outputs": [
+        {
+          "name": "stats_text",
+          "type": "STRING",
+          "links": null
+        },
+        {
+          "name": "min",
+          "type": "FLOAT",
+          "links": null
+        },
+        {
+          "name": "max",
+          "type": "FLOAT",
+          "links": null
+        },
+        {
+          "name": "mean",
+          "type": "FLOAT",
+          "links": null
+        },
+        {
+          "name": "std",
+          "type": "FLOAT",
+          "links": null
+        },
+        {
+          "name": "p_low",
+          "type": "FLOAT",
+          "links": null
+        },
+        {
+          "name": "p_high",
+          "type": "FLOAT",
+          "links": null
+        },
+        {
+          "name": "range",
+          "type": "FLOAT",
+          "links": null
+        },
+        {
+          "name": "valid_count",
+          "type": "INT",
+          "links": null
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfyui-cadabra",
+        "ver": "2ed8e674fd790b4503193c10502457276061b9d0",
+        "Node name for S&R": "MaskAnalyzer"
+      },
+      "widgets_values": [
+        1,
+        99,
+        ""
+      ]
+    },
+    {
+      "id": 9,
+      "type": "MasksToRGB",
+      "pos": [
+        1543.0139016783314,
+        430.3479561067366
+      ],
+      "size": [
+        210,
+        98
+      ],
+      "flags": {},
+      "order": 8,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "red",
+          "type": "MASK",
+          "link": 32
+        },
+        {
+          "name": "green",
+          "type": "MASK",
+          "link": 33
+        },
+        {
+          "name": "blue",
+          "type": "MASK",
+          "link": 34
+        }
+      ],
+      "outputs": [
+        {
+          "name": "image",
+          "type": "IMAGE",
+          "links": [
+            17
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfyui-cadabra",
+        "ver": "2ed8e674fd790b4503193c10502457276061b9d0",
+        "Node name for S&R": "MasksToRGB"
+      },
+      "widgets_values": [
+        true
+      ]
+    },
+    {
+      "id": 5,
+      "type": "PreviewImage",
+      "pos": [
+        1809.498264368587,
+        357.1332649182373
+      ],
+      "size": [
+        140,
+        246
+      ],
+      "flags": {},
+      "order": 9,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "images",
+          "type": "IMAGE",
+          "link": 17
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.76",
+        "Node name for S&R": "PreviewImage"
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 2,
+      "type": "CADRaytracerBVH",
+      "pos": [
+        986.98046875,
+        231.80859375
+      ],
+      "size": [
+        270,
+        394
+      ],
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "brep_path",
+          "type": "STRING",
+          "widget": {
+            "name": "brep_path"
+          },
+          "link": 2
+        }
+      ],
+      "outputs": [
+        {
+          "name": "height",
+          "type": "MASK",
+          "links": []
+        },
+        {
+          "name": "normal_x",
+          "type": "MASK",
+          "links": []
+        },
+        {
+          "name": "normal_y",
+          "type": "MASK",
+          "links": []
+        },
+        {
+          "name": "normal_z",
+          "type": "MASK",
+          "links": []
+        },
+        {
+          "name": "position_x",
+          "type": "MASK",
+          "links": []
+        },
+        {
+          "name": "position_y",
+          "type": "MASK",
+          "links": null
+        },
+        {
+          "name": "position_z",
+          "type": "MASK",
+          "links": [
+            31,
+            32,
+            33,
+            34
+          ]
+        },
+        {
+          "name": "face_id",
+          "type": "MASK",
+          "links": null
+        },
+        {
+          "name": "curv_gauss",
+          "type": "MASK",
+          "links": []
+        },
+        {
+          "name": "curv_mean",
+          "type": "MASK",
+          "links": []
+        },
+        {
+          "name": "curv_min",
+          "type": "MASK",
+          "links": []
+        },
+        {
+          "name": "curv_max",
+          "type": "MASK",
+          "links": null
+        },
+        {
+          "name": "hit_mask",
+          "type": "MASK",
+          "links": null
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfyui-cadabra",
+        "ver": "2ed8e674fd790b4503193c10502457276061b9d0",
+        "Node name for S&R": "CADRaytracerBVH"
+      },
+      "widgets_values": [
+        "",
+        500,
+        0.02,
+        "embree",
+        "full"
+      ]
+    },
+    {
+      "id": 1,
+      "type": "CAD_Load",
+      "pos": [
+        285.1023060251357,
+        243.42946973693486
+      ],
+      "size": [
+        270,
+        58
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "CAD_MODEL",
+          "type": "CAD_MODEL",
+          "links": [
+            23,
+            24,
+            36
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfyui-cadabra",
+        "ver": "2ed8e674fd790b4503193c10502457276061b9d0",
+        "Node name for S&R": "CAD_Load"
+      },
+      "widgets_values": [
+        "wc.STEP"
+      ]
+    },
+    {
+      "id": 17,
+      "type": "PreviewCADOCC",
+      "pos": [
+        654.935216115777,
+        367.23803731427944
+      ],
+      "size": [
+        270,
+        736
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "cad_model",
+          "type": "CAD_MODEL",
+          "link": 36
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "cnr_id": "comfyui-cadabra",
+        "ver": "2ed8e674fd790b4503193c10502457276061b9d0",
+        "Node name for S&R": "PreviewCADOCC"
+      },
+      "widgets_values": [
+        0.1,
+        0.5,
+        ""
+      ]
+    },
+    {
+      "id": 3,
+      "type": "CADSave",
+      "pos": [
+        679.6038263349307,
+        229.61149400261425
+      ],
+      "size": [
+        270,
+        82
+      ],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "cad_model",
+          "type": "CAD_MODEL",
+          "link": 26
+        }
+      ],
+      "outputs": [
+        {
+          "name": "file_path",
+          "type": "STRING",
+          "links": [
+            2
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfyui-cadabra",
+        "ver": "2ed8e674fd790b4503193c10502457276061b9d0",
+        "Node name for S&R": "CADSave"
+      },
+      "widgets_values": [
+        "output",
+        "brep"
+      ]
+    }
+  ],
+  "links": [
+    [
+      2,
+      3,
+      0,
+      2,
+      0,
+      "STRING"
+    ],
+    [
+      17,
+      9,
+      0,
+      5,
+      0,
+      "IMAGE"
+    ],
+    [
+      23,
+      1,
+      0,
+      13,
+      0,
+      "CAD_MODEL"
+    ],
+    [
+      24,
+      1,
+      0,
+      12,
+      0,
+      "CAD_MODEL"
+    ],
+    [
+      26,
+      12,
+      0,
+      3,
+      0,
+      "CAD_MODEL"
+    ],
+    [
+      27,
+      13,
+      4,
+      14,
+      0,
+      "FLOAT"
+    ],
+    [
+      28,
+      14,
+      0,
+      12,
+      1,
+      "FLOAT"
+    ],
+    [
+      31,
+      2,
+      6,
+      11,
+      0,
+      "MASK"
+    ],
+    [
+      32,
+      2,
+      6,
+      9,
+      0,
+      "MASK"
+    ],
+    [
+      33,
+      2,
+      6,
+      9,
+      1,
+      "MASK"
+    ],
+    [
+      34,
+      2,
+      6,
+      9,
+      2,
+      "MASK"
+    ],
+    [
+      36,
+      1,
+      0,
+      17,
+      0,
+      "CAD_MODEL"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 1.0191871437393933,
+      "offset": [
+        -287.3709897035941,
+        301.59566791832765
+      ]
+    },
+    "workflowRendererVersion": "LG",
+    "frontendVersion": "1.33.10"
+  },
+  "version": 0.4
+}

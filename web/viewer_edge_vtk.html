@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>CADabra Edge Viewer (VTK)</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+            background: #1a1a1a;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+        #container {
+            flex: 1;
+            min-height: 0;
+            width: 100%;
+            position: relative;
+        }
+        #loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #ccc;
+            font-size: 14px;
+            text-align: center;
+            z-index: 10;
+        }
+        #error {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #ff6b6b;
+            font-size: 14px;
+            text-align: center;
+            z-index: 10;
+            max-width: 80%;
+            display: none;
+        }
+        #controls-hint {
+            position: absolute;
+            bottom: 8px;
+            left: 8px;
+            background: rgba(0,0,0,0.7);
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: 10px;
+            color: #aaa;
+            z-index: 100;
+            pointer-events: none;
+        }
+        #controls-hint strong {
+            color: #4CAF50;
+        }
+        #edge-info {
+            background: #252530;
+            padding: 10px 12px;
+            font-size: 11px;
+            color: #ccc;
+            flex-shrink: 0;
+            display: none;
+            border-top: 1px solid #333;
+            overflow-y: auto;
+            max-height: 200px;
+        }
+        #edge-info h4 {
+            margin: 0 0 6px 0;
+            color: #4a9eff;
+            font-size: 12px;
+        }
+        #edge-info .row {
+            display: flex;
+            justify-content: space-between;
+            margin: 2px 0;
+        }
+        #edge-info .label {
+            color: #888;
+        }
+        #edge-info .value {
+            color: #fff;
+            font-family: monospace;
+        }
+
+        /* Spline parameters section */
+        .spline-section {
+            margin-top: 8px;
+            border-top: 1px solid #444;
+            padding-top: 8px;
+        }
+        .spline-section h5 {
+            margin: 0 0 4px 0;
+            color: #ff44ff;
+            font-size: 11px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .spline-section h5::before {
+            content: '▶';
+            font-size: 8px;
+            transition: transform 0.2s;
+        }
+        .spline-section.expanded h5::before {
+            transform: rotate(90deg);
+        }
+        .spline-content {
+            display: none;
+            margin-top: 4px;
+        }
+        .spline-section.expanded .spline-content {
+            display: block;
+        }
+        .spline-content .sub-section {
+            margin: 6px 0;
+        }
+        .spline-content .sub-section h6 {
+            margin: 0 0 2px 0;
+            color: #888;
+            font-size: 10px;
+            cursor: pointer;
+        }
+        .spline-content .sub-section h6::before {
+            content: '▸';
+            margin-right: 4px;
+            font-size: 8px;
+        }
+        .spline-content .sub-section.expanded h6::before {
+            content: '▾';
+        }
+        .sub-content {
+            display: none;
+            margin-left: 8px;
+            font-size: 10px;
+            font-family: monospace;
+            max-height: 120px;
+            overflow-y: auto;
+        }
+        .sub-section.expanded .sub-content {
+            display: block;
+        }
+        .ctrl-pt {
+            color: #aaa;
+            margin: 1px 0;
+        }
+        .ctrl-pt .idx {
+            color: #666;
+            width: 24px;
+            display: inline-block;
+        }
+        .ctrl-pt .coords {
+            color: #4a9eff;
+        }
+        .ctrl-pt .weight {
+            color: #ff8844;
+        }
+        .knot-vector {
+            color: #44ff88;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <div id="loading">Loading VTK.js viewer...</div>
+        <div id="error"></div>
+        <div id="controls-hint">
+            <strong>Trackball:</strong> Left=Rotate | Middle/Shift+Left=Pan | Right/Scroll=Zoom | R=Reset
+        </div>
+        <!-- Old overlay panel elements (hidden, kept for JS compatibility) -->
+        <div id="edge-info-overlay" style="display: none;">
+            <span id="edge-id"></span>
+            <span id="edge-type"></span>
+            <span id="edge-length"></span>
+            <span id="edge-status"></span>
+            <div id="spline-params" style="display: none;">
+                <span id="spline-degree"></span>
+                <span id="spline-rational"></span>
+                <span id="spline-poles"></span>
+                <span id="spline-planar"></span>
+                <div id="ctrl-pts-list"></div>
+                <div id="knots-flat"></div>
+                <div id="knots-unique"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edge info panel - below the 3D view -->
+    <div id="edge-info">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 4px 16px;">
+            <div class="row"><span class="label">Edge:</span><span class="value" id="edge-id-bottom">-</span></div>
+            <div class="row"><span class="label">Type:</span><span class="value" id="edge-type-bottom">-</span></div>
+            <div class="row"><span class="label">Length:</span><span class="value" id="edge-length-bottom">-</span></div>
+            <div class="row"><span class="label">Status:</span><span class="value" id="edge-status-bottom">-</span></div>
+        </div>
+
+        <!-- Spline parameters (inline for selected spline edges) -->
+        <div id="spline-params-bottom" style="display: none; margin-top: 8px; padding-top: 8px; border-top: 1px solid #333;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 4px 16px;">
+                <div class="row"><span class="label">Degree:</span><span class="value" id="spline-degree-bottom">-</span></div>
+                <div class="row"><span class="label">Rational:</span><span class="value" id="spline-rational-bottom">-</span></div>
+                <div class="row"><span class="label">Poles:</span><span class="value" id="spline-poles-bottom">-</span></div>
+                <div class="row"><span class="label">Planar:</span><span class="value" id="spline-planar-bottom">-</span></div>
+            </div>
+            <div style="margin-top: 6px; font-size: 10px;">
+                <span class="label">Knots:</span>
+                <span id="knots-flat-bottom" style="color: #ffcc44; font-family: monospace; word-break: break-all;"></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load VTK.js from existing bundle in CADabra -->
+    <script src="/extensions/ComfyUI-CADabra/.libs/vtk/vtk-gltf.js"></script>
+
+    <script type="module">
+        // Use the existing VTK.js bundle loaded globally
+        // Note: vtk-gltf.js provides vtk.IO.XML.vtkXMLPolyDataReader
+        // We need to check if rendering modules are available
+
+        // Edge type names for display
+        const EDGE_TYPE_NAMES = {
+            0: 'Line',
+            1: 'Circle',
+            2: 'Ellipse',
+            3: 'Hyperbola',
+            4: 'Parabola',
+            5: 'Bezier',
+            6: 'BSpline',
+            7: 'Other'
+        };
+
+        // Global state
+        let polydata = null;
+        let selectedCellId = -1;
+        let visualizationMode = 'normal';
+        let nodeId = null;
+        let splineData = {};  // Spline parameters indexed by edge_id
+
+        // Toggle collapsible sections (exposed globally for onclick handlers)
+        window.toggleSection = function(section) {
+            section.classList.toggle('expanded');
+        };
+
+        // Three.js fallback (since vtk-gltf.js only has I/O, not rendering)
+        let scene, camera, renderer, controls;
+        let edgeLines = new Map();
+        let highlightMesh = null;
+
+        // DOM elements
+        const container = document.getElementById('container');
+        const loadingEl = document.getElementById('loading');
+        const errorEl = document.getElementById('error');
+        const edgeInfoEl = document.getElementById('edge-info');
+
+        // Check if VTK rendering is available, otherwise fall back to Three.js
+        async function initViewer() {
+            try {
+                console.log('[VTK Edge Viewer] Initializing...');
+
+                // The vtk-gltf.js bundle only has I/O modules, not rendering
+                // So we'll use Three.js for rendering with custom trackball controls
+                await initThreeJSViewer();
+
+                loadingEl.textContent = 'Viewer ready. Waiting for data...';
+                console.log('[VTK Edge Viewer] Initialized with Three.js trackball');
+
+            } catch (err) {
+                console.error('[VTK Edge Viewer] Init error:', err);
+                showError('Failed to initialize viewer: ' + err.message);
+            }
+        }
+
+        // Initialize Three.js with TrackballControls-like behavior
+        async function initThreeJSViewer() {
+            // Load Three.js from existing CADabra bundle
+            const THREE = await loadThreeJS();
+
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x1a1a1a);
+
+            camera = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 0.01, 10000);
+            camera.position.set(100, 100, 100);
+            camera.up.set(0, 0, 1);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            container.appendChild(renderer.domElement);
+
+            // Use custom trackball-style controls
+            controls = new TrackballControls(camera, renderer.domElement);
+
+            // Add axis helper
+            const axisHelper = new THREE.AxesHelper(50);
+            scene.add(axisHelper);
+
+            // Handle resize
+            window.addEventListener('resize', () => {
+                camera.aspect = container.clientWidth / container.clientHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(container.clientWidth, container.clientHeight);
+            });
+
+            // Reset camera on R key
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'r' || e.key === 'R') {
+                    fitCamera();
+                }
+            });
+
+            // Animation loop
+            function animate() {
+                requestAnimationFrame(animate);
+                controls.update();
+                renderer.render(scene, camera);
+            }
+            animate();
+        }
+
+        // Load Three.js from existing bundle
+        async function loadThreeJS() {
+            return new Promise((resolve, reject) => {
+                if (window.THREE) {
+                    resolve(window.THREE);
+                    return;
+                }
+
+                const script = document.createElement('script');
+                script.src = '/extensions/ComfyUI-CADabra/.libs/three/three.min.js';
+                script.onload = () => resolve(window.THREE);
+                script.onerror = () => reject(new Error('Failed to load Three.js'));
+                document.head.appendChild(script);
+            });
+        }
+
+        // Custom Trackball Controls (free rotation without gimbal lock)
+        class TrackballControls {
+            constructor(camera, domElement) {
+                this.camera = camera;
+                this.domElement = domElement;
+                this.target = new THREE.Vector3();
+
+                this.rotateSpeed = 1.5;
+                this.zoomSpeed = 1.2;
+                this.panSpeed = 0.8;
+
+                this.enabled = true;
+                this.rotating = false;
+                this.panning = false;
+                this.zooming = false;
+
+                this.lastMouse = { x: 0, y: 0 };
+
+                this.bindEvents();
+            }
+
+            bindEvents() {
+                this.domElement.addEventListener('mousedown', this.onMouseDown.bind(this));
+                this.domElement.addEventListener('mousemove', this.onMouseMove.bind(this));
+                this.domElement.addEventListener('mouseup', this.onMouseUp.bind(this));
+                this.domElement.addEventListener('wheel', this.onWheel.bind(this));
+                this.domElement.addEventListener('contextmenu', (e) => e.preventDefault());
+            }
+
+            onMouseDown(e) {
+                if (!this.enabled) return;
+
+                this.lastMouse.x = e.clientX;
+                this.lastMouse.y = e.clientY;
+
+                if (e.button === 0 && !e.shiftKey) {
+                    this.rotating = true;
+                } else if (e.button === 1 || (e.button === 0 && e.shiftKey)) {
+                    this.panning = true;
+                } else if (e.button === 2) {
+                    this.zooming = true;
+                }
+            }
+
+            onMouseMove(e) {
+                if (!this.enabled) return;
+
+                const dx = e.clientX - this.lastMouse.x;
+                const dy = e.clientY - this.lastMouse.y;
+
+                if (this.rotating) {
+                    this.rotateCamera(dx, dy);
+                } else if (this.panning) {
+                    this.panCamera(dx, dy);
+                } else if (this.zooming) {
+                    this.zoomCamera(dy);
+                }
+
+                this.lastMouse.x = e.clientX;
+                this.lastMouse.y = e.clientY;
+            }
+
+            onMouseUp(e) {
+                this.rotating = false;
+                this.panning = false;
+                this.zooming = false;
+            }
+
+            onWheel(e) {
+                if (!this.enabled) return;
+                e.preventDefault();
+                this.zoomCamera(e.deltaY * 0.5);
+            }
+
+            // TRUE TRACKBALL rotation - rotate around arbitrary axis
+            rotateCamera(dx, dy) {
+                const speed = this.rotateSpeed * 0.005;
+
+                // Get camera vectors
+                const offset = new THREE.Vector3().subVectors(this.camera.position, this.target);
+
+                // Create rotation quaternion based on mouse movement
+                // Horizontal movement rotates around world up (or camera up)
+                // Vertical movement rotates around camera right
+                const right = new THREE.Vector3();
+                right.crossVectors(this.camera.up, offset).normalize();
+
+                const up = this.camera.up.clone().normalize();
+
+                // Create quaternions for each rotation
+                const qx = new THREE.Quaternion().setFromAxisAngle(up, -dx * speed);
+                const qy = new THREE.Quaternion().setFromAxisAngle(right, -dy * speed);
+
+                // Apply rotations
+                offset.applyQuaternion(qx);
+                offset.applyQuaternion(qy);
+
+                // Also rotate the up vector to prevent gimbal lock
+                this.camera.up.applyQuaternion(qx);
+                this.camera.up.applyQuaternion(qy);
+                this.camera.up.normalize();
+
+                this.camera.position.copy(this.target).add(offset);
+                this.camera.lookAt(this.target);
+            }
+
+            panCamera(dx, dy) {
+                const offset = new THREE.Vector3().subVectors(this.camera.position, this.target);
+                const distance = offset.length();
+
+                const right = new THREE.Vector3();
+                right.crossVectors(this.camera.up, offset).normalize();
+
+                const up = this.camera.up.clone();
+
+                const panX = right.multiplyScalar(-dx * this.panSpeed * distance * 0.001);
+                const panY = up.multiplyScalar(dy * this.panSpeed * distance * 0.001);
+
+                this.target.add(panX).add(panY);
+                this.camera.position.add(panX).add(panY);
+            }
+
+            zoomCamera(delta) {
+                const offset = new THREE.Vector3().subVectors(this.camera.position, this.target);
+                const distance = offset.length();
+
+                const factor = 1 + delta * this.zoomSpeed * 0.002;
+                offset.multiplyScalar(factor);
+
+                // Clamp zoom
+                if (offset.length() > 0.1 && offset.length() < 100000) {
+                    this.camera.position.copy(this.target).add(offset);
+                }
+            }
+
+            update() {
+                // Called in animation loop, currently no-op but could add damping
+            }
+        }
+
+        // Load spline data JSON
+        async function loadSplineData(splineDataUrl) {
+            if (!splineDataUrl) {
+                splineData = {};
+                return;
+            }
+
+            try {
+                console.log('[VTK Edge Viewer] Loading spline data:', splineDataUrl);
+                const response = await fetch(splineDataUrl);
+                if (response.ok) {
+                    splineData = await response.json();
+                    console.log('[VTK Edge Viewer] Spline data loaded:', Object.keys(splineData).length, 'spline edges');
+                } else {
+                    console.warn('[VTK Edge Viewer] Spline data not found (this is OK if no spline edges)');
+                    splineData = {};
+                }
+            } catch (err) {
+                console.warn('[VTK Edge Viewer] Failed to load spline data:', err);
+                splineData = {};
+            }
+        }
+
+        // Load VTP file using vtk.js reader, then create Three.js geometry
+        async function loadVTP(vtpUrl) {
+            try {
+                loadingEl.style.display = 'block';
+                loadingEl.textContent = 'Loading VTP file...';
+                errorEl.style.display = 'none';
+
+                console.log('[VTK Edge Viewer] Loading:', vtpUrl);
+
+                // Fetch the VTP file
+                const response = await fetch(vtpUrl);
+                const arrayBuffer = await response.arrayBuffer();
+
+                // Parse using VTK.js XMLPolyDataReader
+                const vtkXMLPolyDataReader = vtk.IO.XML.vtkXMLPolyDataReader;
+                const reader = vtkXMLPolyDataReader.newInstance();
+                reader.parseAsArrayBuffer(arrayBuffer);
+
+                polydata = reader.getOutputData();
+                console.log('[VTK Edge Viewer] Loaded polydata:',
+                    polydata.getNumberOfPoints(), 'points,',
+                    polydata.getNumberOfCells(), 'cells');
+
+                // Convert to Three.js geometry
+                createThreeJSGeometry(polydata);
+
+                fitCamera();
+                loadingEl.style.display = 'none';
+                console.log('[VTK Edge Viewer] Rendering complete');
+
+            } catch (err) {
+                console.error('[VTK Edge Viewer] Load error:', err);
+                showError('Failed to load VTP: ' + err.message);
+            }
+        }
+
+        // Create Three.js geometry from VTK polydata
+        function createThreeJSGeometry(polydata) {
+            // Clear existing
+            edgeLines.forEach(line => scene.remove(line));
+            edgeLines.clear();
+
+            const points = polydata.getPoints();
+            const lines = polydata.getLines();
+            const cellData = polydata.getCellData();
+
+            const edgeTypes = cellData.getArrayByName('edge_type');
+            const isFree = cellData.getArrayByName('is_free');
+            const lengths = cellData.getArrayByName('length');
+            const edgeIds = cellData.getArrayByName('edge_id');
+
+            const pointsData = points.getData();
+            const linesData = lines.getData();
+
+            // Get range for length coloring
+            let minLength = Infinity, maxLength = 0;
+            if (lengths) {
+                const lengthData = lengths.getData();
+                for (let i = 0; i < lengthData.length; i++) {
+                    minLength = Math.min(minLength, lengthData[i]);
+                    maxLength = Math.max(maxLength, lengthData[i]);
+                }
+            }
+
+            // Parse cells
+            let offset = 0;
+            let cellIndex = 0;
+
+            while (offset < linesData.length) {
+                const numPoints = linesData[offset];
+                const positions = [];
+
+                for (let i = 0; i < numPoints; i++) {
+                    const ptId = linesData[offset + 1 + i];
+                    positions.push(
+                        pointsData[ptId * 3],
+                        pointsData[ptId * 3 + 1],
+                        pointsData[ptId * 3 + 2]
+                    );
+                }
+
+                // Get edge metadata
+                const edgeId = edgeIds ? edgeIds.getData()[cellIndex] : cellIndex;
+                const edgeType = edgeTypes ? edgeTypes.getData()[cellIndex] : 0;
+                const free = isFree ? isFree.getData()[cellIndex] : 0;
+                const length = lengths ? lengths.getData()[cellIndex] : 0;
+
+                // Determine color based on visualization mode
+                let color;
+                if (visualizationMode === 'edge_type') {
+                    color = getEdgeTypeColor(edgeType);
+                } else if (visualizationMode === 'length') {
+                    color = getLengthColor(length, minLength, maxLength);
+                } else {
+                    color = free ? 0xff3333 : 0x555555;  // Red for free, gray for shared
+                }
+
+                // Create line geometry
+                const geometry = new THREE.BufferGeometry();
+                geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+
+                const material = new THREE.LineBasicMaterial({
+                    color: color,
+                    linewidth: free ? 2 : 1
+                });
+
+                const line = new THREE.Line(geometry, material);
+                line.userData = { edgeId, edgeType, free, length, cellIndex };
+
+                scene.add(line);
+                edgeLines.set(cellIndex, line);
+
+                offset += numPoints + 1;
+                cellIndex++;
+            }
+
+            // Setup raycaster for picking
+            setupPicking();
+        }
+
+        // Edge type colors
+        function getEdgeTypeColor(type) {
+            const colors = {
+                0: 0x4444ff,  // Line: Blue
+                1: 0x44ff44,  // Circle: Green
+                2: 0x44ffff,  // Ellipse: Cyan
+                3: 0xff4444,  // Hyperbola: Red
+                4: 0xff8844,  // Parabola: Orange
+                5: 0xffff44,  // Bezier: Yellow
+                6: 0xff44ff,  // BSpline: Magenta
+                7: 0x888888   // Other: Gray
+            };
+            return colors[type] || 0x888888;
+        }
+
+        // Length gradient color (green -> yellow -> red)
+        function getLengthColor(length, minLength, maxLength) {
+            const range = maxLength - minLength;
+            if (range === 0) return 0x00ff00;
+
+            const t = (length - minLength) / range;
+
+            let r, g, b;
+            if (t < 0.5) {
+                // Green to Yellow
+                r = Math.floor(t * 2 * 255);
+                g = 255;
+                b = 0;
+            } else {
+                // Yellow to Red
+                r = 255;
+                g = Math.floor((1 - (t - 0.5) * 2) * 255);
+                b = 0;
+            }
+
+            return (r << 16) | (g << 8) | b;
+        }
+
+        // Setup click picking
+        function setupPicking() {
+            const raycaster = new THREE.Raycaster();
+            raycaster.params.Line.threshold = 2;
+            const mouse = new THREE.Vector2();
+
+            renderer.domElement.addEventListener('click', (event) => {
+                const rect = renderer.domElement.getBoundingClientRect();
+                mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+                mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+                raycaster.setFromCamera(mouse, camera);
+                const intersects = raycaster.intersectObjects(Array.from(edgeLines.values()));
+
+                if (intersects.length > 0) {
+                    const hit = intersects[0].object;
+                    selectEdge(hit.userData.cellIndex);
+                }
+            });
+        }
+
+        // Select edge
+        function selectEdge(cellIndex) {
+            // Clear previous highlight
+            if (highlightMesh) {
+                scene.remove(highlightMesh);
+                highlightMesh = null;
+            }
+
+            const line = edgeLines.get(cellIndex);
+            if (!line) return;
+
+            const { edgeId, edgeType, free, length } = line.userData;
+            selectedCellId = cellIndex;
+
+            // Create highlight
+            const highlightGeometry = line.geometry.clone();
+            const highlightMaterial = new THREE.LineBasicMaterial({
+                color: 0xffaa00,
+                linewidth: 4
+            });
+            highlightMesh = new THREE.Line(highlightGeometry, highlightMaterial);
+            scene.add(highlightMesh);
+
+            // Update overlay info panel (old - still used for detailed view)
+            document.getElementById('edge-id').textContent = edgeId;
+            document.getElementById('edge-type').textContent = EDGE_TYPE_NAMES[edgeType] || 'Unknown';
+            document.getElementById('edge-length').textContent = length.toFixed(4);
+            document.getElementById('edge-status').textContent = free ? 'Free (boundary)' : 'Shared';
+            // Keep overlay panel hidden - we use bottom panel now
+            // edgeInfoEl.style.display = 'block';
+
+            // Update bottom info panel
+            document.getElementById('edge-id-bottom').textContent = edgeId;
+            document.getElementById('edge-type-bottom').textContent = EDGE_TYPE_NAMES[edgeType] || 'Unknown';
+            document.getElementById('edge-length-bottom').textContent = length.toFixed(4);
+            document.getElementById('edge-status-bottom').textContent = free ? 'Free (boundary)' : 'Shared';
+            document.getElementById('edge-info').style.display = 'block';
+
+            // Check if this edge has spline data (BSpline or Bezier)
+            const splineParamsEl = document.getElementById('spline-params');
+            const edgeSplineData = splineData[String(edgeId)];
+
+            if (edgeSplineData && (edgeType === 5 || edgeType === 6)) {
+                // Show spline parameters
+                document.getElementById('spline-degree').textContent = edgeSplineData.degree;
+                document.getElementById('spline-rational').textContent =
+                    edgeSplineData.is_rational ? 'Yes (NURBS)' : 'No';
+                document.getElementById('spline-poles').textContent = edgeSplineData.num_poles;
+
+                // Display planarity info with deviation value and percentage
+                const planarity = edgeSplineData.planarity;
+                const planarEl = document.getElementById('spline-planar');
+                if (planarity && planarity.max_deviation !== null) {
+                    const dev = planarity.max_deviation;
+                    const pct = planarity.deviation_percent;
+                    const plane = planarity.plane;
+                    let text, color;
+
+                    // Format percentage string
+                    const pctStr = pct !== null ? (pct < 0.01 ? pct.toExponential(1) : pct.toFixed(2)) + '%' : '';
+
+                    if (plane === 'point') {
+                        text = 'point (degenerate)';
+                        color = '#888';
+                    } else if (plane === 'line') {
+                        text = 'line (collinear)';
+                        color = '#44ff88';
+                    } else if (dev < 1e-6) {
+                        text = `${plane} (exact)`;
+                        color = '#44ff88';
+                    } else if (dev < 0.001) {
+                        text = `${plane} (±${dev.toExponential(1)}, ${pctStr})`;
+                        color = '#44ff88';
+                    } else if (dev < 0.1) {
+                        text = `${plane} (±${dev.toFixed(3)}, ${pctStr})`;
+                        color = '#ffcc44';
+                    } else {
+                        text = `3D (dev: ${dev.toFixed(2)}, ${pctStr})`;
+                        color = '#ff8844';
+                    }
+                    planarEl.textContent = text;
+                    planarEl.style.color = color;
+                } else {
+                    planarEl.textContent = '-';
+                    planarEl.style.color = '#888';
+                }
+
+                // Populate control points
+                const ctrlPtsList = document.getElementById('ctrl-pts-list');
+                ctrlPtsList.innerHTML = '';
+                edgeSplineData.control_points.forEach((pt, i) => {
+                    const div = document.createElement('div');
+                    div.className = 'ctrl-pt';
+                    const weightStr = edgeSplineData.is_rational ? ` <span class="weight">w=${pt.w.toFixed(3)}</span>` : '';
+                    div.innerHTML = `<span class="idx">P${i}:</span><span class="coords">(${pt.x.toFixed(3)}, ${pt.y.toFixed(3)}, ${pt.z.toFixed(3)})</span>${weightStr}`;
+                    ctrlPtsList.appendChild(div);
+                });
+
+                // Populate knot vectors
+                const knotsFlat = document.getElementById('knots-flat');
+                knotsFlat.textContent = '[' + edgeSplineData.knots_flat.map(k => k.toFixed(3)).join(', ') + ']';
+
+                const knotsUnique = document.getElementById('knots-unique');
+                const uniqueWithMults = edgeSplineData.knots_unique.map((k, i) =>
+                    `${k.toFixed(3)}(×${edgeSplineData.multiplicities[i]})`
+                ).join(', ');
+                knotsUnique.textContent = uniqueWithMults;
+
+                // Expand the spline section by default
+                splineParamsEl.style.display = 'block';
+                splineParamsEl.classList.add('expanded');
+
+                // Update bottom spline panel
+                document.getElementById('spline-degree-bottom').textContent = edgeSplineData.degree;
+                document.getElementById('spline-rational-bottom').textContent =
+                    edgeSplineData.is_rational ? 'Yes (NURBS)' : 'No';
+                document.getElementById('spline-poles-bottom').textContent = edgeSplineData.num_poles;
+
+                // Planarity for bottom panel
+                const planarityBottom = edgeSplineData.planarity;
+                const planarElBottom = document.getElementById('spline-planar-bottom');
+                if (planarityBottom && planarityBottom.max_deviation !== null) {
+                    const devB = planarityBottom.max_deviation;
+                    const pctB = planarityBottom.deviation_percent;
+                    const planeB = planarityBottom.plane;
+                    const pctStrB = pctB !== null ? (pctB < 0.01 ? pctB.toExponential(1) : pctB.toFixed(2)) + '%' : '';
+
+                    if (planeB === 'point') {
+                        planarElBottom.textContent = 'point';
+                    } else if (planeB === 'line') {
+                        planarElBottom.textContent = 'line';
+                    } else if (devB < 1e-6) {
+                        planarElBottom.textContent = `${planeB} (exact)`;
+                    } else {
+                        planarElBottom.textContent = `${planeB} (±${pctStrB})`;
+                    }
+                } else {
+                    planarElBottom.textContent = '-';
+                }
+
+                // Knots for bottom panel
+                document.getElementById('knots-flat-bottom').textContent =
+                    '[' + edgeSplineData.knots_flat.map(k => k.toFixed(2)).join(', ') + ']';
+
+                document.getElementById('spline-params-bottom').style.display = 'block';
+            } else {
+                // Hide spline parameters for non-spline edges
+                splineParamsEl.style.display = 'none';
+                splineParamsEl.classList.remove('expanded');
+                document.getElementById('spline-params-bottom').style.display = 'none';
+            }
+
+            // Notify parent
+            window.parent.postMessage({
+                type: 'EDGE_SELECTED',
+                nodeId: nodeId,
+                edgeId: edgeId,
+                edgeType: EDGE_TYPE_NAMES[edgeType] || 'Unknown',
+                length: length,
+                isFree: !!free,
+                splineData: edgeSplineData || null
+            }, '*');
+
+            console.log('[VTK Edge Viewer] Selected edge:', edgeId, EDGE_TYPE_NAMES[edgeType],
+                edgeSplineData ? '(has spline data)' : '');
+        }
+
+        // Fit camera to scene
+        function fitCamera() {
+            if (edgeLines.size === 0) return;
+
+            const box = new THREE.Box3();
+            edgeLines.forEach(line => box.expandByObject(line));
+
+            const center = box.getCenter(new THREE.Vector3());
+            const size = box.getSize(new THREE.Vector3());
+            const maxDim = Math.max(size.x, size.y, size.z);
+            const distance = maxDim * 2;
+
+            controls.target.copy(center);
+            camera.position.set(center.x + distance, center.y + distance, center.z + distance);
+            camera.lookAt(center);
+        }
+
+        // Set view direction
+        function setViewDirection(direction) {
+            if (edgeLines.size === 0) return;
+
+            const box = new THREE.Box3();
+            edgeLines.forEach(line => box.expandByObject(line));
+
+            const center = box.getCenter(new THREE.Vector3());
+            const size = box.getSize(new THREE.Vector3());
+            const distance = Math.max(size.x, size.y, size.z) * 2;
+
+            let position, up;
+            switch (direction) {
+                case '+X': position = [center.x + distance, center.y, center.z]; up = [0, 0, 1]; break;
+                case '-X': position = [center.x - distance, center.y, center.z]; up = [0, 0, 1]; break;
+                case '+Y': position = [center.x, center.y + distance, center.z]; up = [0, 0, 1]; break;
+                case '-Y': position = [center.x, center.y - distance, center.z]; up = [0, 0, 1]; break;
+                case '+Z': position = [center.x, center.y, center.z + distance]; up = [0, 1, 0]; break;
+                case '-Z': position = [center.x, center.y, center.z - distance]; up = [0, 1, 0]; break;
+                default: return;
+            }
+
+            controls.target.copy(center);
+            camera.position.set(...position);
+            camera.up.set(...up);
+            camera.lookAt(center);
+        }
+
+        // Show error
+        function showError(msg) {
+            loadingEl.style.display = 'none';
+            errorEl.textContent = msg;
+            errorEl.style.display = 'block';
+        }
+
+        // Message handler
+        window.addEventListener('message', async (event) => {
+            const msg = event.data;
+
+            if (msg.type === 'LOAD_EDGE_VTK') {
+                nodeId = msg.nodeId;
+                visualizationMode = msg.visualizationMode || 'normal';
+
+                // Load spline data JSON (if provided)
+                if (msg.splineDataUrl) {
+                    await loadSplineData(msg.splineDataUrl);
+                } else {
+                    splineData = {};
+                }
+
+                // Load VTP file
+                if (msg.vtpUrl) {
+                    await loadVTP(msg.vtpUrl);
+                }
+            } else if (msg.type === 'SET_VIEW') {
+                setViewDirection(msg.direction);
+            } else if (msg.type === 'FIT_VIEW') {
+                fitCamera();
+            } else if (msg.type === 'SET_VISUALIZATION_MODE') {
+                visualizationMode = msg.mode;
+                if (polydata) {
+                    createThreeJSGeometry(polydata);
+                }
+            }
+        });
+
+        // Initialize on load
+        initViewer();
+    </script>
+</body>
+</html>

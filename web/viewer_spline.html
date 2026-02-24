@@ -1,0 +1,995 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CAD Spline Viewer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #1a1a1a;
+            color: #e0e0e0;
+            font-size: 12px;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+        }
+
+        /* 3D Viewer */
+        #viewer {
+            flex: 1;
+            position: relative;
+        }
+
+        #canvas-container {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Info Panel */
+        .info-panel {
+            width: 320px;
+            background: #252525;
+            border-left: 1px solid #333;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .panel-section {
+            padding: 12px;
+            border-bottom: 1px solid #333;
+        }
+
+        .panel-section h3 {
+            color: #4a9eff;
+            font-size: 13px;
+            margin-bottom: 10px;
+        }
+
+        .panel-section h4 {
+            color: #888;
+            font-size: 11px;
+            text-transform: uppercase;
+            margin: 12px 0 6px;
+        }
+
+        /* Surface type info */
+        .surface-type-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            background: #2d4a2d;
+            border-radius: 4px;
+            color: #4caf50;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .surface-type-badge.bezier { background: #4a3d2d; color: #ff9800; }
+        .surface-type-badge.bspline { background: #2d3d4a; color: #2196f3; }
+        .surface-type-badge.plane { background: #3d2d4a; color: #9c27b0; }
+
+        .surface-description {
+            font-size: 11px;
+            color: #aaa;
+            line-height: 1.5;
+            margin-bottom: 8px;
+        }
+
+        /* Stats grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .stat-item {
+            background: #1e1e1e;
+            padding: 8px;
+            border-radius: 4px;
+        }
+
+        .stat-label {
+            font-size: 10px;
+            color: #888;
+            text-transform: uppercase;
+        }
+
+        .stat-value {
+            font-size: 16px;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        /* Knot vectors */
+        .knot-vector {
+            font-family: monospace;
+            font-size: 11px;
+            background: #1e1e1e;
+            padding: 8px;
+            border-radius: 4px;
+            overflow-x: auto;
+            white-space: nowrap;
+            margin-top: 4px;
+        }
+
+        .knot-value {
+            color: #4caf50;
+        }
+
+        .knot-mult {
+            color: #ff9800;
+            font-size: 9px;
+            vertical-align: super;
+        }
+
+        /* Control point list */
+        .control-points-scroll {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
+        }
+
+        .ctrl-point-item {
+            display: flex;
+            align-items: center;
+            padding: 6px 8px;
+            margin-bottom: 4px;
+            background: #1e1e1e;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+
+        .ctrl-point-item:hover {
+            background: #2a2a2a;
+        }
+
+        .ctrl-point-item.selected {
+            background: #1e3a5f;
+            border: 1px solid #4a9eff;
+        }
+
+        .ctrl-point-index {
+            width: 40px;
+            font-family: monospace;
+            color: #888;
+        }
+
+        .ctrl-point-coords {
+            flex: 1;
+            font-family: monospace;
+            font-size: 10px;
+            color: #aaa;
+        }
+
+        .ctrl-point-weight {
+            font-family: monospace;
+            color: #ff9800;
+        }
+
+        /* Selected control point details */
+        .selected-ctrl-point {
+            background: #1e3a5f;
+            border-radius: 4px;
+            padding: 10px;
+            margin-top: 8px;
+        }
+
+        .selected-ctrl-point h4 {
+            color: #4a9eff;
+            margin-bottom: 8px;
+        }
+
+        .coord-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+            border-bottom: 1px solid #2a4a6a;
+        }
+
+        /* Viewer controls overlay */
+        .viewer-controls {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            display: flex;
+            gap: 4px;
+            z-index: 100;
+        }
+
+        .viewer-controls button {
+            padding: 6px 10px;
+            background: rgba(40, 40, 40, 0.9);
+            border: 1px solid #444;
+            color: #ccc;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+        }
+
+        .viewer-controls button:hover {
+            background: rgba(60, 60, 60, 0.9);
+            color: #fff;
+        }
+
+        .viewer-controls button.active {
+            background: rgba(30, 58, 95, 0.9);
+            border-color: #4a9eff;
+            color: #4a9eff;
+        }
+
+        /* Legend */
+        .legend {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(30, 30, 30, 0.9);
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 11px;
+            z-index: 100;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 4px 0;
+        }
+
+        .legend-color {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+        }
+
+        /* Influence color bar */
+        .color-bar {
+            display: flex;
+            height: 16px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+
+        .color-bar-gradient {
+            flex: 1;
+            background: linear-gradient(to right, #0000ff, #00ffff, #00ff00, #ffff00, #ff0000);
+        }
+
+        .color-bar-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 10px;
+            color: #888;
+            margin-top: 2px;
+        }
+
+        /* Surface type comparison */
+        .type-comparison {
+            background: #1e1e1e;
+            border-radius: 4px;
+            padding: 10px;
+            margin-top: 10px;
+        }
+
+        .comparison-table {
+            width: 100%;
+            font-size: 10px;
+            border-collapse: collapse;
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+            padding: 4px 6px;
+            text-align: left;
+            border-bottom: 1px solid #333;
+        }
+
+        .comparison-table th {
+            color: #888;
+        }
+
+        .comparison-table .current-type {
+            color: #4caf50;
+            font-weight: 600;
+        }
+
+        /* Loading state */
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div id="viewer">
+        <div id="canvas-container"></div>
+
+        <div class="viewer-controls">
+            <button id="toggleMeshBtn" class="active">Mesh</button>
+            <button id="toggleNetBtn" class="active">Control Net</button>
+            <button id="togglePointsBtn" class="active">Points</button>
+            <button id="toggleInfluenceBtn">Influence</button>
+            <button id="fitViewBtn">Fit</button>
+        </div>
+
+        <div class="legend" id="legend" style="display: none;">
+            <div class="legend-item">
+                <span class="legend-color" style="background: #4caf50;"></span>
+                <span>Control Points</span>
+            </div>
+            <div class="legend-item">
+                <span class="legend-color" style="background: #ff9800;"></span>
+                <span>Selected Point</span>
+            </div>
+            <div id="influenceLegend" style="display: none;">
+                <div style="margin-top: 8px; color: #888;">Influence Strength:</div>
+                <div class="color-bar">
+                    <div class="color-bar-gradient"></div>
+                </div>
+                <div class="color-bar-labels">
+                    <span>0</span>
+                    <span>1</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="loading" id="loadingIndicator">Waiting for spline data...</div>
+    </div>
+
+    <div class="info-panel">
+        <div class="panel-section" id="surfaceInfo">
+            <h3>Surface Information</h3>
+            <div id="surfaceTypeContainer"></div>
+        </div>
+
+        <div class="panel-section" id="knotsSection" style="display: none;">
+            <h4>Knot Vectors</h4>
+            <div>U: <span id="knotsU" class="knot-vector"></span></div>
+            <div style="margin-top: 6px;">V: <span id="knotsV" class="knot-vector"></span></div>
+        </div>
+
+        <div class="panel-section" id="selectedPointSection" style="display: none;">
+            <h3>Selected Control Point</h3>
+            <div class="selected-ctrl-point" id="selectedPointDetails"></div>
+        </div>
+
+        <div class="panel-section" style="flex-shrink: 0;">
+            <h4>Control Points</h4>
+        </div>
+        <div class="control-points-scroll" id="controlPointsList"></div>
+
+        <div class="panel-section" id="comparisonSection">
+            <h4>Surface Type Comparison</h4>
+            <div class="type-comparison">
+                <table class="comparison-table">
+                    <tr>
+                        <th>Property</th>
+                        <th>Bezier</th>
+                        <th>B-Spline</th>
+                        <th>NURBS</th>
+                    </tr>
+                    <tr>
+                        <td>Control influence</td>
+                        <td>Global</td>
+                        <td>Local</td>
+                        <td>Local</td>
+                    </tr>
+                    <tr>
+                        <td>Knot vector</td>
+                        <td>Implicit</td>
+                        <td>Explicit</td>
+                        <td>Explicit</td>
+                    </tr>
+                    <tr>
+                        <td>Weights</td>
+                        <td>Optional</td>
+                        <td>All = 1</td>
+                        <td>Arbitrary</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Three.js -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.150.1/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.150.1/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        let scene, camera, renderer, controls;
+        let meshObject, controlNetLines, controlPointSpheres = [];
+        let splineData = null;
+        let selectedControlPoint = null;
+        let showMesh = true, showNet = true, showPoints = true, showInfluence = false;
+        let originalVertexColors = null;
+        let raycaster, mouse;
+
+        // Initialize Three.js scene
+        function initScene() {
+            const container = document.getElementById('canvas-container');
+
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x1a1a1a);
+
+            camera = new THREE.PerspectiveCamera(
+                50,
+                container.clientWidth / container.clientHeight,
+                0.01,
+                10000
+            );
+            camera.position.set(100, 100, 100);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            container.appendChild(renderer.domElement);
+
+            // Lights
+            const ambientLight = new THREE.AmbientLight(0x404040, 2);
+            scene.add(ambientLight);
+
+            const directionalLight1 = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight1.position.set(1, 1, 1);
+            scene.add(directionalLight1);
+
+            const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.4);
+            directionalLight2.position.set(-1, -1, -1);
+            scene.add(directionalLight2);
+
+            // Controls
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+
+            // Raycaster for picking
+            raycaster = new THREE.Raycaster();
+            mouse = new THREE.Vector2();
+
+            // Event listeners
+            renderer.domElement.addEventListener('click', onCanvasClick);
+            window.addEventListener('resize', onWindowResize);
+
+            animate();
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        function onWindowResize() {
+            const container = document.getElementById('canvas-container');
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        }
+
+        function onCanvasClick(event) {
+            const rect = renderer.domElement.getBoundingClientRect();
+            mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+
+            // Check intersection with control point spheres
+            const intersects = raycaster.intersectObjects(controlPointSpheres);
+            if (intersects.length > 0) {
+                const sphere = intersects[0].object;
+                selectControlPoint(sphere.userData.ctrlIndex);
+            }
+        }
+
+        // Load spline data
+        function loadSplineData(data) {
+            splineData = data;
+            document.getElementById('loadingIndicator').style.display = 'none';
+            document.getElementById('legend').style.display = 'block';
+
+            // Clear existing objects
+            if (meshObject) scene.remove(meshObject);
+            if (controlNetLines) scene.remove(controlNetLines);
+            controlPointSpheres.forEach(s => scene.remove(s));
+            controlPointSpheres = [];
+
+            // Update info panel
+            updateInfoPanel(data);
+
+            // Create mesh
+            if (data.mesh && data.mesh.vertices.length > 0) {
+                createMesh(data.mesh);
+            }
+
+            // Create control points and net if available
+            if (data.control_points && data.control_points.length > 0) {
+                createControlPoints(data.control_points, data.num_ctrl_pts_u, data.num_ctrl_pts_v);
+                createControlNet(data.control_points, data.num_ctrl_pts_u, data.num_ctrl_pts_v);
+                updateControlPointsList(data.control_points);
+            }
+
+            // Fit view
+            fitToView();
+        }
+
+        function createMesh(meshData) {
+            const geometry = new THREE.BufferGeometry();
+
+            // Vertices
+            const vertices = new Float32Array(meshData.vertices.flat());
+            geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+
+            // Indices
+            const indices = new Uint32Array(meshData.indices.flat());
+            geometry.setIndex(new THREE.BufferAttribute(indices, 1));
+
+            // Compute normals
+            geometry.computeVertexNormals();
+
+            // Store original vertex colors (neutral gray)
+            const numVertices = meshData.vertices.length;
+            const colors = new Float32Array(numVertices * 3);
+            for (let i = 0; i < numVertices; i++) {
+                colors[i * 3] = 0.7;
+                colors[i * 3 + 1] = 0.7;
+                colors[i * 3 + 2] = 0.7;
+            }
+            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+            originalVertexColors = colors.slice();
+
+            const material = new THREE.MeshPhongMaterial({
+                vertexColors: true,
+                side: THREE.DoubleSide,
+                flatShading: false,
+            });
+
+            meshObject = new THREE.Mesh(geometry, material);
+            meshObject.visible = showMesh;
+            scene.add(meshObject);
+        }
+
+        function createControlPoints(controlPoints, numU, numV) {
+            const sphereGeometry = new THREE.SphereGeometry(0.5, 16, 16);
+
+            controlPoints.forEach((cp, idx) => {
+                const material = new THREE.MeshPhongMaterial({
+                    color: 0x4caf50,
+                    emissive: 0x1b5e20,
+                    emissiveIntensity: 0.2,
+                });
+
+                const sphere = new THREE.Mesh(sphereGeometry, material);
+                sphere.position.set(cp.x, cp.y, cp.z);
+
+                // Scale by weight
+                const weightScale = Math.max(0.3, Math.min(2.0, cp.weight));
+                sphere.scale.setScalar(weightScale);
+
+                sphere.userData.ctrlIndex = idx;
+                sphere.userData.i = cp.i;
+                sphere.userData.j = cp.j;
+
+                sphere.visible = showPoints;
+                scene.add(sphere);
+                controlPointSpheres.push(sphere);
+            });
+        }
+
+        function createControlNet(controlPoints, numU, numV) {
+            const lineMaterial = new THREE.LineBasicMaterial({
+                color: 0x666666,
+                linewidth: 1,
+            });
+
+            const lineGroup = new THREE.Group();
+
+            // Create grid lines in U direction
+            for (let j = 0; j < numV; j++) {
+                const points = [];
+                for (let i = 0; i < numU; i++) {
+                    const idx = i * numV + j;
+                    if (idx < controlPoints.length) {
+                        const cp = controlPoints[idx];
+                        points.push(new THREE.Vector3(cp.x, cp.y, cp.z));
+                    }
+                }
+                if (points.length > 1) {
+                    const geometry = new THREE.BufferGeometry().setFromPoints(points);
+                    const line = new THREE.Line(geometry, lineMaterial);
+                    lineGroup.add(line);
+                }
+            }
+
+            // Create grid lines in V direction
+            for (let i = 0; i < numU; i++) {
+                const points = [];
+                for (let j = 0; j < numV; j++) {
+                    const idx = i * numV + j;
+                    if (idx < controlPoints.length) {
+                        const cp = controlPoints[idx];
+                        points.push(new THREE.Vector3(cp.x, cp.y, cp.z));
+                    }
+                }
+                if (points.length > 1) {
+                    const geometry = new THREE.BufferGeometry().setFromPoints(points);
+                    const line = new THREE.Line(geometry, lineMaterial);
+                    lineGroup.add(line);
+                }
+            }
+
+            controlNetLines = lineGroup;
+            controlNetLines.visible = showNet;
+            scene.add(controlNetLines);
+        }
+
+        function selectControlPoint(idx) {
+            // Deselect previous
+            if (selectedControlPoint !== null) {
+                const prevSphere = controlPointSpheres[selectedControlPoint];
+                if (prevSphere) {
+                    prevSphere.material.color.setHex(0x4caf50);
+                    prevSphere.material.emissive.setHex(0x1b5e20);
+                }
+            }
+
+            // Select new
+            selectedControlPoint = idx;
+            const sphere = controlPointSpheres[idx];
+            if (sphere) {
+                sphere.material.color.setHex(0xff9800);
+                sphere.material.emissive.setHex(0xff6600);
+            }
+
+            // Update UI
+            updateSelectedPointUI(idx);
+
+            // Update influence visualization
+            if (showInfluence) {
+                updateInfluenceVisualization(idx);
+            }
+
+            // Highlight in list
+            document.querySelectorAll('.ctrl-point-item').forEach((el, i) => {
+                el.classList.toggle('selected', i === idx);
+            });
+        }
+
+        function updateSelectedPointUI(idx) {
+            if (!splineData || !splineData.control_points) return;
+
+            const cp = splineData.control_points[idx];
+            const section = document.getElementById('selectedPointSection');
+            const details = document.getElementById('selectedPointDetails');
+
+            section.style.display = 'block';
+            details.innerHTML = `
+                <div class="coord-row">
+                    <span style="color: #888;">Index:</span>
+                    <span>(${cp.i}, ${cp.j})</span>
+                </div>
+                <div class="coord-row">
+                    <span style="color: #888;">X:</span>
+                    <span>${cp.x.toFixed(4)}</span>
+                </div>
+                <div class="coord-row">
+                    <span style="color: #888;">Y:</span>
+                    <span>${cp.y.toFixed(4)}</span>
+                </div>
+                <div class="coord-row">
+                    <span style="color: #888;">Z:</span>
+                    <span>${cp.z.toFixed(4)}</span>
+                </div>
+                <div class="coord-row">
+                    <span style="color: #888;">Weight:</span>
+                    <span style="color: #ff9800;">${cp.weight.toFixed(4)}</span>
+                </div>
+            `;
+        }
+
+        function updateInfluenceVisualization(ctrlIdx) {
+            if (!meshObject || !splineData || !splineData.influence_grid) return;
+
+            const cp = splineData.control_points[ctrlIdx];
+            const key = `${cp.i}_${cp.j}`;
+            const influenceData = splineData.influence_grid.control_point_influence[key];
+
+            if (!influenceData) {
+                console.warn('No influence data for control point', key);
+                return;
+            }
+
+            const geometry = meshObject.geometry;
+            const colors = geometry.attributes.color.array;
+            const positions = geometry.attributes.position.array;
+            const numVertices = positions.length / 3;
+
+            // Get parameter range
+            const uRange = splineData.u_range || [0, 1];
+            const vRange = splineData.v_range || [0, 1];
+            const resolution = splineData.influence_grid.resolution;
+
+            // For each vertex, interpolate influence value
+            for (let i = 0; i < numVertices; i++) {
+                let influence = 0;
+
+                // If we have UV coords, use them directly
+                if (splineData.mesh.uv_coords && splineData.mesh.uv_coords[i]) {
+                    const uv = splineData.mesh.uv_coords[i];
+                    const u = uv[0];
+                    const v = uv[1];
+
+                    // Map to grid index
+                    const uIdx = Math.min(resolution - 1, Math.max(0,
+                        Math.floor((u - uRange[0]) / (uRange[1] - uRange[0]) * (resolution - 1))));
+                    const vIdx = Math.min(resolution - 1, Math.max(0,
+                        Math.floor((v - vRange[0]) / (vRange[1] - vRange[0]) * (resolution - 1))));
+
+                    influence = influenceData[uIdx][vIdx];
+                }
+
+                // Map influence to color (blue -> cyan -> green -> yellow -> red)
+                const color = influenceToColor(influence);
+                colors[i * 3] = color.r;
+                colors[i * 3 + 1] = color.g;
+                colors[i * 3 + 2] = color.b;
+            }
+
+            geometry.attributes.color.needsUpdate = true;
+        }
+
+        function influenceToColor(value) {
+            // Clamp value to [0, 1]
+            value = Math.max(0, Math.min(1, value));
+
+            // Color gradient: blue -> cyan -> green -> yellow -> red
+            let r, g, b;
+            if (value < 0.25) {
+                // Blue to cyan
+                const t = value / 0.25;
+                r = 0;
+                g = t;
+                b = 1;
+            } else if (value < 0.5) {
+                // Cyan to green
+                const t = (value - 0.25) / 0.25;
+                r = 0;
+                g = 1;
+                b = 1 - t;
+            } else if (value < 0.75) {
+                // Green to yellow
+                const t = (value - 0.5) / 0.25;
+                r = t;
+                g = 1;
+                b = 0;
+            } else {
+                // Yellow to red
+                const t = (value - 0.75) / 0.25;
+                r = 1;
+                g = 1 - t;
+                b = 0;
+            }
+
+            return { r, g, b };
+        }
+
+        function resetMeshColors() {
+            if (!meshObject || !originalVertexColors) return;
+
+            const geometry = meshObject.geometry;
+            const colors = geometry.attributes.color.array;
+
+            for (let i = 0; i < originalVertexColors.length; i++) {
+                colors[i] = originalVertexColors[i];
+            }
+
+            geometry.attributes.color.needsUpdate = true;
+        }
+
+        function updateInfoPanel(data) {
+            const container = document.getElementById('surfaceTypeContainer');
+            const surfaceType = data.surface_type || 'Unknown';
+            const info = data.surface_info || {};
+
+            let badgeClass = '';
+            if (surfaceType === 'Bezier') badgeClass = 'bezier';
+            else if (surfaceType === 'BSpline') badgeClass = 'bspline';
+            else if (surfaceType === 'Plane') badgeClass = 'plane';
+
+            let html = `
+                <div class="surface-type-badge ${badgeClass}">${info.full_name || surfaceType}</div>
+                <div class="surface-description">${info.description || ''}</div>
+            `;
+
+            if (data.degree_u !== undefined) {
+                html += `
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-label">Degree U</div>
+                            <div class="stat-value">${data.degree_u}</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Degree V</div>
+                            <div class="stat-value">${data.degree_v}</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Ctrl Pts U</div>
+                            <div class="stat-value">${data.num_ctrl_pts_u}</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Ctrl Pts V</div>
+                            <div class="stat-value">${data.num_ctrl_pts_v}</div>
+                        </div>
+                    </div>
+                    <div style="margin-top: 8px;">
+                        <span style="color: #888;">Rational:</span>
+                        <span style="color: ${data.is_rational ? '#ff9800' : '#888'};">
+                            ${data.is_rational ? 'Yes (NURBS)' : 'No'}
+                        </span>
+                    </div>
+                `;
+            }
+
+            container.innerHTML = html;
+
+            // Update knot vectors
+            const knotsSection = document.getElementById('knotsSection');
+            if (data.knots_u && data.multiplicities_u) {
+                knotsSection.style.display = 'block';
+                document.getElementById('knotsU').innerHTML = formatKnotVector(data.knots_u, data.multiplicities_u);
+                document.getElementById('knotsV').innerHTML = formatKnotVector(data.knots_v, data.multiplicities_v);
+            } else {
+                knotsSection.style.display = 'none';
+            }
+
+            // Highlight current type in comparison table
+            document.querySelectorAll('.comparison-table td').forEach(td => {
+                td.classList.remove('current-type');
+            });
+
+            const typeMapping = {
+                'Bezier': 1,
+                'BSpline': 2,
+            };
+            const col = typeMapping[surfaceType];
+            if (col) {
+                document.querySelectorAll('.comparison-table tr').forEach(tr => {
+                    const cells = tr.querySelectorAll('td');
+                    if (cells[col]) {
+                        cells[col].classList.add('current-type');
+                    }
+                });
+            }
+        }
+
+        function formatKnotVector(knots, mults) {
+            let html = '[';
+            knots.forEach((k, i) => {
+                if (i > 0) html += ', ';
+                html += `<span class="knot-value">${k.toFixed(2)}</span>`;
+                if (mults[i] > 1) {
+                    html += `<span class="knot-mult">x${mults[i]}</span>`;
+                }
+            });
+            html += ']';
+            return html;
+        }
+
+        function updateControlPointsList(controlPoints) {
+            const list = document.getElementById('controlPointsList');
+            list.innerHTML = '';
+
+            controlPoints.forEach((cp, idx) => {
+                const item = document.createElement('div');
+                item.className = 'ctrl-point-item';
+                item.innerHTML = `
+                    <span class="ctrl-point-index">(${cp.i},${cp.j})</span>
+                    <span class="ctrl-point-coords">${cp.x.toFixed(2)}, ${cp.y.toFixed(2)}, ${cp.z.toFixed(2)}</span>
+                    <span class="ctrl-point-weight">w=${cp.weight.toFixed(2)}</span>
+                `;
+                item.addEventListener('click', () => selectControlPoint(idx));
+                list.appendChild(item);
+            });
+        }
+
+        function fitToView() {
+            if (!meshObject && controlPointSpheres.length === 0) return;
+
+            const box = new THREE.Box3();
+
+            if (meshObject) {
+                box.expandByObject(meshObject);
+            }
+
+            controlPointSpheres.forEach(s => {
+                box.expandByObject(s);
+            });
+
+            const center = box.getCenter(new THREE.Vector3());
+            const size = box.getSize(new THREE.Vector3());
+            const maxDim = Math.max(size.x, size.y, size.z);
+
+            camera.position.copy(center);
+            camera.position.x += maxDim * 1.5;
+            camera.position.y += maxDim * 1.5;
+            camera.position.z += maxDim * 1.5;
+
+            controls.target.copy(center);
+            controls.update();
+
+            // Scale control point spheres
+            const sphereSize = maxDim * 0.02;
+            controlPointSpheres.forEach(s => {
+                const weightScale = s.scale.x;  // Preserve weight scaling
+                s.scale.setScalar(sphereSize * weightScale);
+            });
+        }
+
+        // Button handlers
+        document.getElementById('toggleMeshBtn').addEventListener('click', function() {
+            showMesh = !showMesh;
+            this.classList.toggle('active', showMesh);
+            if (meshObject) meshObject.visible = showMesh;
+        });
+
+        document.getElementById('toggleNetBtn').addEventListener('click', function() {
+            showNet = !showNet;
+            this.classList.toggle('active', showNet);
+            if (controlNetLines) controlNetLines.visible = showNet;
+        });
+
+        document.getElementById('togglePointsBtn').addEventListener('click', function() {
+            showPoints = !showPoints;
+            this.classList.toggle('active', showPoints);
+            controlPointSpheres.forEach(s => s.visible = showPoints);
+        });
+
+        document.getElementById('toggleInfluenceBtn').addEventListener('click', function() {
+            showInfluence = !showInfluence;
+            this.classList.toggle('active', showInfluence);
+            document.getElementById('influenceLegend').style.display = showInfluence ? 'block' : 'none';
+
+            if (showInfluence && selectedControlPoint !== null) {
+                updateInfluenceVisualization(selectedControlPoint);
+            } else {
+                resetMeshColors();
+            }
+        });
+
+        document.getElementById('fitViewBtn').addEventListener('click', fitToView);
+
+        // Message handler for ComfyUI integration
+        window.addEventListener('message', (event) => {
+            const data = event.data;
+
+            if (data.type === 'LOAD_SPLINE') {
+                fetch(data.jsonUrl)
+                    .then(response => response.json())
+                    .then(jsonData => {
+                        loadSplineData(jsonData);
+                    })
+                    .catch(err => {
+                        console.error('Failed to load spline data:', err);
+                        document.getElementById('loadingIndicator').textContent = 'Failed to load spline data';
+                    });
+            }
+        });
+
+        // Initialize
+        initScene();
+
+        // Signal ready
+        window.parent.postMessage({ type: 'SPLINE_VIEWER_READY' }, '*');
+    </script>
+</body>
+</html>

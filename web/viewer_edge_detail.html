@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>CADabra Edge Detail Viewer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+            background: #1a1a1a;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            color: #ccc;
+        }
+        #canvasContainer {
+            flex: 1;
+            min-height: 200px;
+            position: relative;
+            background: #222;
+            border-bottom: 1px solid #444;
+        }
+        #edgeCanvas {
+            width: 100%;
+            height: 100%;
+        }
+        #loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #888;
+            font-size: 12px;
+        }
+        #axisLabel {
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            font-size: 10px;
+            color: #666;
+            background: rgba(0,0,0,0.5);
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+        #paramsPanel {
+            flex-shrink: 0;
+            padding: 12px;
+            background: #2a2a2a;
+            overflow-y: auto;
+            max-height: 50%;
+        }
+        #paramsPanel h3 {
+            font-size: 13px;
+            color: #4a9eff;
+            margin-bottom: 10px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid #444;
+        }
+        .param-section {
+            margin-bottom: 12px;
+        }
+        .param-section h4 {
+            font-size: 11px;
+            color: #888;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+        }
+        .param-grid {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 4px 12px;
+            font-size: 11px;
+        }
+        .param-label {
+            color: #888;
+        }
+        .param-value {
+            color: #fff;
+            font-family: monospace;
+        }
+        .param-value.highlight {
+            color: #4aff4a;
+        }
+        .vector-display {
+            font-family: monospace;
+            color: #ffaa00;
+        }
+    </style>
+</head>
+<body>
+    <div id="canvasContainer">
+        <canvas id="edgeCanvas"></canvas>
+        <div id="loading">Waiting for edge data...</div>
+        <div id="axisLabel">XY</div>
+    </div>
+    <div id="paramsPanel">
+        <h3>Edge Parameters</h3>
+        <div id="paramsContent">
+            <div style="color: #666; font-size: 11px;">No edge loaded</div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('edgeCanvas');
+        const ctx = canvas.getContext('2d');
+        const loadingDiv = document.getElementById('loading');
+        const axisLabel = document.getElementById('axisLabel');
+        const paramsContent = document.getElementById('paramsContent');
+
+        let currentData = null;
+        let nodeId = null;
+
+        function resizeCanvas() {
+            const container = document.getElementById('canvasContainer');
+            canvas.width = container.clientWidth * window.devicePixelRatio;
+            canvas.height = container.clientHeight * window.devicePixelRatio;
+            canvas.style.width = container.clientWidth + 'px';
+            canvas.style.height = container.clientHeight + 'px';
+            ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+            if (currentData) {
+                drawEdge(currentData);
+            }
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+
+        function drawEdge(data) {
+            const points2d = data.points_2d || [];
+            if (points2d.length < 2) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                return;
+            }
+
+            // Get canvas dimensions
+            const width = canvas.width / window.devicePixelRatio;
+            const height = canvas.height / window.devicePixelRatio;
+
+            // Compute bounds
+            let minX = Infinity, maxX = -Infinity;
+            let minY = Infinity, maxY = -Infinity;
+            for (const p of points2d) {
+                minX = Math.min(minX, p[0]);
+                maxX = Math.max(maxX, p[0]);
+                minY = Math.min(minY, p[1]);
+                maxY = Math.max(maxY, p[1]);
+            }
+
+            // Add padding
+            const padding = 40;
+            const rangeX = maxX - minX || 1;
+            const rangeY = maxY - minY || 1;
+
+            // Compute scale (maintain aspect ratio)
+            const scaleX = (width - padding * 2) / rangeX;
+            const scaleY = (height - padding * 2) / rangeY;
+            const scale = Math.min(scaleX, scaleY);
+
+            // Center offset
+            const offsetX = padding + ((width - padding * 2) - rangeX * scale) / 2;
+            const offsetY = padding + ((height - padding * 2) - rangeY * scale) / 2;
+
+            // Transform function
+            const transform = (p) => [
+                offsetX + (p[0] - minX) * scale,
+                height - (offsetY + (p[1] - minY) * scale)  // Flip Y
+            ];
+
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width / window.devicePixelRatio, canvas.height / window.devicePixelRatio);
+
+            // Draw grid
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 0.5;
+            const gridSpacing = 50;
+            for (let x = 0; x < width; x += gridSpacing) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, height);
+                ctx.stroke();
+            }
+            for (let y = 0; y < height; y += gridSpacing) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(width, y);
+                ctx.stroke();
+            }
+
+            // Draw edge curve
+            ctx.strokeStyle = data.is_free ? '#ff4444' : '#4a9eff';
+            ctx.lineWidth = 3;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+
+            ctx.beginPath();
+            const startPt = transform(points2d[0]);
+            ctx.moveTo(startPt[0], startPt[1]);
+            for (let i = 1; i < points2d.length; i++) {
+                const pt = transform(points2d[i]);
+                ctx.lineTo(pt[0], pt[1]);
+            }
+            ctx.stroke();
+
+            // Draw start/end points
+            const start = transform(points2d[0]);
+            const end = transform(points2d[points2d.length - 1]);
+
+            // Start point (green)
+            ctx.fillStyle = '#00ff00';
+            ctx.beginPath();
+            ctx.arc(start[0], start[1], 6, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#000';
+            ctx.font = '9px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('S', start[0], start[1] + 3);
+
+            // End point (red)
+            ctx.fillStyle = '#ff6600';
+            ctx.beginPath();
+            ctx.arc(end[0], end[1], 6, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#000';
+            ctx.fillText('E', end[0], end[1] + 3);
+
+            // Draw center point for circles/ellipses
+            if (data.params && data.params.center) {
+                const center2d = projectPoint(data.params.center, data.projection_plane);
+                const centerPt = transform(center2d);
+                ctx.strokeStyle = '#ffff00';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(centerPt[0] - 8, centerPt[1]);
+                ctx.lineTo(centerPt[0] + 8, centerPt[1]);
+                ctx.moveTo(centerPt[0], centerPt[1] - 8);
+                ctx.lineTo(centerPt[0], centerPt[1] + 8);
+                ctx.stroke();
+                ctx.fillStyle = '#ffff00';
+                ctx.font = '9px sans-serif';
+                ctx.textAlign = 'left';
+                ctx.fillText('C', centerPt[0] + 10, centerPt[1] + 3);
+            }
+
+            // Draw tangent vectors at endpoints
+            if (data.tangents) {
+                ctx.strokeStyle = '#00ffff';
+                ctx.lineWidth = 1.5;
+                const tangentLength = 30;
+
+                if (data.tangents.start) {
+                    const tan2d = projectVector(data.tangents.start, data.projection_plane);
+                    const mag = Math.sqrt(tan2d[0]**2 + tan2d[1]**2);
+                    if (mag > 0.001) {
+                        const dx = (tan2d[0] / mag) * tangentLength;
+                        const dy = -(tan2d[1] / mag) * tangentLength;  // Flip Y
+                        ctx.beginPath();
+                        ctx.moveTo(start[0], start[1]);
+                        ctx.lineTo(start[0] + dx, start[1] + dy);
+                        ctx.stroke();
+                        // Arrow head
+                        drawArrowHead(ctx, start[0] + dx, start[1] + dy, dx, dy);
+                    }
+                }
+
+                if (data.tangents.end) {
+                    const tan2d = projectVector(data.tangents.end, data.projection_plane);
+                    const mag = Math.sqrt(tan2d[0]**2 + tan2d[1]**2);
+                    if (mag > 0.001) {
+                        const dx = (tan2d[0] / mag) * tangentLength;
+                        const dy = -(tan2d[1] / mag) * tangentLength;
+                        ctx.beginPath();
+                        ctx.moveTo(end[0], end[1]);
+                        ctx.lineTo(end[0] + dx, end[1] + dy);
+                        ctx.stroke();
+                        drawArrowHead(ctx, end[0] + dx, end[1] + dy, dx, dy);
+                    }
+                }
+            }
+
+            // Update axis label
+            axisLabel.textContent = data.projection_plane || 'XY';
+        }
+
+        function projectPoint(p3d, plane) {
+            if (plane === 'XY') return [p3d[0], p3d[1]];
+            if (plane === 'XZ') return [p3d[0], p3d[2]];
+            if (plane === 'YZ') return [p3d[1], p3d[2]];
+            return [p3d[0], p3d[1]];
+        }
+
+        function projectVector(v3d, plane) {
+            if (plane === 'XY') return [v3d[0], v3d[1]];
+            if (plane === 'XZ') return [v3d[0], v3d[2]];
+            if (plane === 'YZ') return [v3d[1], v3d[2]];
+            return [v3d[0], v3d[1]];
+        }
+
+        function drawArrowHead(ctx, x, y, dx, dy) {
+            const angle = Math.atan2(dy, dx);
+            const headLength = 8;
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.lineTo(x - headLength * Math.cos(angle - Math.PI/6), y - headLength * Math.sin(angle - Math.PI/6));
+            ctx.moveTo(x, y);
+            ctx.lineTo(x - headLength * Math.cos(angle + Math.PI/6), y - headLength * Math.sin(angle + Math.PI/6));
+            ctx.stroke();
+        }
+
+        function updateParams(data) {
+            const edgeType = data.edge_type || 'Unknown';
+            const params = data.params || {};
+
+            let html = '';
+
+            // Basic info section
+            html += '<div class="param-section">';
+            html += '<h4>Basic Info</h4>';
+            html += '<div class="param-grid">';
+            html += `<span class="param-label">Edge ID:</span><span class="param-value">${data.edge_id}</span>`;
+            html += `<span class="param-label">Type:</span><span class="param-value highlight">${edgeType}</span>`;
+            html += `<span class="param-label">Boundary:</span><span class="param-value">${data.is_free ? 'Yes (free edge)' : 'No (internal)'}</span>`;
+            html += `<span class="param-label">Projection:</span><span class="param-value">${data.projection_plane}</span>`;
+            html += '</div></div>';
+
+            // Geometry section
+            html += '<div class="param-section">';
+            html += '<h4>Geometry</h4>';
+            html += '<div class="param-grid">';
+
+            if (params.length !== undefined) {
+                html += `<span class="param-label">Length:</span><span class="param-value">${params.length.toFixed(4)}</span>`;
+            }
+
+            // Type-specific params
+            if (edgeType === 'Circle' || edgeType === 'Ellipse') {
+                if (params.radius !== undefined) {
+                    html += `<span class="param-label">Radius:</span><span class="param-value highlight">${params.radius.toFixed(4)}</span>`;
+                }
+                if (params.major_radius !== undefined) {
+                    html += `<span class="param-label">Major Radius:</span><span class="param-value">${params.major_radius.toFixed(4)}</span>`;
+                }
+                if (params.minor_radius !== undefined) {
+                    html += `<span class="param-label">Minor Radius:</span><span class="param-value">${params.minor_radius.toFixed(4)}</span>`;
+                }
+                if (params.center) {
+                    html += `<span class="param-label">Center:</span><span class="param-value vector-display">[${params.center.map(v => v.toFixed(2)).join(', ')}]</span>`;
+                }
+            }
+
+            if (edgeType === 'Line' && params.direction) {
+                html += `<span class="param-label">Direction:</span><span class="param-value vector-display">[${params.direction.map(v => v.toFixed(4)).join(', ')}]</span>`;
+            }
+
+            html += '</div></div>';
+
+            // Vertices section
+            if (params.start_point || params.end_point) {
+                html += '<div class="param-section">';
+                html += '<h4>Vertices</h4>';
+                html += '<div class="param-grid">';
+                if (params.start_point) {
+                    html += `<span class="param-label">Start:</span><span class="param-value vector-display">[${params.start_point.map(v => v.toFixed(3)).join(', ')}]</span>`;
+                }
+                if (params.end_point) {
+                    html += `<span class="param-label">End:</span><span class="param-value vector-display">[${params.end_point.map(v => v.toFixed(3)).join(', ')}]</span>`;
+                }
+                html += '</div></div>';
+            }
+
+            // Tangents section
+            if (params.start_tangent || params.end_tangent) {
+                html += '<div class="param-section">';
+                html += '<h4>Tangent Vectors</h4>';
+                html += '<div class="param-grid">';
+                if (params.start_tangent) {
+                    html += `<span class="param-label">At Start:</span><span class="param-value vector-display">[${params.start_tangent.map(v => v.toFixed(4)).join(', ')}]</span>`;
+                }
+                if (params.end_tangent) {
+                    html += `<span class="param-label">At End:</span><span class="param-value vector-display">[${params.end_tangent.map(v => v.toFixed(4)).join(', ')}]</span>`;
+                }
+                html += '</div></div>';
+            }
+
+            // Curvature section
+            if (params.curvature_avg !== undefined) {
+                html += '<div class="param-section">';
+                html += '<h4>Curvature</h4>';
+                html += '<div class="param-grid">';
+                html += `<span class="param-label">Min:</span><span class="param-value">${params.curvature_min.toFixed(6)}</span>`;
+                html += `<span class="param-label">Max:</span><span class="param-value">${params.curvature_max.toFixed(6)}</span>`;
+                html += `<span class="param-label">Avg:</span><span class="param-value">${params.curvature_avg.toFixed(6)}</span>`;
+                html += '</div></div>';
+            }
+
+            // Topology section
+            if (data.adjacent_faces && data.adjacent_faces.length > 0) {
+                html += '<div class="param-section">';
+                html += '<h4>Topology</h4>';
+                html += '<div class="param-grid">';
+                html += `<span class="param-label">Adjacent Faces:</span><span class="param-value">${data.adjacent_faces.join(', ')}</span>`;
+                if (data.connected_edges) {
+                    const startEdges = data.connected_edges.start || [];
+                    const endEdges = data.connected_edges.end || [];
+                    if (startEdges.length > 0) {
+                        html += `<span class="param-label">At Start:</span><span class="param-value">Edges ${startEdges.join(', ')}</span>`;
+                    }
+                    if (endEdges.length > 0) {
+                        html += `<span class="param-label">At End:</span><span class="param-value">Edges ${endEdges.join(', ')}</span>`;
+                    }
+                }
+                html += '</div></div>';
+            }
+
+            paramsContent.innerHTML = html;
+        }
+
+        function loadEdgeData(data) {
+            currentData = data;
+            loadingDiv.style.display = 'none';
+
+            resizeCanvas();
+            drawEdge(data);
+            updateParams(data);
+        }
+
+        // Listen for messages from parent
+        window.addEventListener('message', (event) => {
+            console.log('[CADabra EdgeDetail] Received:', event.data);
+
+            if (event.data.type === 'LOAD_EDGE_DETAIL') {
+                nodeId = event.data.nodeId;
+                loadEdgeData(event.data);
+            }
+        });
+
+        // Initial resize
+        resizeCanvas();
+        console.log('[CADabra EdgeDetail] Viewer ready');
+    </script>
+</body>
+</html>

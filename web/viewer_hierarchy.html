@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CAD Hierarchy Tree Viewer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #1a1a1a;
+            color: #e0e0e0;
+            font-size: 12px;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* Tree panel */
+        .tree-panel {
+            flex: 1;
+            overflow: auto;
+            padding: 12px;
+            background: #1e1e1e;
+        }
+
+        /* Summary panel */
+        .summary-panel {
+            width: 280px;
+            background: #252525;
+            border-left: 1px solid #333;
+            padding: 16px;
+            overflow-y: auto;
+        }
+
+        .summary-panel h3 {
+            color: #4a9eff;
+            font-size: 14px;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #333;
+        }
+
+        .summary-section {
+            margin-bottom: 20px;
+        }
+
+        .summary-section h4 {
+            color: #888;
+            font-size: 11px;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+            border-bottom: 1px solid #2a2a2a;
+        }
+
+        .stat-label {
+            color: #aaa;
+        }
+
+        .stat-value {
+            color: #fff;
+            font-weight: 500;
+        }
+
+        /* Tree styles */
+        .tree-node {
+            margin-left: 16px;
+            position: relative;
+        }
+
+        .tree-node::before {
+            content: '';
+            position: absolute;
+            left: -12px;
+            top: 0;
+            height: 100%;
+            width: 1px;
+            background: #333;
+        }
+
+        .tree-node:last-child::before {
+            height: 12px;
+        }
+
+        .tree-node::after {
+            content: '';
+            position: absolute;
+            left: -12px;
+            top: 12px;
+            width: 10px;
+            height: 1px;
+            background: #333;
+        }
+
+        .tree-root {
+            margin-left: 0;
+        }
+
+        .tree-root::before,
+        .tree-root::after {
+            display: none;
+        }
+
+        .node-header {
+            display: flex;
+            align-items: center;
+            padding: 4px 8px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: background 0.15s;
+            margin: 2px 0;
+        }
+
+        .node-header:hover {
+            background: #2a2a2a;
+        }
+
+        .node-header.selected {
+            background: #1e3a5f;
+        }
+
+        .toggle-btn {
+            width: 16px;
+            height: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 6px;
+            color: #666;
+            font-size: 10px;
+            flex-shrink: 0;
+        }
+
+        .toggle-btn.has-children {
+            color: #888;
+            cursor: pointer;
+        }
+
+        .toggle-btn.has-children:hover {
+            color: #fff;
+        }
+
+        .node-icon {
+            width: 18px;
+            height: 18px;
+            margin-right: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            flex-shrink: 0;
+        }
+
+        .node-type {
+            font-weight: 500;
+            margin-right: 8px;
+        }
+
+        .node-props {
+            color: #888;
+            font-size: 11px;
+        }
+
+        .node-count {
+            color: #666;
+            font-size: 10px;
+            margin-left: auto;
+            padding-left: 8px;
+        }
+
+        .children-container {
+            display: block;
+        }
+
+        .children-container.collapsed {
+            display: none;
+        }
+
+        /* Type colors */
+        .type-COMPOUND .node-icon { color: #ff9800; }
+        .type-COMPSOLID .node-icon { color: #ff5722; }
+        .type-SOLID .node-icon { color: #4caf50; }
+        .type-SHELL .node-icon { color: #2196f3; }
+        .type-FACE .node-icon { color: #9c27b0; }
+        .type-WIRE .node-icon { color: #00bcd4; }
+        .type-EDGE .node-icon { color: #ffeb3b; }
+        .type-VERTEX .node-icon { color: #f44336; }
+
+        .type-COMPOUND .node-type { color: #ff9800; }
+        .type-COMPSOLID .node-type { color: #ff5722; }
+        .type-SOLID .node-type { color: #4caf50; }
+        .type-SHELL .node-type { color: #2196f3; }
+        .type-FACE .node-type { color: #9c27b0; }
+        .type-WIRE .node-type { color: #00bcd4; }
+        .type-EDGE .node-type { color: #ffeb3b; }
+        .type-VERTEX .node-type { color: #f44336; }
+
+        /* Icons */
+        .icon-compound::before { content: ''; }
+        .icon-solid::before { content: ''; }
+        .icon-shell::before { content: ''; }
+        .icon-face::before { content: ''; }
+        .icon-wire::before { content: ''; }
+        .icon-edge::before { content: ''; }
+        .icon-vertex::before { content: ''; }
+
+        /* Toolbar */
+        .toolbar {
+            display: flex;
+            gap: 8px;
+            padding: 8px 12px;
+            background: #252525;
+            border-bottom: 1px solid #333;
+        }
+
+        .toolbar button {
+            padding: 6px 12px;
+            background: #333;
+            border: 1px solid #444;
+            color: #ccc;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+        }
+
+        .toolbar button:hover {
+            background: #444;
+            color: #fff;
+        }
+
+        .toolbar input {
+            flex: 1;
+            max-width: 200px;
+            padding: 6px 10px;
+            background: #1e1e1e;
+            border: 1px solid #444;
+            color: #fff;
+            border-radius: 4px;
+            font-size: 11px;
+        }
+
+        .toolbar input::placeholder {
+            color: #666;
+        }
+
+        /* Filter dropdown */
+        .filter-dropdown {
+            padding: 6px 10px;
+            background: #333;
+            border: 1px solid #444;
+            color: #ccc;
+            border-radius: 4px;
+            font-size: 11px;
+            cursor: pointer;
+        }
+
+        /* Loading state */
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #666;
+        }
+
+        /* Pie chart placeholder */
+        .pie-chart {
+            width: 100%;
+            height: 120px;
+            background: #1e1e1e;
+            border-radius: 8px;
+            display: flex;
+            flex-wrap: wrap;
+            padding: 8px;
+            gap: 4px;
+        }
+
+        .pie-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            padding: 4px 8px;
+            background: #2a2a2a;
+            border-radius: 4px;
+        }
+
+        .pie-color {
+            width: 10px;
+            height: 10px;
+            border-radius: 2px;
+        }
+
+        /* Truncated indicator */
+        .truncated-indicator {
+            color: #ff9800;
+            font-size: 10px;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="toolbar">
+        <input type="text" id="searchInput" placeholder="Search (type or property)...">
+        <select class="filter-dropdown" id="filterType">
+            <option value="">All Types</option>
+            <option value="COMPOUND">Compounds</option>
+            <option value="SOLID">Solids</option>
+            <option value="SHELL">Shells</option>
+            <option value="FACE">Faces</option>
+            <option value="WIRE">Wires</option>
+            <option value="EDGE">Edges</option>
+        </select>
+        <button id="expandAllBtn">Expand All</button>
+        <button id="collapseAllBtn">Collapse All</button>
+        <button id="copyJsonBtn">Copy JSON</button>
+    </div>
+
+    <div class="container">
+        <div class="tree-panel" id="treePanel">
+            <div class="loading">Waiting for hierarchy data...</div>
+        </div>
+
+        <div class="summary-panel" id="summaryPanel">
+            <h3>Summary</h3>
+            <div class="summary-section">
+                <h4>Entity Counts</h4>
+                <div id="entityCounts"></div>
+            </div>
+            <div class="summary-section">
+                <h4>Surface Types</h4>
+                <div class="pie-chart" id="surfaceTypes"></div>
+            </div>
+            <div class="summary-section">
+                <h4>Curve Types</h4>
+                <div class="pie-chart" id="curveTypes"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let hierarchyData = null;
+        let allNodeElements = [];
+
+        // Type icons (using unicode symbols)
+        const TYPE_ICONS = {
+            'COMPOUND': '\u25A0',   // Square
+            'COMPSOLID': '\u25A0',
+            'SOLID': '\u25A6',      // Cube-ish
+            'SHELL': '\u25A1',      // Empty square
+            'FACE': '\u25B3',       // Triangle (surface)
+            'WIRE': '\u25CB',       // Circle
+            'EDGE': '\u2014',       // Line
+            'VERTEX': '\u2022',     // Dot
+        };
+
+        // Colors for pie charts
+        const SURFACE_COLORS = {
+            'Plane': '#4caf50',
+            'Cylinder': '#2196f3',
+            'Cone': '#ff9800',
+            'Sphere': '#9c27b0',
+            'Torus': '#e91e63',
+            'Bezier': '#00bcd4',
+            'BSpline': '#ff5722',
+            'Revolution': '#795548',
+            'Extrusion': '#607d8b',
+            'Other': '#666',
+        };
+
+        const CURVE_COLORS = {
+            'Line': '#4caf50',
+            'Circle': '#2196f3',
+            'Ellipse': '#ff9800',
+            'Hyperbola': '#9c27b0',
+            'Parabola': '#e91e63',
+            'Bezier': '#00bcd4',
+            'BSpline': '#ff5722',
+            'Other': '#666',
+        };
+
+        // Render the tree
+        function renderTree(node, isRoot = false) {
+            const div = document.createElement('div');
+            div.className = `tree-node ${isRoot ? 'tree-root' : ''} type-${node.type}`;
+
+            const hasChildren = node.children && node.children.length > 0;
+            const header = document.createElement('div');
+            header.className = 'node-header';
+
+            // Toggle button
+            const toggle = document.createElement('span');
+            toggle.className = `toggle-btn ${hasChildren ? 'has-children' : ''}`;
+            toggle.textContent = hasChildren ? '\u25BC' : '';  // Down arrow or empty
+
+            // Icon
+            const icon = document.createElement('span');
+            icon.className = 'node-icon';
+            icon.textContent = TYPE_ICONS[node.type] || '?';
+
+            // Type label
+            const typeLabel = document.createElement('span');
+            typeLabel.className = 'node-type';
+            typeLabel.textContent = node.type;
+
+            // Properties
+            const props = document.createElement('span');
+            props.className = 'node-props';
+            if (node.properties) {
+                const propStrs = [];
+                if (node.properties.surface_type) propStrs.push(node.properties.surface_type);
+                if (node.properties.curve_type) propStrs.push(node.properties.curve_type);
+                props.textContent = propStrs.length > 0 ? `(${propStrs.join(', ')})` : '';
+            }
+
+            // Child count
+            const count = document.createElement('span');
+            count.className = 'node-count';
+            if (hasChildren) {
+                count.textContent = `${node.children.length} children`;
+            } else if (node.children_count) {
+                count.textContent = `${node.children_count} children`;
+            } else if (node.vertex_count) {
+                count.textContent = `${node.vertex_count} vertices`;
+            }
+
+            // Truncated indicator
+            if (node.truncated) {
+                const truncated = document.createElement('span');
+                truncated.className = 'truncated-indicator';
+                truncated.textContent = ' (truncated)';
+                count.appendChild(truncated);
+            }
+
+            header.appendChild(toggle);
+            header.appendChild(icon);
+            header.appendChild(typeLabel);
+            header.appendChild(props);
+            header.appendChild(count);
+            div.appendChild(header);
+
+            // Children container
+            if (hasChildren) {
+                const childrenContainer = document.createElement('div');
+                childrenContainer.className = 'children-container';
+
+                node.children.forEach(child => {
+                    childrenContainer.appendChild(renderTree(child, false));
+                });
+
+                div.appendChild(childrenContainer);
+
+                // Toggle click handler
+                toggle.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const isCollapsed = childrenContainer.classList.toggle('collapsed');
+                    toggle.textContent = isCollapsed ? '\u25B6' : '\u25BC';  // Right or down arrow
+                });
+
+                // Double-click to expand/collapse
+                header.addEventListener('dblclick', (e) => {
+                    e.stopPropagation();
+                    const isCollapsed = childrenContainer.classList.toggle('collapsed');
+                    toggle.textContent = isCollapsed ? '\u25B6' : '\u25BC';
+                });
+            }
+
+            // Store reference for search
+            allNodeElements.push({
+                element: div,
+                header: header,
+                node: node,
+                type: node.type,
+                properties: node.properties,
+            });
+
+            return div;
+        }
+
+        // Render summary
+        function renderSummary(summary) {
+            // Entity counts
+            const countsDiv = document.getElementById('entityCounts');
+            countsDiv.innerHTML = '';
+
+            const entities = [
+                ['Compounds', summary.total_compounds],
+                ['Comp Solids', summary.total_compsolids],
+                ['Solids', summary.total_solids],
+                ['Shells', summary.total_shells],
+                ['Faces', summary.total_faces],
+                ['Wires', summary.total_wires],
+                ['Edges', summary.total_edges],
+                ['Vertices', summary.total_vertices],
+            ];
+
+            entities.forEach(([label, value]) => {
+                if (value > 0) {
+                    const row = document.createElement('div');
+                    row.className = 'stat-row';
+                    row.innerHTML = `<span class="stat-label">${label}</span><span class="stat-value">${value}</span>`;
+                    countsDiv.appendChild(row);
+                }
+            });
+
+            // Surface types pie
+            const surfaceDiv = document.getElementById('surfaceTypes');
+            surfaceDiv.innerHTML = '';
+            Object.entries(summary.surface_types || {}).sort((a, b) => b[1] - a[1]).forEach(([type, count]) => {
+                const item = document.createElement('div');
+                item.className = 'pie-item';
+                const color = SURFACE_COLORS[type] || '#666';
+                item.innerHTML = `<span class="pie-color" style="background:${color}"></span>${type}: ${count}`;
+                surfaceDiv.appendChild(item);
+            });
+
+            // Curve types pie
+            const curveDiv = document.getElementById('curveTypes');
+            curveDiv.innerHTML = '';
+            Object.entries(summary.curve_types || {}).sort((a, b) => b[1] - a[1]).forEach(([type, count]) => {
+                const item = document.createElement('div');
+                item.className = 'pie-item';
+                const color = CURVE_COLORS[type] || '#666';
+                item.innerHTML = `<span class="pie-color" style="background:${color}"></span>${type}: ${count}`;
+                curveDiv.appendChild(item);
+            });
+        }
+
+        // Load hierarchy data
+        function loadHierarchy(data) {
+            hierarchyData = data;
+            allNodeElements = [];
+
+            const treePanel = document.getElementById('treePanel');
+            treePanel.innerHTML = '';
+
+            if (data.root) {
+                treePanel.appendChild(renderTree(data.root, true));
+            }
+
+            if (data.summary) {
+                renderSummary(data.summary);
+            }
+        }
+
+        // Search functionality
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase();
+            const filterType = document.getElementById('filterType').value;
+
+            allNodeElements.forEach(({ element, header, node, type, properties }) => {
+                let visible = true;
+
+                // Filter by type
+                if (filterType && type !== filterType) {
+                    visible = false;
+                }
+
+                // Search in type and properties
+                if (query) {
+                    const typeMatch = type.toLowerCase().includes(query);
+                    let propMatch = false;
+                    if (properties) {
+                        propMatch = Object.values(properties).some(v =>
+                            String(v).toLowerCase().includes(query)
+                        );
+                    }
+                    if (!typeMatch && !propMatch) {
+                        visible = false;
+                    }
+                }
+
+                element.style.display = visible ? '' : 'none';
+
+                // Highlight matching
+                if (visible && query) {
+                    header.style.background = '#2d4a2d';
+                } else {
+                    header.style.background = '';
+                }
+            });
+        });
+
+        // Filter by type
+        document.getElementById('filterType').addEventListener('change', (e) => {
+            document.getElementById('searchInput').dispatchEvent(new Event('input'));
+        });
+
+        // Expand all
+        document.getElementById('expandAllBtn').addEventListener('click', () => {
+            document.querySelectorAll('.children-container').forEach(el => {
+                el.classList.remove('collapsed');
+            });
+            document.querySelectorAll('.toggle-btn.has-children').forEach(el => {
+                el.textContent = '\u25BC';
+            });
+        });
+
+        // Collapse all
+        document.getElementById('collapseAllBtn').addEventListener('click', () => {
+            document.querySelectorAll('.children-container').forEach(el => {
+                el.classList.add('collapsed');
+            });
+            document.querySelectorAll('.toggle-btn.has-children').forEach(el => {
+                el.textContent = '\u25B6';
+            });
+        });
+
+        // Copy JSON
+        document.getElementById('copyJsonBtn').addEventListener('click', () => {
+            if (hierarchyData) {
+                navigator.clipboard.writeText(JSON.stringify(hierarchyData, null, 2))
+                    .then(() => alert('JSON copied to clipboard!'))
+                    .catch(err => console.error('Failed to copy:', err));
+            }
+        });
+
+        // Message handler for ComfyUI integration
+        window.addEventListener('message', (event) => {
+            const data = event.data;
+
+            if (data.type === 'LOAD_HIERARCHY') {
+                // Fetch the JSON file
+                fetch(data.jsonUrl)
+                    .then(response => response.json())
+                    .then(jsonData => {
+                        loadHierarchy(jsonData);
+                    })
+                    .catch(err => {
+                        console.error('Failed to load hierarchy:', err);
+                        document.getElementById('treePanel').innerHTML =
+                            '<div class="loading">Failed to load hierarchy data</div>';
+                    });
+            } else if (data.type === 'EXPAND_ALL') {
+                document.getElementById('expandAllBtn').click();
+            } else if (data.type === 'COLLAPSE_ALL') {
+                document.getElementById('collapseAllBtn').click();
+            }
+        });
+
+        // Signal ready
+        window.parent.postMessage({ type: 'HIERARCHY_VIEWER_READY' }, '*');
+    </script>
+</body>
+</html>
