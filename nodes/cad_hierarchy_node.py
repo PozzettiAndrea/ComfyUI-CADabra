@@ -1,16 +1,11 @@
-"""
-CAD Hierarchy Tree node for ComfyUI-CADabra
-Visualizes the topological structure of a CAD model as a collapsible tree.
-"""
+from __future__ import annotations
 
 import json
 import os
 import time
 import folder_paths
+from .utils.occ_logging import logger
 
-from ..utils.occ_logging import logger
-
-# OCC imports
 from OCC.Core.TopAbs import (
     TopAbs_COMPOUND, TopAbs_COMPSOLID, TopAbs_SOLID,
     TopAbs_SHELL, TopAbs_FACE, TopAbs_WIRE,
@@ -26,50 +21,68 @@ from OCC.Core.GeomAbs import (
     GeomAbs_Parabola, GeomAbs_BezierCurve, GeomAbs_BSplineCurve, GeomAbs_OtherCurve
 )
 
-# Shape type names
-SHAPE_TYPE_NAMES = {
-    TopAbs_COMPOUND: "COMPOUND",
-    TopAbs_COMPSOLID: "COMPSOLID",
-    TopAbs_SOLID: "SOLID",
-    TopAbs_SHELL: "SHELL",
-    TopAbs_FACE: "FACE",
-    TopAbs_WIRE: "WIRE",
-    TopAbs_EDGE: "EDGE",
-    TopAbs_VERTEX: "VERTEX",
-}
+def _get_shape_type_names():
+    """Get shape type names dict - called at runtime when OCC is available."""
+    from OCC.Core.TopAbs import (
+        TopAbs_COMPOUND, TopAbs_COMPSOLID, TopAbs_SOLID,
+        TopAbs_SHELL, TopAbs_FACE, TopAbs_WIRE,
+        TopAbs_EDGE, TopAbs_VERTEX
+    )
+    return {
+        TopAbs_COMPOUND: "COMPOUND",
+        TopAbs_COMPSOLID: "COMPSOLID",
+        TopAbs_SOLID: "SOLID",
+        TopAbs_SHELL: "SHELL",
+        TopAbs_FACE: "FACE",
+        TopAbs_WIRE: "WIRE",
+        TopAbs_EDGE: "EDGE",
+        TopAbs_VERTEX: "VERTEX",
+    }
 
-# Surface type names
-SURFACE_TYPE_NAMES = {
-    GeomAbs_Plane: "Plane",
-    GeomAbs_Cylinder: "Cylinder",
-    GeomAbs_Cone: "Cone",
-    GeomAbs_Sphere: "Sphere",
-    GeomAbs_Torus: "Torus",
-    GeomAbs_BezierSurface: "Bezier",
-    GeomAbs_BSplineSurface: "BSpline",
-    GeomAbs_SurfaceOfRevolution: "Revolution",
-    GeomAbs_SurfaceOfExtrusion: "Extrusion",
-    GeomAbs_OtherSurface: "Other",
-}
 
-# Curve type names
-CURVE_TYPE_NAMES = {
-    GeomAbs_Line: "Line",
-    GeomAbs_Circle: "Circle",
-    GeomAbs_Ellipse: "Ellipse",
-    GeomAbs_Hyperbola: "Hyperbola",
-    GeomAbs_Parabola: "Parabola",
-    GeomAbs_BezierCurve: "Bezier",
-    GeomAbs_BSplineCurve: "BSpline",
-    GeomAbs_OtherCurve: "Other",
-}
+def _get_surface_type_names():
+    """Get surface type names dict - called at runtime when OCC is available."""
+    from OCC.Core.GeomAbs import (
+        GeomAbs_Plane, GeomAbs_Cylinder, GeomAbs_Cone, GeomAbs_Sphere,
+        GeomAbs_Torus, GeomAbs_BezierSurface, GeomAbs_BSplineSurface,
+        GeomAbs_SurfaceOfRevolution, GeomAbs_SurfaceOfExtrusion, GeomAbs_OtherSurface
+    )
+    return {
+        GeomAbs_Plane: "Plane",
+        GeomAbs_Cylinder: "Cylinder",
+        GeomAbs_Cone: "Cone",
+        GeomAbs_Sphere: "Sphere",
+        GeomAbs_Torus: "Torus",
+        GeomAbs_BezierSurface: "Bezier",
+        GeomAbs_BSplineSurface: "BSpline",
+        GeomAbs_SurfaceOfRevolution: "Revolution",
+        GeomAbs_SurfaceOfExtrusion: "Extrusion",
+        GeomAbs_OtherSurface: "Other",
+    }
 
+
+def _get_curve_type_names():
+    """Get curve type names dict - called at runtime when OCC is available."""
+    from OCC.Core.GeomAbs import (
+        GeomAbs_Line, GeomAbs_Circle, GeomAbs_Ellipse, GeomAbs_Hyperbola,
+        GeomAbs_Parabola, GeomAbs_BezierCurve, GeomAbs_BSplineCurve, GeomAbs_OtherCurve
+    )
+    return {
+        GeomAbs_Line: "Line",
+        GeomAbs_Circle: "Circle",
+        GeomAbs_Ellipse: "Ellipse",
+        GeomAbs_Hyperbola: "Hyperbola",
+        GeomAbs_Parabola: "Parabola",
+        GeomAbs_BezierCurve: "Bezier",
+        GeomAbs_BSplineCurve: "BSpline",
+        GeomAbs_OtherCurve: "Other",
+    }
 
 class CADHierarchyTree:
     """
     Visualizes the topological structure of a CAD model as a collapsible tree.
 
-    Traverses the TopoDS_Shape hierarchy (COMPOUND → SOLID → SHELL → FACE → WIRE → EDGE → VERTEX)
+    Traverses the TopoDS_Shape hierarchy (COMPOUND -> SOLID -> SHELL -> FACE -> WIRE -> EDGE -> VERTEX)
     and outputs a JSON tree structure with entity counts and type information.
     """
 
@@ -108,7 +121,7 @@ class CADHierarchyTree:
     DESCRIPTION = """
     Visualizes the topological structure of a CAD model as a collapsible tree.
 
-    Shows the hierarchy: COMPOUND → SOLID → SHELL → FACE → WIRE → EDGE → VERTEX
+    Shows the hierarchy: COMPOUND -> SOLID -> SHELL -> FACE -> WIRE -> EDGE -> VERTEX
     with surface types for faces and curve types for edges.
 
     Outputs:
@@ -119,10 +132,12 @@ class CADHierarchyTree:
     def build_hierarchy(self, cad_model, max_depth=-1, include_properties=True, collapse_vertices=True):
         """Build the hierarchy tree from a CAD model."""
 
-        # Get OCC shape
-        occ_shape = cad_model.get("occ_shape") or cad_model.get("shape")
-        if occ_shape is None:
-            raise RuntimeError("CAD model has no OCC shape")
+        # Get OCC shape from brep_path
+        try:
+            from .utils.brep_cache import get_occ_shape
+        except ImportError:
+            from .utils.brep_cache import get_occ_shape
+        occ_shape = get_occ_shape(cad_model)
 
         output_dir = folder_paths.get_output_directory()
         timestamp = int(time.time() * 1000)
@@ -218,7 +233,7 @@ class CADHierarchyTree:
         """Recursively build a tree node for a shape."""
 
         shape_type = shape.ShapeType()
-        type_name = SHAPE_TYPE_NAMES.get(shape_type, "UNKNOWN")
+        type_name = _get_shape_type_names().get(shape_type, "UNKNOWN")
 
         # Update counter
         if type_name in self.counters:
@@ -238,7 +253,7 @@ class CADHierarchyTree:
                 try:
                     adaptor = BRepAdaptor_Surface(topods.Face(shape))
                     surface_type = adaptor.GetType()
-                    surface_name = SURFACE_TYPE_NAMES.get(surface_type, "Unknown")
+                    surface_name = _get_surface_type_names().get(surface_type, "Unknown")
                     node["properties"] = {"surface_type": surface_name}
 
                     # Update surface type counter
@@ -250,7 +265,7 @@ class CADHierarchyTree:
                 try:
                     adaptor = BRepAdaptor_Curve(topods.Edge(shape))
                     curve_type = adaptor.GetType()
-                    curve_name = CURVE_TYPE_NAMES.get(curve_type, "Unknown")
+                    curve_name = _get_curve_type_names().get(curve_type, "Unknown")
                     node["properties"] = {"curve_type": curve_name}
 
                     # Update curve type counter

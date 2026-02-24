@@ -7,8 +7,7 @@ import os
 import json
 import numpy as np
 import folder_paths
-
-from ..utils.occ_logging import logger
+from .utils.occ_logging import logger
 
 
 class CADCurvePlotter:
@@ -62,7 +61,7 @@ class CADCurvePlotter:
     - Control points with indices
     - Curve parameters (degree, knots, planarity)
 
-    Only works with planar curves (deviation ≤ 1%).
+    Only works with planar curves (deviation <= 1%).
     """
 
     def plot_curve(self, spline_data_file, edge_id, num_samples=100):
@@ -103,7 +102,7 @@ class CADCurvePlotter:
         if deviation_pct is None or deviation_pct > 1.0:
             return self._error_result(
                 f"Cannot plot: curve is 3D (deviation: {deviation_pct:.2f}%)\n"
-                f"Only planar curves (≤1% deviation) can be plotted."
+                f"Only planar curves (<=1% deviation) can be plotted."
             )
 
         # Get control points

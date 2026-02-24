@@ -2,6 +2,7 @@
 CAD Spline Viewer node for ComfyUI-CADabra
 Interactive visualization of B-spline, Bezier, and NURBS surface parameters.
 """
+from __future__ import annotations
 
 import json
 import os
@@ -9,9 +10,8 @@ import time
 import numpy as np
 import folder_paths
 
-from ..utils.occ_logging import logger
+from .utils.occ_logging import logger
 
-# OCC imports
 from OCC.Core.TopExp import TopExp_Explorer
 from OCC.Core.TopAbs import TopAbs_FACE
 from OCC.Core.TopoDS import topods
@@ -27,19 +27,26 @@ from OCC.Core.GeomAbs import (
 from OCC.Core.gp import gp_Pnt, gp_Vec
 from OCC.Core.ShapeAnalysis import ShapeAnalysis_Surface
 
-# Surface type names
-SURFACE_TYPE_NAMES = {
-    GeomAbs_Plane: "Plane",
-    GeomAbs_Cylinder: "Cylinder",
-    GeomAbs_Cone: "Cone",
-    GeomAbs_Sphere: "Sphere",
-    GeomAbs_Torus: "Torus",
-    GeomAbs_BezierSurface: "Bezier",
-    GeomAbs_BSplineSurface: "BSpline",
-    GeomAbs_SurfaceOfRevolution: "Revolution",
-    GeomAbs_SurfaceOfExtrusion: "Extrusion",
-    GeomAbs_OtherSurface: "Other",
-}
+
+def _get_surface_type_names():
+    """Get surface type names dict - called at runtime when OCC is available."""
+    from OCC.Core.GeomAbs import (
+        GeomAbs_Plane, GeomAbs_Cylinder, GeomAbs_Cone, GeomAbs_Sphere,
+        GeomAbs_Torus, GeomAbs_BezierSurface, GeomAbs_BSplineSurface,
+        GeomAbs_SurfaceOfRevolution, GeomAbs_SurfaceOfExtrusion, GeomAbs_OtherSurface
+    )
+    return {
+        GeomAbs_Plane: "Plane",
+        GeomAbs_Cylinder: "Cylinder",
+        GeomAbs_Cone: "Cone",
+        GeomAbs_Sphere: "Sphere",
+        GeomAbs_Torus: "Torus",
+        GeomAbs_BezierSurface: "Bezier",
+        GeomAbs_BSplineSurface: "BSpline",
+        GeomAbs_SurfaceOfRevolution: "Revolution",
+        GeomAbs_SurfaceOfExtrusion: "Extrusion",
+        GeomAbs_OtherSurface: "Other",
+    }
 
 # Detailed surface type info for education
 SURFACE_TYPE_INFO = {
@@ -221,10 +228,9 @@ class CADSplineViewer:
                        compute_influence=True, influence_resolution=20):
         """Analyze a face's spline parameters."""
 
-        # Get OCC shape
-        occ_shape = cad_model.get("occ_shape") or cad_model.get("shape")
-        if occ_shape is None:
-            raise RuntimeError("CAD model has no OCC shape")
+        # Get OCC shape from brep_path
+        from .utils.brep_cache import get_occ_shape
+        occ_shape = get_occ_shape(cad_model)
 
         output_dir = folder_paths.get_output_directory()
         timestamp = int(time.time() * 1000)
@@ -250,7 +256,7 @@ class CADSplineViewer:
         # Get surface adaptor
         adaptor = BRepAdaptor_Surface(face)
         surface_type = adaptor.GetType()
-        surface_type_name = SURFACE_TYPE_NAMES.get(surface_type, "Unknown")
+        surface_type_name = _get_surface_type_names().get(surface_type, "Unknown")
 
         # Mesh the face
         BRepMesh_IncrementalMesh(face, linear_deflection)

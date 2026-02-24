@@ -15,12 +15,15 @@ Exit codes:
     1 - Error (details in stderr or result file)
 """
 
+import logging
 import sys
 import argparse
 import json
 import os
 import math
 import time
+
+log = logging.getLogger("cadabra")
 
 
 # =============================================================================
@@ -197,11 +200,11 @@ def main():
         log_handle = open(args.log_file, 'w')
         sys.stdout = log_handle
         sys.stderr = log_handle
-        print(f"[CADabra Load Subprocess]")
-        print(f"Input: {args.input_file}")
-        print(f"Output: {args.output_brep}")
-        print(f"Started: {time.strftime('%Y-%m-%d %H:%M:%S')}")
-        print("=" * 60)
+        log.info(f"[CADabra Load Subprocess]")
+        log.info(f"Input: {args.input_file}")
+        log.info(f"Output: {args.output_brep}")
+        log.info(f"Started: {time.strftime('%Y-%m-%d %H:%M:%S')}")
+        log.info("=" * 60)
         sys.stdout.flush()
 
     try:
@@ -213,17 +216,17 @@ def main():
 
         # Write final status to log
         if log_handle:
-            print("=" * 60)
+            log.info("=" * 60)
             if result['success']:
                 axis_str = " (axis applied)" if result.get('axis_transform_applied') else ""
-                print(f"SUCCESS: Loaded {result.get('format', 'unknown')} with {result.get('num_faces', '?')} faces{axis_str}")
+                log.info(f"SUCCESS: Loaded {result.get('format', 'unknown')} with {result.get('num_faces', '?')} faces{axis_str}")
                 if 'timings' in result:
-                    print("\nTimings:")
+                    log.info("\nTimings:")
                     for step, duration in result['timings'].items():
-                        print(f"  {step}: {duration:.3f}s")
+                        log.info(f"  {step}: {duration:.3f}s")
             else:
-                print(f"FAILED: {result['error']}")
-            print(f"Finished: {time.strftime('%Y-%m-%d %H:%M:%S')}")
+                log.info(f"FAILED: {result['error']}")
+            log.info(f"Finished: {time.strftime('%Y-%m-%d %H:%M:%S')}")
             sys.stdout.flush()
 
         # Restore stdout/stderr for exit message
@@ -234,15 +237,15 @@ def main():
 
         if result['success']:
             axis_str = " (axis applied)" if result.get('axis_transform_applied') else ""
-            print(f"OK: Loaded {result.get('format', 'unknown')} with {result.get('num_faces', '?')} faces{axis_str}")
+            log.info(f"OK: Loaded {result.get('format', 'unknown')} with {result.get('num_faces', '?')} faces{axis_str}")
             sys.exit(0)
         else:
-            print(f"ERROR: {result['error']}", file=sys.stderr)
+            log.info(f"ERROR: {result['error']}", file=sys.stderr)
             sys.exit(1)
 
     except Exception as e:
         if log_handle:
-            print(f"\nEXCEPTION: {e}")
+            log.info(f"\nEXCEPTION: {e}")
             import traceback
             traceback.print_exc()
             sys.stdout = original_stdout
@@ -259,7 +262,7 @@ def load_cad_file(input_path, output_path):
     """
     timings = {}
 
-    print(f"\n[Reading CAD file: {os.path.basename(input_path)}]")
+    log.info(f"Reading CAD file: {os.path.basename(input_path)}")
     sys.stdout.flush()
 
     try:
@@ -281,26 +284,26 @@ def load_cad_file(input_path, output_path):
         # OCC may print warnings/info here which will be captured in log
         t0 = time.time()
         if ext in ['.step', '.stp']:
-            print(f"Reading STEP file...")
+            log.info(f"Reading STEP file...")
             sys.stdout.flush()
             reader = STEPControl_Reader()
             status = reader.ReadFile(input_path)
             if status != IFSelect_RetDone:
                 return {"success": False, "error": f"Failed to read STEP file: status={status}"}
-            print(f"Transferring roots...")
+            log.info(f"Transferring roots...")
             sys.stdout.flush()
             reader.TransferRoots()
             occ_shape = reader.OneShape()
             metadata["format"] = "step"
 
         elif ext in ['.iges', '.igs']:
-            print(f"Reading IGES file...")
+            log.info(f"Reading IGES file...")
             sys.stdout.flush()
             reader = IGESControl_Reader()
             status = reader.ReadFile(input_path)
             if status != IFSelect_RetDone:
                 return {"success": False, "error": f"Failed to read IGES file: status={status}"}
-            print(f"Transferring roots...")
+            log.info(f"Transferring roots...")
             sys.stdout.flush()
             reader.TransferRoots()
             occ_shape = reader.OneShape()
@@ -321,12 +324,12 @@ def load_cad_file(input_path, output_path):
                     metadata["units"] = unit_map.get(gs.UnitFlag(), "unknown")
                     metadata["author"] = gs.AuthorName().ToCString() if gs.AuthorName() else ""
                     metadata["company"] = gs.CompanyName().ToCString() if gs.CompanyName() else ""
-                    print(f"IGES metadata: units={metadata['units']}, resolution={metadata['resolution']}")
+                    log.info(f"IGES metadata: units={metadata['units']}, resolution={metadata['resolution']}")
             except Exception:
                 pass  # Metadata extraction is optional
 
         elif ext == '.brep':
-            print(f"Reading BREP file...")
+            log.info(f"Reading BREP file...")
             sys.stdout.flush()
             builder = BRep_Builder()
             shape = TopoDS_Shape()
@@ -338,7 +341,7 @@ def load_cad_file(input_path, output_path):
             return {"success": False, "error": f"Unsupported format: {ext}"}
 
         timings['read_cad'] = time.time() - t0
-        print(f"[TIMING] read_cad: {timings['read_cad']:.3f}s")
+        log.info(f"[TIMING] read_cad: {timings['read_cad']:.3f}s")
         sys.stdout.flush()
 
         if occ_shape is None or occ_shape.IsNull():
@@ -355,37 +358,37 @@ def load_cad_file(input_path, output_path):
             base_path = os.path.splitext(input_path)[0]
             axis_path = base_path + '_axis.igs'
             if os.path.exists(axis_path):
-                print(f"\n[Parsing axis file: {os.path.basename(axis_path)}]")
+                log.info(f"\n[Parsing axis file: {os.path.basename(axis_path)}]")
                 sys.stdout.flush()
 
                 t0 = time.time()
                 axis_data = parse_axis_igs(axis_path)
                 timings['parse_axis'] = time.time() - t0
-                print(f"[TIMING] parse_axis: {timings['parse_axis']:.3f}s")
+                log.info(f"[TIMING] parse_axis: {timings['parse_axis']:.3f}s")
 
                 if axis_data:
-                    print(f"Axis origin: {axis_data['origin']}")
-                    print(f"Axis X-dir: {axis_data['x_dir']}")
-                    print(f"Axis Z-dir: {axis_data['z_dir']}")
+                    log.info(f"Axis origin: {axis_data['origin']}")
+                    log.info(f"Axis X-dir: {axis_data['x_dir']}")
+                    log.info(f"Axis Z-dir: {axis_data['z_dir']}")
 
                     t0 = time.time()
                     trsf = build_axis_transform(axis_data)
                     timings['build_transform'] = time.time() - t0
-                    print(f"[TIMING] build_transform: {timings['build_transform']:.3f}s")
+                    log.info(f"[TIMING] build_transform: {timings['build_transform']:.3f}s")
 
                     if trsf:
-                        print(f"\n[Applying transform to shape...]")
+                        log.info(f"\n[Applying transform to shape...]")
                         sys.stdout.flush()
                         t0 = time.time()
                         occ_shape = apply_transform_to_shape(occ_shape, trsf)
                         timings['apply_transform'] = time.time() - t0
-                        print(f"[TIMING] apply_transform: {timings['apply_transform']:.3f}s")
+                        log.info(f"[TIMING] apply_transform: {timings['apply_transform']:.3f}s")
                         axis_applied = True
             else:
-                print(f"No axis file found (looked for: {os.path.basename(axis_path)})")
+                log.info(f"No axis file found (looked for: {os.path.basename(axis_path)})")
 
         # --- Count faces ---
-        print(f"\n[Counting faces...]")
+        log.info(f"\n[Counting faces...]")
         t0 = time.time()
         num_faces = 0
         explorer = TopExp_Explorer(occ_shape, TopAbs_FACE)
@@ -393,15 +396,15 @@ def load_cad_file(input_path, output_path):
             num_faces += 1
             explorer.Next()
         timings['count_faces'] = time.time() - t0
-        print(f"[TIMING] count_faces: {timings['count_faces']:.3f}s ({num_faces} faces)")
+        log.info(f"[TIMING] count_faces: {timings['count_faces']:.3f}s ({num_faces} faces)")
 
         # --- Write output BREP ---
-        print(f"\n[Writing BREP output...]")
+        log.info(f"\n[Writing BREP output...]")
         sys.stdout.flush()
         t0 = time.time()
         breptools.Write(occ_shape, str(output_path))
         timings['write_brep'] = time.time() - t0
-        print(f"[TIMING] write_brep: {timings['write_brep']:.3f}s")
+        log.info(f"[TIMING] write_brep: {timings['write_brep']:.3f}s")
 
         # --- Calculate total ---
         total = sum(timings.values())
@@ -417,7 +420,7 @@ def load_cad_file(input_path, output_path):
         }
 
     except Exception as e:
-        print(f"\n[ERROR] {str(e)}")
+        log.info(f"\n[ERROR] {str(e)}")
         import traceback
         traceback.print_exc()
         return {"success": False, "error": str(e), "timings": timings}
