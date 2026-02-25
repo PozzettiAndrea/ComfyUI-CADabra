@@ -1,6 +1,6 @@
 # ComfyUI-CADabra
 
-CAD file processing and ML-based surface reconstruction nodes for ComfyUI.
+CAD file processing and surface reconstruction nodes for ComfyUI.
 
 <div align="center">
 <a href="https://pozzettiandrea.github.io/ComfyUI-CADabra/">
@@ -9,6 +9,10 @@ CAD file processing and ML-based surface reconstruction nodes for ComfyUI.
 <br>
 <b><a href="https://pozzettiandrea.github.io/ComfyUI-CADabra/">View Live Test Gallery →</a></b>
 </div>
+
+
+https://github.com/user-attachments/assets/6e3c250b-d011-43e5-a972-e96aa70cc8fa
+
 
 ## Standalone Model Packages
 
