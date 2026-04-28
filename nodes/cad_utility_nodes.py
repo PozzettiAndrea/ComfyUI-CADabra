@@ -18,6 +18,7 @@ import logging
 import os
 import sys
 
+from comfy_api.latest import io
 from .utils.occ_logging import log_operation
 
 log = logging.getLogger("cadabra")

@@ -8,6 +8,7 @@ import uuid
 import numpy as np
 import folder_paths
 import trimesh
+from comfy_api.latest import io
 from .utils.occ_logging import log_operation
 
 log = logging.getLogger("cadabra")
@@ -256,41 +257,43 @@ def _save_cache_metadata(metadata, path):
         json.dump(metadata, f)
 
 
-class CAD_Load:
+def _get_cad_files():
+    """Get CAD files from input/cad directory."""
+    input_dir = folder_paths.get_input_directory()
+    cad_dir = os.path.join(input_dir, 'cad')
+    cad_files = []
+    if os.path.exists(cad_dir) and os.path.isdir(cad_dir):
+        cad_extensions = ['.step', '.stp', '.iges', '.igs', '.brep']
+        for filename in os.listdir(cad_dir):
+            ext = os.path.splitext(filename)[1].lower()
+            if ext in cad_extensions:
+                cad_files.append(filename)
+        cad_files.sort()
+    if not cad_files:
+        cad_files = ["(no CAD files found in input/cad)"]
+    return cad_files
+
+
+class CAD_Load(io.ComfyNode):
     """Load CAD files (STEP, IGES, BREP) using OpenCASCADE with BREP caching."""
 
     @classmethod
-    def INPUT_TYPES(cls):
-        # Get CAD files from input/cad directory
-        input_dir = folder_paths.get_input_directory()
-        cad_dir = os.path.join(input_dir, 'cad')
+    def define_schema(cls):
+        return io.Schema(
+            node_id="CAD_Load",
+            display_name="Load CAD",
+            category="CADabra",
+            inputs=[
+                io.Combo.Input("filename", options=_get_cad_files(),
+                               tooltip="Select CAD file from input/cad folder"),
+            ],
+            outputs=[
+                io.Custom("CAD_MODEL").Output(display_name="cad_model"),
+            ],
+        )
 
-        cad_files = []
-        if os.path.exists(cad_dir) and os.path.isdir(cad_dir):
-            cad_extensions = ['.step', '.stp', '.iges', '.igs', '.brep']
-            for filename in os.listdir(cad_dir):
-                ext = os.path.splitext(filename)[1].lower()
-                if ext in cad_extensions:
-                    cad_files.append(filename)
-            cad_files.sort()
-
-        # If no files found, provide a placeholder
-        if not cad_files:
-            cad_files = ["(no CAD files found in input/cad)"]
-
-        return {
-            "required": {
-                "filename": (cad_files, {
-                    "tooltip": "Select CAD file from input/cad folder"
-                }),
-            }
-        }
-
-    RETURN_TYPES = ("CAD_MODEL",)
-    FUNCTION = "load_cad"
-    CATEGORY = "CADabra"
-
-    def load_cad(self, filename):
+    @classmethod
+    def execute(cls, filename):
         import hashlib
 
         # Check if placeholder (no files found)
@@ -354,179 +357,129 @@ class CAD_Load:
             cad_data["metadata"] = metadata
 
         log.info(f" Ready: {filename}")
-        return (cad_data,)
+        return io.NodeOutput(cad_data)
 
 
 
-class CAD_Mesh:
+def _flatten_dynamic(d):
+    """Flatten nested DynamicCombo dicts into a flat key-value dict."""
+    flat = {}
+    for k, v in d.items():
+        if isinstance(v, dict):
+            flat.update(_flatten_dynamic(v))
+        else:
+            flat[k] = v
+    return flat
+
+
+class CAD_Mesh(io.ComfyNode):
     """Unified CAD-to-mesh node. Supports BRepIncremental (OCC) and GMSH backends."""
 
     @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "cad_model": ("CAD_MODEL",),
-                "backend": (["BRepIncremental", "GMSH"], {
-                    "default": "BRepIncremental",
-                    "tooltip": "BRepIncremental: fast OCC tessellation. GMSH: full-featured mesh generation with algorithm control"
-                }),
-            },
-            "optional": {
-                # === BRepIncremental params ===
-                "linear_deflection": ("FLOAT", {
-                    "default": 0.1, "min": 0.001, "max": 100.0, "step": 0.01,
-                    "tooltip": "Max distance between mesh and actual surface (smaller = finer mesh)",
-                    "visible_when": {"backend": ["BRepIncremental"]},
-                }),
-                "angular_deflection": ("FLOAT", {
-                    "default": 0.5, "min": 0.01, "max": 1.57, "step": 0.01,
-                    "tooltip": "Angular deflection in radians (controls curvature sampling)",
-                    "visible_when": {"backend": ["BRepIncremental"]},
-                }),
-                "merge_vertices": ("BOOLEAN", {
-                    "default": True,
-                    "tooltip": "Merge duplicate vertices on shared edges (produces connected mesh)",
-                    "visible_when": {"backend": ["BRepIncremental"]},
-                }),
-                "advanced": ("BOOLEAN", {
-                    "default": False,
-                    "tooltip": "Show advanced BRepIncremental parameters",
-                    "visible_when": {"backend": ["BRepIncremental"]},
-                }),
-                "relative": ("BOOLEAN", {
-                    "default": False,
-                    "tooltip": "If True, deflection values are relative to edge size rather than absolute",
-                    "visible_when": {"backend": ["BRepIncremental"], "advanced": [True]},
-                }),
-                "parallel": ("BOOLEAN", {
-                    "default": False,
-                    "tooltip": "Mesh in parallel using multiple CPU cores",
-                    "visible_when": {"backend": ["BRepIncremental"], "advanced": [True]},
-                }),
-                "min_size": ("FLOAT", {
-                    "default": 0.0, "min": 0.0, "max": 100.0, "step": 0.001,
-                    "tooltip": "Minimum triangle edge length (0 = no minimum)",
-                    "visible_when": {"backend": ["BRepIncremental"], "advanced": [True]},
-                }),
+    def define_schema(cls):
+        return io.Schema(
+            node_id="CAD_Mesh",
+            display_name="CAD Mesh",
+            category="CADabra",
+            inputs=[
+                io.Custom("CAD_MODEL").Input("cad_model"),
+                io.DynamicCombo.Input("backend", tooltip="BRepIncremental: fast OCC tessellation. GMSH: full-featured mesh generation with algorithm control", options=[
+                    io.DynamicCombo.Option("BRepIncremental", [
+                        io.Float.Input("linear_deflection", default=0.1, min=0.001, max=100.0, step=0.01,
+                                       tooltip="Max distance between mesh and actual surface (smaller = finer mesh)"),
+                        io.Float.Input("angular_deflection", default=0.5, min=0.01, max=1.57, step=0.01,
+                                       tooltip="Angular deflection in radians (controls curvature sampling)"),
+                        io.Boolean.Input("merge_vertices", default=True,
+                                         tooltip="Merge duplicate vertices on shared edges (produces connected mesh)"),
+                        io.Boolean.Input("relative", default=False, advanced=True,
+                                         tooltip="If True, deflection values are relative to edge size rather than absolute"),
+                        io.Boolean.Input("parallel", default=False, advanced=True,
+                                         tooltip="Mesh in parallel using multiple CPU cores"),
+                        io.Float.Input("min_size", default=0.0, min=0.0, max=100.0, step=0.001, advanced=True,
+                                       tooltip="Minimum triangle edge length (0 = no minimum)"),
+                    ]),
+                    io.DynamicCombo.Option("GMSH", [
+                        io.DynamicCombo.Input("output_dim", tooltip="2D Surface: mesh only surfaces. 3D Volume: mesh interior with tetrahedra", options=[
+                            io.DynamicCombo.Option("2D Surface", []),
+                            io.DynamicCombo.Option("3D Volume", [
+                                io.Combo.Input("algorithm_3d", options=["Delaunay", "Frontal (Netgen)", "HXT", "MMG3D"],
+                                               default="Delaunay", tooltip="3D volume meshing algorithm"),
+                            ]),
+                        ]),
+                        io.Combo.Input("algorithm_2d", options=[
+                            "Delaunay", "Automatic", "MeshAdapt", "Frontal-Delaunay",
+                            "BAMG", "Frontal-Delaunay for Quads",
+                            "Packing of Parallelograms", "Quasi-structured Quad"
+                        ], tooltip="2D surface meshing algorithm (always runs — surfaces are meshed first)"),
+                        io.DynamicCombo.Input("size_mode", tooltip="How to interpret mesh sizes", options=[
+                            io.DynamicCombo.Option("Absolute", [
+                                io.Float.Input("target_size", default=1.0, min=0.0001, max=1000.0, step=0.001,
+                                               tooltip="Target element size"),
+                                io.Float.Input("size_factor", default=1.0, min=0.01, max=100.0, step=0.1,
+                                               tooltip="Global multiplier for all mesh sizes"),
+                                io.Float.Input("min_size_factor", default=1.0, min=0.001, max=1.0, step=0.01,
+                                               tooltip="Minimum size as fraction of target"),
+                                io.Float.Input("max_size_factor", default=10.0, min=1.0, max=100.0, step=0.1,
+                                               tooltip="Maximum size as multiple of target"),
+                            ]),
+                            io.DynamicCombo.Option("Relative to Bounds", [
+                                io.Float.Input("target_size", default=1.0, min=0.0001, max=1000.0, step=0.001,
+                                               tooltip="Target element size. 0.05 = 5% of model diagonal"),
+                                io.Float.Input("size_factor", default=1.0, min=0.01, max=100.0, step=0.1,
+                                               tooltip="Global multiplier for all mesh sizes"),
+                                io.Float.Input("min_size_factor", default=1.0, min=0.001, max=1.0, step=0.01,
+                                               tooltip="Minimum size as fraction of target"),
+                                io.Float.Input("max_size_factor", default=10.0, min=1.0, max=100.0, step=0.1,
+                                               tooltip="Maximum size as multiple of target"),
+                            ]),
+                            io.DynamicCombo.Option("Curvature Adaptive", [
+                                io.Int.Input("elements_per_2pi", default=20, min=4, max=100, step=1,
+                                             tooltip="Elements per 2*PI radians of curvature"),
+                                io.Boolean.Input("extend_from_boundary", default=True,
+                                                 tooltip="Extend curvature-based sizing into volume interior"),
+                            ]),
+                        ]),
+                        io.Combo.Input("element_order", options=["1", "2"],
+                                       tooltip="1 = linear, 2 = quadratic elements"),
+                        io.Int.Input("smoothing_steps", default=0, min=0, max=10, step=1,
+                                     tooltip="Elliptic smoother iterations. 0 = disabled"),
+                        io.Boolean.Input("optimize", default=False,
+                                         tooltip="Run mesh optimization after generation"),
+                        io.Int.Input("optimization_passes", default=1, min=0, max=10, step=1, advanced=True,
+                                     tooltip="Number of optimization passes"),
+                        io.Boolean.Input("recombine_to_quads", default=False,
+                                         tooltip="Recombine triangles into quadrangles"),
+                        io.Combo.Input("subdivision", options=["None", "All Triangles", "All Quadrangles", "Barycentric"],
+                                       tooltip="Mesh refinement by subdivision"),
+                        io.String.Input("gmsh_options", multiline=True, default="{}",
+                                        tooltip="Advanced Gmsh options as JSON"),
+                    ]),
+                ]),
+                io.Boolean.Input("extract_face_ids", default=True, optional=True,
+                                 tooltip="Store CAD face index for each mesh triangle as 'cad_face_id' face attribute"),
+            ],
+            outputs=[
+                io.Custom("TRIMESH").Output(display_name="trimesh"),
+                io.Custom("MESH_METADATA").Output(display_name="metadata"),
+            ],
+        )
 
-                # === GMSH: Tier 1 — Topology ===
-                "output_dim": (["2D Surface", "3D Volume"], {
-                    "tooltip": "2D Surface: mesh only surfaces. 3D Volume: mesh interior with tetrahedra",
-                    "visible_when": {"backend": ["GMSH"]},
-                }),
-                "algorithm_3d": (["Delaunay", "Frontal (Netgen)", "HXT", "MMG3D"], {
-                    "default": "Delaunay",
-                    "tooltip": "3D volume meshing algorithm",
-                    "visible_when": {"backend": ["GMSH"], "output_dim": ["3D Volume"]},
-                }),
-
-                # === GMSH: Tier 2 — Algorithm ===
-                "algorithm_2d": ([
-                    "Delaunay", "Automatic", "MeshAdapt", "Frontal-Delaunay",
-                    "BAMG", "Frontal-Delaunay for Quads",
-                    "Packing of Parallelograms", "Quasi-structured Quad"
-                ], {
-                    "tooltip": "2D surface meshing algorithm (always runs — surfaces are meshed first)",
-                    "visible_when": {"backend": ["GMSH"]},
-                }),
-
-                # === GMSH: Tier 3 — Element Sizing ===
-                "size_mode": (["Absolute", "Relative to Bounds", "Curvature Adaptive"], {
-                    "tooltip": "How to interpret mesh sizes",
-                    "visible_when": {"backend": ["GMSH"]},
-                }),
-                "target_size": ("FLOAT", {
-                    "default": 1.0, "min": 0.0001, "max": 1000.0, "step": 0.001,
-                    "tooltip": "Target element size. For Relative mode: 0.05 = 5% of model diagonal",
-                    "visible_when": {"backend": ["GMSH"], "size_mode": ["Absolute", "Relative to Bounds"]},
-                }),
-                "size_factor": ("FLOAT", {
-                    "default": 1.0, "min": 0.01, "max": 100.0, "step": 0.1,
-                    "tooltip": "Global multiplier for all mesh sizes",
-                    "visible_when": {"backend": ["GMSH"], "size_mode": ["Absolute", "Relative to Bounds"]},
-                }),
-                "min_size_factor": ("FLOAT", {
-                    "default": 1.0, "min": 0.001, "max": 1.0, "step": 0.01,
-                    "tooltip": "Minimum size as fraction of target",
-                    "visible_when": {"backend": ["GMSH"], "size_mode": ["Absolute", "Relative to Bounds"]},
-                }),
-                "max_size_factor": ("FLOAT", {
-                    "default": 10.0, "min": 1.0, "max": 100.0, "step": 0.1,
-                    "tooltip": "Maximum size as multiple of target",
-                    "visible_when": {"backend": ["GMSH"], "size_mode": ["Absolute", "Relative to Bounds"]},
-                }),
-                "elements_per_2pi": ("INT", {
-                    "default": 20, "min": 4, "max": 100, "step": 1,
-                    "tooltip": "Elements per 2*PI radians of curvature",
-                    "visible_when": {"backend": ["GMSH"], "size_mode": ["Curvature Adaptive"]},
-                }),
-                "extend_from_boundary": ("BOOLEAN", {
-                    "default": True,
-                    "tooltip": "Extend curvature-based sizing into volume interior",
-                    "visible_when": {"backend": ["GMSH"], "size_mode": ["Curvature Adaptive"]},
-                }),
-
-                # === GMSH: Tier 4 — Element Quality ===
-                "element_order": (["1", "2"], {
-                    "tooltip": "1 = linear, 2 = quadratic elements",
-                    "visible_when": {"backend": ["GMSH"]},
-                }),
-                "smoothing_steps": ("INT", {
-                    "default": 0, "min": 0, "max": 10, "step": 1,
-                    "tooltip": "Elliptic smoother iterations. 0 = disabled",
-                    "visible_when": {"backend": ["GMSH"]},
-                }),
-                "optimize": ("BOOLEAN", {
-                    "default": False,
-                    "tooltip": "Run mesh optimization after generation",
-                    "visible_when": {"backend": ["GMSH"]},
-                }),
-                "optimization_passes": ("INT", {
-                    "default": 1, "min": 0, "max": 10, "step": 1,
-                    "tooltip": "Number of optimization passes",
-                    "visible_when": {"backend": ["GMSH"], "optimize": [True]},
-                }),
-                "recombine_to_quads": ("BOOLEAN", {
-                    "default": False,
-                    "tooltip": "Recombine triangles into quadrangles",
-                    "visible_when": {"backend": ["GMSH"]},
-                }),
-                "subdivision": (["None", "All Triangles", "All Quadrangles", "Barycentric"], {
-                    "tooltip": "Mesh refinement by subdivision",
-                    "visible_when": {"backend": ["GMSH"]},
-                }),
-
-                # === GMSH: Tier 5 — Advanced ===
-                "gmsh_options": ("STRING", {
-                    "multiline": True, "default": "{}",
-                    "tooltip": "Advanced Gmsh options as JSON",
-                    "visible_when": {"backend": ["GMSH"]},
-                }),
-
-                # === Shared params ===
-                "extract_face_ids": ("BOOLEAN", {
-                    "default": True,
-                    "tooltip": "Store CAD face index for each mesh triangle as 'cad_face_id' face attribute"
-                }),
-            }
-        }
-
-    RETURN_TYPES = ("TRIMESH", "MESH_METADATA")
-    FUNCTION = "mesh"
-    CATEGORY = "CADabra"
-
-    def mesh(self, cad_model, backend, **kwargs):
-        if backend == "BRepIncremental":
-            return self._mesh_brep(cad_model, **kwargs)
-        elif backend == "GMSH":
-            return self._mesh_gmsh(cad_model, **kwargs)
+    @classmethod
+    def execute(cls, cad_model, backend, extract_face_ids=True):
+        params = _flatten_dynamic(backend)
+        selected = params.pop("backend")
+        if selected == "BRepIncremental":
+            return cls._mesh_brep(cad_model, extract_face_ids=extract_face_ids, **params)
+        elif selected == "GMSH":
+            return cls._mesh_gmsh(cad_model, extract_face_ids=extract_face_ids, **params)
         else:
-            raise ValueError(f"Unknown backend: {backend}")
+            raise ValueError(f"Unknown backend: {selected}")
 
     # -------------------------------------------------------------------------
     # BRepIncremental backend
     # -------------------------------------------------------------------------
-    def _mesh_brep(self, cad_model, linear_deflection=0.1, angular_deflection=0.5,
+    @classmethod
+    def _mesh_brep(cls, cad_model, linear_deflection=0.1, angular_deflection=0.5,
                    relative=False, parallel=False, min_size=0.0,
                    merge_vertices=True, extract_face_ids=True, **_kwargs):
         import trimesh
@@ -653,12 +606,13 @@ class CAD_Mesh:
         log.info(f"CAD_Mesh [BRepIncremental]: {len(tm.vertices)} verts, {len(tm.faces)} faces "
                  f"from {cad_face_idx} CAD faces (merged={merge_vertices}, before={verts_before})")
 
-        return (tm, metadata)
+        return io.NodeOutput(tm, metadata)
 
     # -------------------------------------------------------------------------
     # GMSH backend
     # -------------------------------------------------------------------------
-    def _mesh_gmsh(self, cad_model, output_dim="2D Surface", algorithm_2d="Delaunay",
+    @classmethod
+    def _mesh_gmsh(cls, cad_model, output_dim="2D Surface", algorithm_2d="Delaunay",
                    algorithm_3d="Delaunay", size_mode="Absolute",
                    target_size=1.0, size_factor=1.0,
                    min_size_factor=1.0, max_size_factor=10.0,
@@ -1017,7 +971,7 @@ class CAD_Mesh:
                      f"{len(vertices)} vertices, {len(triangulated_faces)} triangular faces, "
                      f"size: {actual_target_size:.4f} ({size_mode}), algo: {algorithm_2d}")
 
-            return (tm, metadata)
+            return io.NodeOutput(tm, metadata)
 
         except Exception as e:
             raise RuntimeError(f"GMSH mesh generation failed: {str(e)}")
@@ -1203,7 +1157,7 @@ MIN_CAD_FILE_SIZE_KB = 5
 
 
 
-class CAD_Load_From_Glob:
+class CAD_Load_From_Glob(io.ComfyNode):
     """
     Load multiple CAD files matching a glob pattern (batch loading).
 
@@ -1215,64 +1169,41 @@ class CAD_Load_From_Glob:
     Parallel mode uses subprocesses for crash isolation and OS-level timeout.
     """
 
-    # Supported CAD file extensions
     SUPPORTED_EXTENSIONS = ['.step', '.stp', '.iges', '.igs', '.brep']
 
     @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "glob_pattern": ("STRING", {
-                    "default": "**/*.step",
-                    "tooltip": "Glob pattern for CAD files. Relative patterns resolve from ComfyUI input dir (e.g., '**/*.step', 'parts/*.stp'). Absolute paths are used as-is (e.g., '/data/cad/**/*.step')."
-                }),
-                "execution_mode": (["single_core", "parallel"], {
-                    "default": "single_core",
-                    "tooltip": "single_core: sequential loading. parallel: subprocess workers with timeout"
-                }),
-                "start_index": ("INT", {
-                    "default": 0,
-                    "min": 0,
-                    "max": 100000,
-                    "tooltip": "Skip first N files"
-                }),
-                "max_cads": ("INT", {
-                    "default": -1,
-                    "min": -1,
-                    "max": 100000,
-                    "tooltip": "Load up to N files (-1 = unlimited)"
-                }),
-            },
-            "optional": {
-                "num_workers": ("INT", {
-                    "default": 4,
-                    "min": 1,
-                    "max": 32,
-                    "tooltip": "Number of parallel subprocesses (parallel mode only)",
-                    "visible_when": {"execution_mode": ["parallel"]},
-                }),
-                "timeout": ("INT", {
-                    "default": 60,
-                    "min": 10,
-                    "max": 600,
-                    "tooltip": "Timeout per file in seconds (parallel mode only)",
-                    "visible_when": {"execution_mode": ["parallel"]},
-                }),
-                "recursive": ("BOOLEAN", {
-                    "default": True,
-                    "tooltip": "Search subdirectories recursively"
-                }),
-            }
-        }
+    def define_schema(cls):
+        return io.Schema(
+            node_id="CAD_Load_From_Glob",
+            display_name="Load CAD From Glob",
+            category="CADabra/Loading",
+            inputs=[
+                io.String.Input("glob_pattern", default="**/*.step",
+                                tooltip="Glob pattern for CAD files. Relative patterns resolve from ComfyUI input dir. Absolute paths are used as-is."),
+                io.DynamicCombo.Input("execution_mode", tooltip="single_core: sequential loading. parallel: subprocess workers with timeout", options=[
+                    io.DynamicCombo.Option("single_core", []),
+                    io.DynamicCombo.Option("parallel", [
+                        io.Int.Input("num_workers", default=4, min=1, max=32,
+                                     tooltip="Number of parallel subprocesses (parallel mode only)"),
+                        io.Int.Input("timeout", default=60, min=10, max=600,
+                                     tooltip="Timeout per file in seconds (parallel mode only)"),
+                    ]),
+                ]),
+                io.Int.Input("start_index", default=0, min=0, max=100000,
+                             tooltip="Skip first N files"),
+                io.Int.Input("max_cads", default=-1, min=-1, max=100000,
+                             tooltip="Load up to N files (-1 = unlimited)"),
+                io.Boolean.Input("recursive", default=True, optional=True,
+                                 tooltip="Search subdirectories recursively"),
+            ],
+            outputs=[
+                io.Custom("CAD_MODEL").Output(display_name="cad_models", is_output_list=True,
+                                              tooltip="Batch of loaded CAD models"),
+            ],
+        )
 
-    RETURN_TYPES = ("CAD_MODEL",)
-    RETURN_NAMES = ("cad_models",)
-    OUTPUT_TOOLTIPS = ("Batch of loaded CAD models",)
-    FUNCTION = "load_from_glob"
-    CATEGORY = "CADabra/Loading"
-    OUTPUT_IS_LIST = (True,)
-
-    def _discover_cad_files(self, glob_pattern, start_index, max_cads, recursive):
+    @classmethod
+    def _discover_cad_files(cls, glob_pattern, start_index, max_cads, recursive):
         """Discover CAD files matching a glob pattern. Returns list of cad_files."""
         from pathlib import Path
         import glob as glob_module
@@ -1327,7 +1258,7 @@ class CAD_Load_From_Glob:
             raise FileNotFoundError(
                 f"No CAD files found matching pattern: {pattern}\n"
                 f"Recursive: {recursive}\n"
-                f"Valid extensions: {', '.join(self.SUPPORTED_EXTENSIONS)}"
+                f"Valid extensions: {', '.join(cls.SUPPORTED_EXTENSIONS)}"
             )
 
         log.info(f" Found {len(cad_files)} CAD files")
@@ -1345,7 +1276,8 @@ class CAD_Load_From_Glob:
 
         return cad_files
 
-    def _load_sequential(self, cad_files):
+    @classmethod
+    def _load_sequential(cls, cad_files):
         """Load CAD files sequentially (single_core mode)."""
         try:
             import gmsh
@@ -1445,7 +1377,8 @@ class CAD_Load_From_Glob:
 
         return loaded_cads
 
-    def _load_parallel(self, cad_files, num_workers, timeout):
+    @classmethod
+    def _load_parallel(cls, cad_files, num_workers, timeout):
         """Load CAD files in parallel using subprocesses (parallel mode)."""
         from concurrent.futures import ThreadPoolExecutor, as_completed
         from OCC.Core.BRepTools import breptools
@@ -1593,67 +1526,67 @@ class CAD_Load_From_Glob:
 
         return loaded_cads
 
-    def load_from_glob(self, glob_pattern, execution_mode, start_index, max_cads, num_workers=4, timeout=60, recursive=True):
+    @classmethod
+    def execute(cls, glob_pattern, execution_mode, start_index, max_cads, recursive=True):
         """Main dispatch method - routes to sequential or parallel loading."""
+        # Extract DynamicCombo params
+        if isinstance(execution_mode, dict):
+            mode = execution_mode["execution_mode"]
+            num_workers = execution_mode.get("num_workers", 4)
+            timeout = execution_mode.get("timeout", 60)
+        else:
+            mode = execution_mode
+            num_workers = 4
+            timeout = 60
+
         # Discover CAD files
-        cad_files = self._discover_cad_files(glob_pattern, start_index, max_cads, recursive)
+        cad_files = cls._discover_cad_files(glob_pattern, start_index, max_cads, recursive)
 
         # Dispatch based on execution mode
-        if execution_mode == "parallel":
-            loaded_cads = self._load_parallel(cad_files, num_workers, timeout)
+        if mode == "parallel":
+            loaded_cads = cls._load_parallel(cad_files, num_workers, timeout)
         else:
-            loaded_cads = self._load_sequential(cad_files)
+            loaded_cads = cls._load_sequential(cad_files)
 
         if len(loaded_cads) == 0:
             raise ValueError(f"Failed to load any CAD files matching pattern: {glob_pattern}")
 
         log.info(f" Successfully loaded {len(loaded_cads)} CAD files")
 
-        return (loaded_cads,)
+        return io.NodeOutput(loaded_cads)
 
 
 
-class CAD_Quality_Metrics:
+class CAD_Quality_Metrics(io.ComfyNode):
     """Analyze CAD model topology and quality metrics"""
 
     @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "cad_model": ("CAD_MODEL",),
-            },
-            "optional": {
-                "check_watertightness": ("BOOLEAN", {
-                    "default": True,
-                    "tooltip": "Check if model is closed/manifold"
-                }),
-                "check_degeneracy": ("BOOLEAN", {
-                    "default": True,
-                    "tooltip": "Check for degenerate faces (zero area, collapsed edges)"
-                }),
-                "check_boundaries": ("BOOLEAN", {
-                    "default": True,
-                    "tooltip": "Analyze face boundaries and loops"
-                }),
-                "area_tolerance": ("FLOAT", {
-                    "default": 1e-6,
-                    "min": 1e-12,
-                    "max": 1.0,
-                    "step": 1e-6,
-                    "tooltip": "Minimum area threshold for degenerate face detection"
-                }),
-            }
-        }
+    def define_schema(cls):
+        return io.Schema(
+            node_id="CAD_Quality_Metrics",
+            display_name="CAD Quality Metrics",
+            category="CADabra/Analysis",
+            description="Analyze CAD topology: watertightness, connectedness, face quality, boundaries",
+            inputs=[
+                io.Custom("CAD_MODEL").Input("cad_model"),
+                io.Boolean.Input("check_watertightness", default=True, optional=True,
+                                 tooltip="Check if model is closed/manifold"),
+                io.Boolean.Input("check_degeneracy", default=True, optional=True,
+                                 tooltip="Check for degenerate faces (zero area, collapsed edges)"),
+                io.Boolean.Input("check_boundaries", default=True, optional=True,
+                                 tooltip="Analyze face boundaries and loops"),
+                io.Float.Input("area_tolerance", default=1e-6, min=1e-12, max=1.0, step=1e-6, optional=True,
+                               tooltip="Minimum area threshold for degenerate face detection"),
+            ],
+            outputs=[
+                io.String.Output(display_name="metrics_dict", tooltip="Metrics as JSON string"),
+                io.String.Output(display_name="info", tooltip="Human-readable report"),
+            ],
+        )
 
-    RETURN_TYPES = ("STRING", "STRING")
-    RETURN_NAMES = ("metrics_dict", "info")
-    OUTPUT_TOOLTIPS = ("Metrics as JSON string", "Human-readable report")
-    FUNCTION = "analyze_quality"
-    CATEGORY = "CADabra/Analysis"
-    DESCRIPTION = "Analyze CAD topology: watertightness, connectedness, face quality, boundaries"
-
-    def analyze_quality(self, cad_model, check_watertightness=True, check_degeneracy=True,
-                       check_boundaries=True, area_tolerance=1e-6):
+    @classmethod
+    def execute(cls, cad_model, check_watertightness=True, check_degeneracy=True,
+                check_boundaries=True, area_tolerance=1e-6):
         try:
             import gmsh
             import json
@@ -1919,34 +1852,35 @@ class CAD_Quality_Metrics:
 
             log.info(f" Quality analysis complete")
 
-            return (metrics_json, report)
+            return io.NodeOutput(metrics_json, report)
 
         except Exception as e:
             raise RuntimeError(f"Quality analysis failed: {str(e)}")
 
 
 
-class PreviewCADOCC:
+class PreviewCADOCC(io.ComfyNode):
     """Preview CAD model with VTP tessellation and VTK.js viewer."""
 
     @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "cad_model": ("CAD_MODEL",),
-                "linear_deflection": ("FLOAT", {"default": 0.1, "min": 0.001, "max": 1.0, "step": 0.01,
-                                                "tooltip": "Tessellation quality (smaller = finer mesh)"}),
-                "angular_deflection": ("FLOAT", {"default": 0.5, "min": 0.1, "max": 1.0, "step": 0.1,
-                                                 "tooltip": "Angular deflection in radians"}),
-            },
-        }
+    def define_schema(cls):
+        return io.Schema(
+            node_id="PreviewCADOCC",
+            display_name="Preview CAD (OCC)",
+            category="CADabra/Visualization",
+            is_output_node=True,
+            inputs=[
+                io.Custom("CAD_MODEL").Input("cad_model"),
+                io.Float.Input("linear_deflection", default=0.1, min=0.001, max=1.0, step=0.01,
+                               tooltip="Tessellation quality (smaller = finer mesh)"),
+                io.Float.Input("angular_deflection", default=0.5, min=0.1, max=1.0, step=0.1,
+                               tooltip="Angular deflection in radians"),
+            ],
+            outputs=[],
+        )
 
-    RETURN_TYPES = ()
-    OUTPUT_NODE = True
-    FUNCTION = "preview_cad"
-    CATEGORY = "CADabra/Visualization"
-
-    def preview_cad(self, cad_model, linear_deflection=0.1, angular_deflection=0.5):
+    @classmethod
+    def execute(cls, cad_model, linear_deflection=0.1, angular_deflection=0.5):
         """Export CAD to VTP mesh for preview."""
         import folder_paths
 
@@ -2040,7 +1974,7 @@ class PreviewCADOCC:
 
         log.info(f" Entities: {num_volumes} volumes, {num_faces} faces, {num_edges} edges")
 
-        return {"ui": {
+        return io.NodeOutput(ui={
             "mesh_file": [vtp_filename],
             "format": ["vtp"],
             "original_format": [cad_model.get("format", "unknown")],
@@ -2051,9 +1985,10 @@ class PreviewCADOCC:
             "bounds_max": [[xmax, ymax, zmax]],
             "extents": [[xmax - xmin, ymax - ymin, zmax - zmin]],
             "linear_deflection": [linear_deflection],
-        }}
+        })
 
-    def _export_vtp(self, vertices, indices, face_ranges, base_filename, output_dir):
+    @staticmethod
+    def _export_vtp(vertices, indices, face_ranges, base_filename, output_dir):
         """Export mesh as VTP with FaceID cell data."""
         import vtk
 
@@ -2218,7 +2153,7 @@ def trimesh_to_glb(trimesh_obj, output_path):
 
 
 
-class PreviewCADBatch:
+class PreviewCADBatch(io.ComfyNode):
     """Preview batch of CAD models or TRIMESH objects with VTK.js viewer and index navigation.
 
     Accepts either CAD_MODEL or TRIMESH as input (but not both).
@@ -2227,28 +2162,27 @@ class PreviewCADBatch:
     """
 
     @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "index": ("INT", {"default": 0, "min": 0, "max": 100}),
-            },
-            "optional": {
-                "cad_model": ("CAD_MODEL",),
-                "trimesh": ("TRIMESH",),
-                "linear_deflection": ("FLOAT", {"default": 0.1, "min": 0.001, "max": 1.0, "step": 0.01,
-                                                "tooltip": "Tessellation quality (smaller = finer mesh)"}),
-                "angular_deflection": ("FLOAT", {"default": 0.5, "min": 0.1, "max": 1.0, "step": 0.1,
-                                                 "tooltip": "Angular deflection in radians"}),
-            },
-        }
+    def define_schema(cls):
+        return io.Schema(
+            node_id="PreviewCADBatch",
+            display_name="Preview CAD Batch",
+            category="CADabra/Visualization",
+            is_output_node=True,
+            is_input_list=True,
+            inputs=[
+                io.Int.Input("index", default=0, min=0, max=100),
+                io.Custom("CAD_MODEL").Input("cad_model", optional=True),
+                io.Custom("TRIMESH").Input("trimesh", optional=True),
+                io.Float.Input("linear_deflection", default=0.1, min=0.001, max=1.0, step=0.01, optional=True,
+                               tooltip="Tessellation quality (smaller = finer mesh)"),
+                io.Float.Input("angular_deflection", default=0.5, min=0.1, max=1.0, step=0.1, optional=True,
+                               tooltip="Angular deflection in radians"),
+            ],
+            outputs=[],
+        )
 
-    RETURN_TYPES = ()
-    OUTPUT_NODE = True
-    FUNCTION = "preview_cad_batch"
-    CATEGORY = "CADabra/Visualization"
-    INPUT_IS_LIST = True
-
-    def preview_cad_batch(self, index, cad_model=None, trimesh=None, linear_deflection=None, angular_deflection=None):
+    @classmethod
+    def execute(cls, index, cad_model=None, trimesh=None, linear_deflection=None, angular_deflection=None):
         """Preview CAD model or TRIMESH from batch with navigation controls."""
         import folder_paths
 
@@ -2269,11 +2203,12 @@ class PreviewCADBatch:
 
         # Route to appropriate handler
         if has_trimesh:
-            return self._preview_trimesh_batch(trimesh, index_val)
+            return cls._preview_trimesh_batch(trimesh, index_val)
         else:
-            return self._preview_cad_batch(cad_model, index_val, linear_deflection_val, angular_deflection_val)
+            return cls._preview_cad_batch(cad_model, index_val, linear_deflection_val, angular_deflection_val)
 
-    def _preview_trimesh_batch(self, trimesh_list, index_val):
+    @classmethod
+    def _preview_trimesh_batch(cls, trimesh_list, index_val):
         """Handle TRIMESH input - convert to VTP."""
         import folder_paths
 
@@ -2322,7 +2257,7 @@ class PreviewCADBatch:
             "current_index": [actual_index],
         }
 
-        return {"ui": ui_data}
+        return io.NodeOutput(ui=ui_data)
 
     def _export_trimesh_vtp(self, mesh, base_filename, output_dir):
         """Export trimesh to VTP format."""
@@ -2357,7 +2292,8 @@ class PreviewCADBatch:
 
         return vtp_filename
 
-    def _preview_cad_batch(self, cad_model, index_val, linear_deflection_val, angular_deflection_val):
+    @classmethod
+    def _preview_cad_batch(cls, cad_model, index_val, linear_deflection_val, angular_deflection_val):
         """Handle CAD_MODEL input - tessellate and export to VTP."""
         import folder_paths
 
@@ -2478,7 +2414,7 @@ class PreviewCADBatch:
                 "current_index": [actual_index],
             }
 
-            return {"ui": ui_data}
+            return io.NodeOutput(ui=ui_data)
 
         except Exception as e:
             raise RuntimeError(f"Failed to export CAD for batch preview: {str(e)}")
