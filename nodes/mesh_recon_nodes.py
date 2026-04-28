@@ -56,7 +56,7 @@ class QuadRemeshNode(io.ComfyNode):
             category="CADabra/Mesh Reconstruction",
             inputs=[
                 io.Custom("TRIMESH").Input("mesh"),
-                io.Float.Input("target_edge_length", default=0.1, min=0.001, max=10.0, step=0.01, display="slider"),
+                io.Float.Input("target_edge_length", default=0.1, min=0.001, max=10.0, step=0.01, display_mode="slider"),
                 io.Int.Input("iterations", default=3, min=1, max=10, step=1),
                 io.Custom("MESH_METADATA").Input("metadata", optional=True),
                 io.Boolean.Input("smooth", default=True, optional=True),
@@ -733,7 +733,7 @@ class PrimitiveFittingNode(io.ComfyNode):
             inputs=[
                 io.Custom("TRIMESH,SEGMENTED_CLOUD").Input("segmented_cloud"),
                 io.Combo.Input("primitive_type", options=["auto", "plane", "cylinder", "sphere", "cone"]),
-                io.Float.Input("ransac_threshold", default=0.01, min=0.001, max=0.1, step=0.001, display="slider"),
+                io.Float.Input("ransac_threshold", default=0.01, min=0.001, max=0.1, step=0.001, display_mode="slider"),
                 io.Int.Input("min_points", default=100, min=10, max=1000, step=10, optional=True),
             ],
             outputs=[

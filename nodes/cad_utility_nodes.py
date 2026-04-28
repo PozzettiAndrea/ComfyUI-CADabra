@@ -247,7 +247,7 @@ class CADSewFaces(io.ComfyNode):
         # Count free edges before sewing
         _log_msg(f"[CADabra] Counting free edges before sewing...")
         t0 = time.time()
-        free_edges_before = self._count_free_edges(shape)
+        free_edges_before = cls._count_free_edges(shape)
         _log_msg(f"[CADabra] [TIMING] count_free_edges_before: {time.time() - t0:.3f}s ({free_edges_before} free edges)")
 
         # Count edges before sewing
@@ -505,7 +505,7 @@ class CADSewFaces(io.ComfyNode):
         # Count connected components after sewing
         _log_msg(f"[CADabra] Counting connected components after sewing...")
         t0 = time.time()
-        components_after = self._count_connected_components(sewn_shape)
+        components_after = cls._count_connected_components(sewn_shape)
         _log_msg(f"[CADabra] [TIMING] count_components_after: {time.time() - t0:.3f}s ({components_after} components)")
 
         # Count edges and shells for more insight
@@ -530,7 +530,7 @@ class CADSewFaces(io.ComfyNode):
         # Count free edges after sewing
         _log_msg(f"[CADabra] Counting free edges after sewing...")
         t0 = time.time()
-        free_edges_after = self._count_free_edges(sewn_shape)
+        free_edges_after = cls._count_free_edges(sewn_shape)
         _log_msg(f"[CADabra] [TIMING] count_free_edges_after: {time.time() - t0:.3f}s ({free_edges_after} free edges)")
 
         # Print summary
@@ -560,7 +560,8 @@ class CADSewFaces(io.ComfyNode):
 
         return (result, report)
 
-    def _count_connected_components(self, shape):
+    @staticmethod
+    def _count_connected_components(shape):
         """Count disconnected components using face adjacency."""
         all_faces = []
         explorer = TopExp_Explorer(shape, TopAbs_FACE)
@@ -613,7 +614,8 @@ class CADSewFaces(io.ComfyNode):
 
         return num_components
 
-    def _count_free_edges(self, shape):
+    @staticmethod
+    def _count_free_edges(shape):
         """Count free (open) edges - edges with only one adjacent face."""
         edge_map = TopTools_IndexedMapOfShape()
         topexp.MapShapes(shape, TopAbs_EDGE, edge_map)
@@ -633,7 +635,8 @@ class CADSewFaces(io.ComfyNode):
 
         return sum(1 for count in edge_face_count.values() if count == 1)
 
-    def _sew_parallel(self, cad_models, num_workers, timeout, tolerance):
+    @classmethod
+    def _sew_parallel(cls, cad_models, num_workers, timeout, tolerance):
         """Sew faces using subprocess per model with OS-level timeout."""
         from concurrent.futures import ThreadPoolExecutor, as_completed
         from OCC.Core.BRepTools import breptools

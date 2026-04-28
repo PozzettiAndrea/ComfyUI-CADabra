@@ -1226,7 +1226,7 @@ class CAD_Load_From_Glob(io.ComfyNode):
             files = sorted(Path(p) for p in glob_module.glob(pattern))
 
         # Filter for valid CAD extensions and exclude small files
-        valid_extensions = set(self.SUPPORTED_EXTENSIONS)
+        valid_extensions = set(cls.SUPPORTED_EXTENSIONS)
         min_size_bytes = MIN_CAD_FILE_SIZE_KB * 1024
 
         cad_files = []
@@ -1968,7 +1968,7 @@ class PreviewCADOCC(io.ComfyNode):
 
         try:
             import vtk
-            vtp_filename = self._export_vtp(all_vertices, all_indices, face_ranges, base_name, output_dir)
+            vtp_filename = cls._export_vtp(all_vertices, all_indices, face_ranges, base_name, output_dir)
         except ImportError:
             raise RuntimeError("VTK not available. Please install vtk: pip install vtk")
 
@@ -2233,7 +2233,7 @@ class PreviewCADBatch(io.ComfyNode):
         # Export to VTP
         try:
             import vtk
-            vtp_filename = self._export_trimesh_vtp(current_mesh, base_name, output_dir)
+            vtp_filename = cls._export_trimesh_vtp(current_mesh, base_name, output_dir)
         except ImportError:
             raise RuntimeError("VTK not available. Please install vtk: pip install vtk")
 
@@ -2259,7 +2259,8 @@ class PreviewCADBatch(io.ComfyNode):
 
         return io.NodeOutput(ui=ui_data)
 
-    def _export_trimesh_vtp(self, mesh, base_filename, output_dir):
+    @staticmethod
+    def _export_trimesh_vtp(mesh, base_filename, output_dir):
         """Export trimesh to VTP format."""
         import vtk
 
@@ -2392,7 +2393,7 @@ class PreviewCADBatch(io.ComfyNode):
             # Export VTP
             try:
                 import vtk
-                vtp_filename = self._export_vtp(all_vertices, all_indices, face_ranges, base_name, output_dir)
+                vtp_filename = cls._export_vtp(all_vertices, all_indices, face_ranges, base_name, output_dir)
             except ImportError:
                 raise RuntimeError("VTK not available. Please install vtk: pip install vtk")
 
@@ -2419,7 +2420,8 @@ class PreviewCADBatch(io.ComfyNode):
         except Exception as e:
             raise RuntimeError(f"Failed to export CAD for batch preview: {str(e)}")
 
-    def _export_vtp(self, vertices, indices, face_ranges, base_filename, output_dir):
+    @staticmethod
+    def _export_vtp(vertices, indices, face_ranges, base_filename, output_dir):
         """Export mesh as VTP with FaceID cell data."""
         import vtk
 
