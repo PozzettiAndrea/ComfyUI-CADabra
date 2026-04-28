@@ -11,6 +11,8 @@ import uuid
 import numpy as np
 import folder_paths
 
+from comfy_api.latest import io
+
 log = logging.getLogger("cadabra")
 
 from OCC.Core.Bnd import Bnd_Box
@@ -33,7 +35,7 @@ _CHANNELS_NORMALS = [
 _CHANNELS_BASIC = ["height", "face_id", "hit_mask"]
 
 
-class CADRaytracerBVH:
+class CADRaytracerBVH(io.ComfyNode):
     """
     Executes BVH raytracing on a CAD model using occt_rt.
     Saves a .npz with named channels (raw/unnormalized) to ComfyUI output folder.
@@ -41,33 +43,35 @@ class CADRaytracerBVH:
     """
 
     @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "cad_model": ("CAD_MODEL",),
-                "resolution": ("INT", {"default": 500, "min": 32, "max": 4096}),
-                "deflection": ("FLOAT", {"default": 0.02, "min": 0.001, "max": 10.0, "step": 0.01,
-                                         "tooltip": "Tessellation deflection (smaller = finer mesh)"}),
-            },
-            "optional": {
-                "backend": (["embree", "occt", "embree_simd4", "embree_simd8"], {"default": "embree"}),
-                "output_mode": (["full", "normals", "basic"], {"default": "full",
-                               "tooltip": "full=all outputs, normals=no curvatures, basic=depth+faceid only"}),
-                "roi": ("STRING", {
-                    "default": "",
-                    "tooltip": "ROI bounds (X1,Y1,X2,Y2) - connect from ROI Selector to crop render area"
-                }),
-            }
-        }
+    def define_schema(cls):
+        return io.Schema(
+            node_id="CADRaytracerBVH",
+            display_name="CAD Raytracer (BVH)",
+            category="CADabra/Analysis",
+            is_output_node=True,
+            inputs=[
+                io.Custom("CAD_MODEL").Input("cad_model"),
+                io.Int.Input("resolution", default=500, min=32, max=4096),
+                io.Float.Input("deflection", default=0.02, min=0.001, max=10.0, step=0.01,
+                               tooltip="Tessellation deflection (smaller = finer mesh)"),
+                io.Combo.Input("backend", options=["embree", "occt", "embree_simd4", "embree_simd8"],
+                               default="embree", optional=True),
+                io.Combo.Input("output_mode", options=["full", "normals", "basic"],
+                               default="full",
+                               tooltip="full=all outputs, normals=no curvatures, basic=depth+faceid only",
+                               optional=True),
+                io.String.Input("roi", default="",
+                                tooltip="ROI bounds (X1,Y1,X2,Y2) - connect from ROI Selector to crop render area",
+                                optional=True),
+            ],
+            outputs=[
+                io.String.Output(display_name="npz_path"),
+            ],
+        )
 
-    RETURN_TYPES = ("STRING",)
-    RETURN_NAMES = ("npz_path",)
-    OUTPUT_NODE = True
-    FUNCTION = "run_raytracer"
-    CATEGORY = "CADabra/Analysis"
-
-    def run_raytracer(self, cad_model, resolution, deflection,
-                      backend="embree", output_mode="full", roi=""):
+    @classmethod
+    def execute(cls, cad_model, resolution, deflection,
+                backend="embree", output_mode="full", roi=""):
         from .utils.brep_cache import get_occ_shape
 
         shape = get_occ_shape(cad_model)
@@ -198,7 +202,7 @@ class CADRaytracerBVH:
         log.info(f" Raytracing complete. {len(channels)} channels, shape: ({H}, {W})")
         log.info(f" Saved to {npz_path}")
 
-        return (npz_path,)
+        return io.NodeOutput(npz_path)
 
 
 NODE_CLASS_MAPPINGS = {

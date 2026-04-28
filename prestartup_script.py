@@ -35,15 +35,3 @@ from comfy_3d_viewers import get_nodes_dir
 for name in ("cadrille_inference.js", "mask_analyzer.js", "cad_preview_batch.js"):
     copy_files(get_nodes_dir(), SCRIPT_DIR / "web" / "js", pattern=name)
 
-# Copy dynamic widgets
-try:
-    from comfy_dynamic_widgets import get_js_path
-    import shutil
-    src = Path(get_js_path())
-    if src.exists():
-        dst = SCRIPT_DIR / "web" / "js" / "dynamic_widgets.js"
-        dst.parent.mkdir(parents=True, exist_ok=True)
-        if not dst.exists() or src.stat().st_mtime > dst.stat().st_mtime:
-            shutil.copy2(src, dst)
-except ImportError:
-    pass

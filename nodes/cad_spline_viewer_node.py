@@ -9,6 +9,7 @@ import os
 import time
 import numpy as np
 import folder_paths
+from comfy_api.latest import io
 
 from .utils.occ_logging import logger
 
@@ -162,7 +163,7 @@ def compute_bspline_basis_grid(num_ctrl, degree, knots, param_values):
     return basis_values
 
 
-class CADSplineViewer:
+class CADSplineViewer(io.ComfyNode):
     """
     Interactive spline/NURBS visualization node.
 
@@ -171,48 +172,13 @@ class CADSplineViewer:
     """
 
     @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "cad_model": ("CAD_MODEL", {
-                    "tooltip": "CAD model to analyze"
-                }),
-                "face_index": ("INT", {
-                    "default": 0,
-                    "min": 0,
-                    "max": 10000,
-                    "step": 1,
-                    "tooltip": "Index of the face to visualize (0-based)"
-                }),
-            },
-            "optional": {
-                "linear_deflection": ("FLOAT", {
-                    "default": 0.1,
-                    "min": 0.001,
-                    "max": 1.0,
-                    "step": 0.01,
-                    "tooltip": "Mesh quality - lower = finer mesh"
-                }),
-                "compute_influence": ("BOOLEAN", {
-                    "default": True,
-                    "tooltip": "Precompute basis function values for influence visualization"
-                }),
-                "influence_resolution": ("INT", {
-                    "default": 20,
-                    "min": 5,
-                    "max": 100,
-                    "step": 5,
-                    "tooltip": "Resolution for influence grid computation"
-                }),
-            }
-        }
-
-    RETURN_TYPES = ("CAD_MODEL", "STRING", "STRING")
-    RETURN_NAMES = ("cad_model", "json_filepath", "surface_info")
-    OUTPUT_NODE = True
-    FUNCTION = "analyze_spline"
-    CATEGORY = "CADabra/Analysis"
-    DESCRIPTION = """
+    def define_schema(cls):
+        return io.Schema(
+            node_id="CADSplineViewer",
+            display_name="CAD Spline Viewer",
+            category="CADabra/Analysis",
+            is_output_node=True,
+            description="""
     Interactive visualization of B-spline, Bezier, and NURBS surface parameters.
 
     For spline surfaces, shows:
@@ -222,10 +188,28 @@ class CADSplineViewer:
     - Basis function influence regions
 
     Click on control points to see their influence on the surface.
-    """
+    """,
+            inputs=[
+                io.Custom("CAD_MODEL").Input("cad_model", tooltip="CAD model to analyze"),
+                io.Int.Input("face_index", default=0, min=0, max=10000, step=1,
+                             tooltip="Index of the face to visualize (0-based)"),
+                io.Float.Input("linear_deflection", default=0.1, min=0.001, max=1.0, step=0.01,
+                               tooltip="Mesh quality - lower = finer mesh", optional=True),
+                io.Boolean.Input("compute_influence", default=True,
+                                 tooltip="Precompute basis function values for influence visualization", optional=True),
+                io.Int.Input("influence_resolution", default=20, min=5, max=100, step=5,
+                             tooltip="Resolution for influence grid computation", optional=True),
+            ],
+            outputs=[
+                io.Custom("CAD_MODEL").Output(display_name="cad_model"),
+                io.String.Output(display_name="json_filepath"),
+                io.String.Output(display_name="surface_info"),
+            ],
+        )
 
-    def analyze_spline(self, cad_model, face_index=0, linear_deflection=0.1,
-                       compute_influence=True, influence_resolution=20):
+    @classmethod
+    def execute(cls, cad_model, face_index=0, linear_deflection=0.1,
+                compute_influence=True, influence_resolution=20):
         """Analyze a face's spline parameters."""
 
         # Get OCC shape from brep_path
@@ -262,7 +246,7 @@ class CADSplineViewer:
         BRepMesh_IncrementalMesh(face, linear_deflection)
 
         # Extract mesh data
-        mesh_data = self._extract_mesh(face)
+        mesh_data = _extract_mesh(face)
 
         # Build output data
         output_data = {
@@ -276,16 +260,16 @@ class CADSplineViewer:
 
         # Extract spline parameters if applicable
         if surface_type == GeomAbs_BSplineSurface:
-            spline_data = self._extract_bspline_data(adaptor, compute_influence, influence_resolution)
+            spline_data = _extract_bspline_data(adaptor, compute_influence, influence_resolution)
             output_data.update(spline_data)
 
         elif surface_type == GeomAbs_BezierSurface:
-            bezier_data = self._extract_bezier_data(adaptor, compute_influence, influence_resolution)
+            bezier_data = _extract_bezier_data(adaptor, compute_influence, influence_resolution)
             output_data.update(bezier_data)
 
         else:
             # For analytic surfaces, extract basic parameters
-            analytic_data = self._extract_analytic_data(adaptor)
+            analytic_data = _extract_analytic_data(adaptor)
             output_data.update(analytic_data)
 
         # Write JSON
@@ -309,304 +293,309 @@ class CADSplineViewer:
 
         logger.info(f"[CADSplineViewer] Analyzed face {face_index}: {surface_type_name}")
 
-        return {
-            "ui": {
+        return io.NodeOutput(
+            cad_model, json_filename, surface_info,
+            ui={
                 "spline_file": [json_filename],
                 "surface_type": [surface_type_name],
                 "face_index": [face_index],
                 "total_faces": [len(faces)],
             },
-            "result": (cad_model, json_filename, surface_info)
+        )
+
+
+def _extract_mesh(face):
+    """Extract triangulated mesh from a face."""
+    location = TopLoc_Location()
+    triangulation = BRep_Tool.Triangulation(face, location)
+
+    if triangulation is None:
+        return {"vertices": [], "indices": [], "uv_coords": []}
+
+    trsf = location.Transformation()
+
+    # Extract vertices and UV coordinates
+    vertices = []
+    uv_coords = []
+    num_nodes = triangulation.NbNodes()
+
+    for i in range(1, num_nodes + 1):
+        pnt = triangulation.Node(i).Transformed(trsf)
+        vertices.append([pnt.X(), pnt.Y(), pnt.Z()])
+
+        # Get UV parameters if available
+        if triangulation.HasUVNodes():
+            uv = triangulation.UVNode(i)
+            uv_coords.append([uv.X(), uv.Y()])
+
+    # Extract triangles
+    indices = []
+    num_triangles = triangulation.NbTriangles()
+
+    for i in range(1, num_triangles + 1):
+        tri = triangulation.Triangle(i)
+        n1, n2, n3 = tri.Get()
+        # Convert to 0-indexed
+        indices.append([n1 - 1, n2 - 1, n3 - 1])
+
+    return {
+        "vertices": vertices,
+        "indices": indices,
+        "uv_coords": uv_coords,
+        "num_vertices": len(vertices),
+        "num_triangles": len(indices),
+    }
+
+
+def _extract_bspline_data(adaptor, compute_influence, influence_resolution):
+    """Extract B-spline surface parameters."""
+    bspline = adaptor.BSpline()
+
+    # Basic info
+    degree_u = bspline.UDegree()
+    degree_v = bspline.VDegree()
+    num_ctrl_u = bspline.NbUPoles()
+    num_ctrl_v = bspline.NbVPoles()
+    is_u_rational = bspline.IsURational()
+    is_v_rational = bspline.IsVRational()
+    is_rational = is_u_rational or is_v_rational
+
+    # Extract control points
+    control_points = []
+    for i in range(1, num_ctrl_u + 1):
+        for j in range(1, num_ctrl_v + 1):
+            pole = bspline.Pole(i, j)
+            weight = bspline.Weight(i, j) if is_rational else 1.0
+            control_points.append({
+                "i": i - 1,  # 0-indexed for JS
+                "j": j - 1,
+                "x": pole.X(),
+                "y": pole.Y(),
+                "z": pole.Z(),
+                "weight": weight,
+            })
+
+    # Extract knot vectors (flat)
+    knots_u = []
+    knots_v = []
+
+    # Get flat knot sequence (with multiplicities expanded)
+    for i in range(1, bspline.NbUKnots() + 1):
+        knot = bspline.UKnot(i)
+        mult = bspline.UMultiplicity(i)
+        knots_u.extend([knot] * mult)
+
+    for i in range(1, bspline.NbVKnots() + 1):
+        knot = bspline.VKnot(i)
+        mult = bspline.VMultiplicity(i)
+        knots_v.extend([knot] * mult)
+
+    # Extract unique knots with multiplicities
+    unique_knots_u = []
+    mults_u = []
+    for i in range(1, bspline.NbUKnots() + 1):
+        unique_knots_u.append(bspline.UKnot(i))
+        mults_u.append(bspline.UMultiplicity(i))
+
+    unique_knots_v = []
+    mults_v = []
+    for i in range(1, bspline.NbVKnots() + 1):
+        unique_knots_v.append(bspline.VKnot(i))
+        mults_v.append(bspline.VMultiplicity(i))
+
+    # Parameter bounds
+    u_min, u_max = adaptor.FirstUParameter(), adaptor.LastUParameter()
+    v_min, v_max = adaptor.FirstVParameter(), adaptor.LastVParameter()
+
+    data = {
+        "degree_u": degree_u,
+        "degree_v": degree_v,
+        "num_ctrl_pts_u": num_ctrl_u,
+        "num_ctrl_pts_v": num_ctrl_v,
+        "is_rational": is_rational,
+        "is_u_rational": is_u_rational,
+        "is_v_rational": is_v_rational,
+        "control_points": control_points,
+        "knots_u_flat": knots_u,
+        "knots_v_flat": knots_v,
+        "knots_u": unique_knots_u,
+        "knots_v": unique_knots_v,
+        "multiplicities_u": mults_u,
+        "multiplicities_v": mults_v,
+        "u_range": [u_min, u_max],
+        "v_range": [v_min, v_max],
+    }
+
+    # Compute influence grid if requested
+    if compute_influence:
+        influence_data = _compute_bspline_influence(
+            num_ctrl_u, num_ctrl_v, degree_u, degree_v,
+            knots_u, knots_v, u_min, u_max, v_min, v_max,
+            influence_resolution
+        )
+        data["influence_grid"] = influence_data
+
+    return data
+
+
+def _extract_bezier_data(adaptor, compute_influence, influence_resolution):
+    """Extract Bezier surface parameters."""
+    bezier = adaptor.Bezier()
+
+    # Basic info
+    degree_u = bezier.UDegree()
+    degree_v = bezier.VDegree()
+    num_ctrl_u = degree_u + 1
+    num_ctrl_v = degree_v + 1
+    is_u_rational = bezier.IsURational()
+    is_v_rational = bezier.IsVRational()
+    is_rational = is_u_rational or is_v_rational
+
+    # Extract control points
+    control_points = []
+    for i in range(1, num_ctrl_u + 1):
+        for j in range(1, num_ctrl_v + 1):
+            pole = bezier.Pole(i, j)
+            weight = bezier.Weight(i, j) if is_rational else 1.0
+            control_points.append({
+                "i": i - 1,
+                "j": j - 1,
+                "x": pole.X(),
+                "y": pole.Y(),
+                "z": pole.Z(),
+                "weight": weight,
+            })
+
+    # Bezier has implicit knot vector [0, 0, ..., 0, 1, 1, ..., 1]
+    knots_u = [0.0] * (degree_u + 1) + [1.0] * (degree_u + 1)
+    knots_v = [0.0] * (degree_v + 1) + [1.0] * (degree_v + 1)
+
+    # Parameter bounds
+    u_min, u_max = adaptor.FirstUParameter(), adaptor.LastUParameter()
+    v_min, v_max = adaptor.FirstVParameter(), adaptor.LastVParameter()
+
+    data = {
+        "degree_u": degree_u,
+        "degree_v": degree_v,
+        "num_ctrl_pts_u": num_ctrl_u,
+        "num_ctrl_pts_v": num_ctrl_v,
+        "is_rational": is_rational,
+        "is_u_rational": is_u_rational,
+        "is_v_rational": is_v_rational,
+        "control_points": control_points,
+        "knots_u_flat": knots_u,
+        "knots_v_flat": knots_v,
+        "knots_u": [0.0, 1.0],
+        "knots_v": [0.0, 1.0],
+        "multiplicities_u": [degree_u + 1, degree_u + 1],
+        "multiplicities_v": [degree_v + 1, degree_v + 1],
+        "u_range": [u_min, u_max],
+        "v_range": [v_min, v_max],
+    }
+
+    # Compute influence grid if requested
+    if compute_influence:
+        influence_data = _compute_bspline_influence(
+            num_ctrl_u, num_ctrl_v, degree_u, degree_v,
+            knots_u, knots_v, u_min, u_max, v_min, v_max,
+            influence_resolution
+        )
+        data["influence_grid"] = influence_data
+
+    return data
+
+
+def _extract_analytic_data(adaptor):
+    """Extract parameters for analytic surfaces (plane, cylinder, etc.)."""
+    surface_type = adaptor.GetType()
+    data = {"analytic_params": {}}
+
+    if surface_type == GeomAbs_Plane:
+        plane = adaptor.Plane()
+        loc = plane.Location()
+        axis = plane.Axis().Direction()
+        data["analytic_params"] = {
+            "location": [loc.X(), loc.Y(), loc.Z()],
+            "normal": [axis.X(), axis.Y(), axis.Z()],
         }
 
-    def _extract_mesh(self, face):
-        """Extract triangulated mesh from a face."""
-        location = TopLoc_Location()
-        triangulation = BRep_Tool.Triangulation(face, location)
-
-        if triangulation is None:
-            return {"vertices": [], "indices": [], "uv_coords": []}
-
-        trsf = location.Transformation()
-
-        # Extract vertices and UV coordinates
-        vertices = []
-        uv_coords = []
-        num_nodes = triangulation.NbNodes()
-
-        for i in range(1, num_nodes + 1):
-            pnt = triangulation.Node(i).Transformed(trsf)
-            vertices.append([pnt.X(), pnt.Y(), pnt.Z()])
-
-            # Get UV parameters if available
-            if triangulation.HasUVNodes():
-                uv = triangulation.UVNode(i)
-                uv_coords.append([uv.X(), uv.Y()])
-
-        # Extract triangles
-        indices = []
-        num_triangles = triangulation.NbTriangles()
-
-        for i in range(1, num_triangles + 1):
-            tri = triangulation.Triangle(i)
-            n1, n2, n3 = tri.Get()
-            # Convert to 0-indexed
-            indices.append([n1 - 1, n2 - 1, n3 - 1])
-
-        return {
-            "vertices": vertices,
-            "indices": indices,
-            "uv_coords": uv_coords,
-            "num_vertices": len(vertices),
-            "num_triangles": len(indices),
+    elif surface_type == GeomAbs_Cylinder:
+        cyl = adaptor.Cylinder()
+        loc = cyl.Location()
+        axis = cyl.Axis().Direction()
+        data["analytic_params"] = {
+            "location": [loc.X(), loc.Y(), loc.Z()],
+            "axis": [axis.X(), axis.Y(), axis.Z()],
+            "radius": cyl.Radius(),
         }
 
-    def _extract_bspline_data(self, adaptor, compute_influence, influence_resolution):
-        """Extract B-spline surface parameters."""
-        bspline = adaptor.BSpline()
-
-        # Basic info
-        degree_u = bspline.UDegree()
-        degree_v = bspline.VDegree()
-        num_ctrl_u = bspline.NbUPoles()
-        num_ctrl_v = bspline.NbVPoles()
-        is_u_rational = bspline.IsURational()
-        is_v_rational = bspline.IsVRational()
-        is_rational = is_u_rational or is_v_rational
-
-        # Extract control points
-        control_points = []
-        for i in range(1, num_ctrl_u + 1):
-            for j in range(1, num_ctrl_v + 1):
-                pole = bspline.Pole(i, j)
-                weight = bspline.Weight(i, j) if is_rational else 1.0
-                control_points.append({
-                    "i": i - 1,  # 0-indexed for JS
-                    "j": j - 1,
-                    "x": pole.X(),
-                    "y": pole.Y(),
-                    "z": pole.Z(),
-                    "weight": weight,
-                })
-
-        # Extract knot vectors (flat)
-        knots_u = []
-        knots_v = []
-
-        # Get flat knot sequence (with multiplicities expanded)
-        for i in range(1, bspline.NbUKnots() + 1):
-            knot = bspline.UKnot(i)
-            mult = bspline.UMultiplicity(i)
-            knots_u.extend([knot] * mult)
-
-        for i in range(1, bspline.NbVKnots() + 1):
-            knot = bspline.VKnot(i)
-            mult = bspline.VMultiplicity(i)
-            knots_v.extend([knot] * mult)
-
-        # Extract unique knots with multiplicities
-        unique_knots_u = []
-        mults_u = []
-        for i in range(1, bspline.NbUKnots() + 1):
-            unique_knots_u.append(bspline.UKnot(i))
-            mults_u.append(bspline.UMultiplicity(i))
-
-        unique_knots_v = []
-        mults_v = []
-        for i in range(1, bspline.NbVKnots() + 1):
-            unique_knots_v.append(bspline.VKnot(i))
-            mults_v.append(bspline.VMultiplicity(i))
-
-        # Parameter bounds
-        u_min, u_max = adaptor.FirstUParameter(), adaptor.LastUParameter()
-        v_min, v_max = adaptor.FirstVParameter(), adaptor.LastVParameter()
-
-        data = {
-            "degree_u": degree_u,
-            "degree_v": degree_v,
-            "num_ctrl_pts_u": num_ctrl_u,
-            "num_ctrl_pts_v": num_ctrl_v,
-            "is_rational": is_rational,
-            "is_u_rational": is_u_rational,
-            "is_v_rational": is_v_rational,
-            "control_points": control_points,
-            "knots_u_flat": knots_u,
-            "knots_v_flat": knots_v,
-            "knots_u": unique_knots_u,
-            "knots_v": unique_knots_v,
-            "multiplicities_u": mults_u,
-            "multiplicities_v": mults_v,
-            "u_range": [u_min, u_max],
-            "v_range": [v_min, v_max],
+    elif surface_type == GeomAbs_Cone:
+        cone = adaptor.Cone()
+        apex = cone.Apex()
+        axis = cone.Axis().Direction()
+        data["analytic_params"] = {
+            "apex": [apex.X(), apex.Y(), apex.Z()],
+            "axis": [axis.X(), axis.Y(), axis.Z()],
+            "semi_angle": cone.SemiAngle(),
+            "ref_radius": cone.RefRadius(),
         }
 
-        # Compute influence grid if requested
-        if compute_influence:
-            influence_data = self._compute_bspline_influence(
-                num_ctrl_u, num_ctrl_v, degree_u, degree_v,
-                knots_u, knots_v, u_min, u_max, v_min, v_max,
-                influence_resolution
-            )
-            data["influence_grid"] = influence_data
-
-        return data
-
-    def _extract_bezier_data(self, adaptor, compute_influence, influence_resolution):
-        """Extract Bezier surface parameters."""
-        bezier = adaptor.Bezier()
-
-        # Basic info
-        degree_u = bezier.UDegree()
-        degree_v = bezier.VDegree()
-        num_ctrl_u = degree_u + 1
-        num_ctrl_v = degree_v + 1
-        is_u_rational = bezier.IsURational()
-        is_v_rational = bezier.IsVRational()
-        is_rational = is_u_rational or is_v_rational
-
-        # Extract control points
-        control_points = []
-        for i in range(1, num_ctrl_u + 1):
-            for j in range(1, num_ctrl_v + 1):
-                pole = bezier.Pole(i, j)
-                weight = bezier.Weight(i, j) if is_rational else 1.0
-                control_points.append({
-                    "i": i - 1,
-                    "j": j - 1,
-                    "x": pole.X(),
-                    "y": pole.Y(),
-                    "z": pole.Z(),
-                    "weight": weight,
-                })
-
-        # Bezier has implicit knot vector [0, 0, ..., 0, 1, 1, ..., 1]
-        knots_u = [0.0] * (degree_u + 1) + [1.0] * (degree_u + 1)
-        knots_v = [0.0] * (degree_v + 1) + [1.0] * (degree_v + 1)
-
-        # Parameter bounds
-        u_min, u_max = adaptor.FirstUParameter(), adaptor.LastUParameter()
-        v_min, v_max = adaptor.FirstVParameter(), adaptor.LastVParameter()
-
-        data = {
-            "degree_u": degree_u,
-            "degree_v": degree_v,
-            "num_ctrl_pts_u": num_ctrl_u,
-            "num_ctrl_pts_v": num_ctrl_v,
-            "is_rational": is_rational,
-            "is_u_rational": is_u_rational,
-            "is_v_rational": is_v_rational,
-            "control_points": control_points,
-            "knots_u_flat": knots_u,
-            "knots_v_flat": knots_v,
-            "knots_u": [0.0, 1.0],
-            "knots_v": [0.0, 1.0],
-            "multiplicities_u": [degree_u + 1, degree_u + 1],
-            "multiplicities_v": [degree_v + 1, degree_v + 1],
-            "u_range": [u_min, u_max],
-            "v_range": [v_min, v_max],
+    elif surface_type == GeomAbs_Sphere:
+        sphere = adaptor.Sphere()
+        center = sphere.Location()
+        data["analytic_params"] = {
+            "center": [center.X(), center.Y(), center.Z()],
+            "radius": sphere.Radius(),
         }
 
-        # Compute influence grid if requested
-        if compute_influence:
-            influence_data = self._compute_bspline_influence(
-                num_ctrl_u, num_ctrl_v, degree_u, degree_v,
-                knots_u, knots_v, u_min, u_max, v_min, v_max,
-                influence_resolution
-            )
-            data["influence_grid"] = influence_data
-
-        return data
-
-    def _extract_analytic_data(self, adaptor):
-        """Extract parameters for analytic surfaces (plane, cylinder, etc.)."""
-        surface_type = adaptor.GetType()
-        data = {"analytic_params": {}}
-
-        if surface_type == GeomAbs_Plane:
-            plane = adaptor.Plane()
-            loc = plane.Location()
-            axis = plane.Axis().Direction()
-            data["analytic_params"] = {
-                "location": [loc.X(), loc.Y(), loc.Z()],
-                "normal": [axis.X(), axis.Y(), axis.Z()],
-            }
-
-        elif surface_type == GeomAbs_Cylinder:
-            cyl = adaptor.Cylinder()
-            loc = cyl.Location()
-            axis = cyl.Axis().Direction()
-            data["analytic_params"] = {
-                "location": [loc.X(), loc.Y(), loc.Z()],
-                "axis": [axis.X(), axis.Y(), axis.Z()],
-                "radius": cyl.Radius(),
-            }
-
-        elif surface_type == GeomAbs_Cone:
-            cone = adaptor.Cone()
-            apex = cone.Apex()
-            axis = cone.Axis().Direction()
-            data["analytic_params"] = {
-                "apex": [apex.X(), apex.Y(), apex.Z()],
-                "axis": [axis.X(), axis.Y(), axis.Z()],
-                "semi_angle": cone.SemiAngle(),
-                "ref_radius": cone.RefRadius(),
-            }
-
-        elif surface_type == GeomAbs_Sphere:
-            sphere = adaptor.Sphere()
-            center = sphere.Location()
-            data["analytic_params"] = {
-                "center": [center.X(), center.Y(), center.Z()],
-                "radius": sphere.Radius(),
-            }
-
-        elif surface_type == GeomAbs_Torus:
-            torus = adaptor.Torus()
-            loc = torus.Location()
-            axis = torus.Axis().Direction()
-            data["analytic_params"] = {
-                "location": [loc.X(), loc.Y(), loc.Z()],
-                "axis": [axis.X(), axis.Y(), axis.Z()],
-                "major_radius": torus.MajorRadius(),
-                "minor_radius": torus.MinorRadius(),
-            }
-
-        return data
-
-    def _compute_bspline_influence(self, num_ctrl_u, num_ctrl_v, degree_u, degree_v,
-                                    knots_u, knots_v, u_min, u_max, v_min, v_max,
-                                    resolution):
-        """
-        Compute basis function influence values on a grid.
-
-        Returns a dict mapping control point indices "i_j" to a 2D array of
-        influence values on a resolution x resolution grid.
-        """
-        # Create parameter grid
-        u_values = np.linspace(u_min, u_max, resolution)
-        v_values = np.linspace(v_min, v_max, resolution)
-
-        # Compute basis functions for U and V directions
-        basis_u = compute_bspline_basis_grid(num_ctrl_u, degree_u, knots_u, u_values)
-        basis_v = compute_bspline_basis_grid(num_ctrl_v, degree_v, knots_v, v_values)
-
-        # Store influence data
-        influence = {
-            "resolution": resolution,
-            "u_values": u_values.tolist(),
-            "v_values": v_values.tolist(),
-            "control_point_influence": {},
+    elif surface_type == GeomAbs_Torus:
+        torus = adaptor.Torus()
+        loc = torus.Location()
+        axis = torus.Axis().Direction()
+        data["analytic_params"] = {
+            "location": [loc.X(), loc.Y(), loc.Z()],
+            "axis": [axis.X(), axis.Y(), axis.Z()],
+            "major_radius": torus.MajorRadius(),
+            "minor_radius": torus.MinorRadius(),
         }
 
-        # For each control point, compute the tensor product of basis functions
-        for i in range(num_ctrl_u):
-            for j in range(num_ctrl_v):
-                # Tensor product: N_i(u) * N_j(v)
-                grid = np.outer(basis_u[i], basis_v[j])
-                key = f"{i}_{j}"
-                influence["control_point_influence"][key] = grid.tolist()
+    return data
 
-        return influence
+
+def _compute_bspline_influence(num_ctrl_u, num_ctrl_v, degree_u, degree_v,
+                                knots_u, knots_v, u_min, u_max, v_min, v_max,
+                                resolution):
+    """
+    Compute basis function influence values on a grid.
+
+    Returns a dict mapping control point indices "i_j" to a 2D array of
+    influence values on a resolution x resolution grid.
+    """
+    # Create parameter grid
+    u_values = np.linspace(u_min, u_max, resolution)
+    v_values = np.linspace(v_min, v_max, resolution)
+
+    # Compute basis functions for U and V directions
+    basis_u = compute_bspline_basis_grid(num_ctrl_u, degree_u, knots_u, u_values)
+    basis_v = compute_bspline_basis_grid(num_ctrl_v, degree_v, knots_v, v_values)
+
+    # Store influence data
+    influence = {
+        "resolution": resolution,
+        "u_values": u_values.tolist(),
+        "v_values": v_values.tolist(),
+        "control_point_influence": {},
+    }
+
+    # For each control point, compute the tensor product of basis functions
+    for i in range(num_ctrl_u):
+        for j in range(num_ctrl_v):
+            # Tensor product: N_i(u) * N_j(v)
+            grid = np.outer(basis_u[i], basis_v[j])
+            key = f"{i}_{j}"
+            influence["control_point_influence"][key] = grid.tolist()
+
+    return influence
 
 
 # Node registration
