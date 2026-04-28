@@ -12,7 +12,7 @@ sqlite = "*"
 [target.linux-64.dependencies]
 libstdcxx-ng = ">=12.0"
 libglu = "*"
-mesa-libgl = "*"
+mesalib = "*"
 
 [pypi-dependencies]
 gmsh = ">=4.11.0"
