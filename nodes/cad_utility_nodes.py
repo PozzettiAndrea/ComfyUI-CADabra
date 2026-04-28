@@ -64,29 +64,25 @@ def _make_cad_model(occ_shape, original_cad_model=None, name_hint="shape"):
     return make_cad_model(occ_shape, original_cad_model, name_hint)
 
 
-class CADExtractFaces:
-    """
-    Extract only faces from a CAD model, removing edges, wires, and solids.
-
-    Useful for cleaning up CAD models that have extraneous entities.
-    """
+class CADExtractFaces(io.ComfyNode):
+    """Extract only faces from a CAD model, removing edges, wires, and solids."""
 
     @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "cad_model": ("CAD_MODEL", {
-                    "tooltip": "CAD model to extract faces from"
-                }),
-            }
-        }
+    def define_schema(cls):
+        return io.Schema(
+            node_id="CADExtractFaces",
+            display_name="Extract Faces",
+            category="CADabra/Utility",
+            inputs=[
+                io.Custom("CAD_MODEL").Input("cad_model", tooltip="CAD model to extract faces from"),
+            ],
+            outputs=[
+                io.Custom("CAD_MODEL").Output(display_name="faces_only"),
+            ],
+        )
 
-    RETURN_TYPES = ("CAD_MODEL",)
-    RETURN_NAMES = ("faces_only",)
-    FUNCTION = "extract_faces"
-    CATEGORY = "CADabra/Utility"
-
-    def extract_faces(self, cad_model):
+    @classmethod
+    def execute(cls, cad_model):
         """Extract only faces using OCC."""
         shape = _get_occ_shape(cad_model)
 
@@ -108,10 +104,10 @@ class CADExtractFaces:
         # Return new CAD_MODEL with OCC shape (no STEP round-trip!)
         result = _make_cad_model(face_compound, cad_model)
 
-        return (result,)
+        return io.NodeOutput(result)
 
 
-class CADSewFaces:
+class CADSewFaces(io.ComfyNode):
     """
     Sew disconnected faces together into a watertight shell.
 
@@ -126,68 +122,64 @@ class CADSewFaces:
     connectivity issues. Recommended: use tolerance <= 1.0 for most models.
     """
 
-    INPUT_IS_LIST = True
+    @classmethod
+    def define_schema(cls):
+        return io.Schema(
+            node_id="CADSewFaces",
+            display_name="CAD Sew Faces",
+            category="CADabra/Utility",
+            is_input_list=True,
+            inputs=[
+                io.Custom("CAD_MODEL").Input("cad_model", tooltip="CAD model(s) with disconnected faces"),
+                io.Float.Input("tolerance", default=1.0, min=1e-6, max=1000.0, step=0.1,
+                    tooltip="Maximum distance between edges/vertices to consider them coincident (in model units, e.g. mm)"),
+                io.DynamicCombo.Input("execution_mode",
+                    tooltip="single_core: sequential in main process. parallel: subprocesses with timeout and crash isolation",
+                    options=[
+                        io.DynamicCombo.Option("single_core", []),
+                        io.DynamicCombo.Option("parallel", [
+                            io.Int.Input("num_workers", default=4, min=1, max=32,
+                                tooltip="Number of parallel subprocesses (parallel mode only)"),
+                            io.Int.Input("timeout", default=120, min=10, max=600,
+                                tooltip="Timeout per model in seconds (parallel mode only)"),
+                        ]),
+                    ],
+                ),
+            ],
+            outputs=[
+                io.Custom("CAD_MODEL").Output(display_name="sewn_models", is_output_list=True),
+                io.String.Output(display_name="info"),
+            ],
+        )
 
     @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "cad_model": ("CAD_MODEL", {
-                    "tooltip": "CAD model(s) with disconnected faces"
-                }),
-                "tolerance": ("FLOAT", {
-                    "default": 1.0,
-                    "min": 1e-6,
-                    "max": 1000.0,
-                    "step": 0.1,
-                    "tooltip": "Maximum distance between edges/vertices to consider them coincident (in model units, e.g. mm)"
-                }),
-            },
-            "optional": {
-                "execution_mode": (["single_core", "parallel"], {
-                    "default": "single_core",
-                    "tooltip": "single_core: sequential in main process. parallel: subprocesses with timeout and crash isolation"
-                }),
-                "num_workers": ("INT", {
-                    "default": 4,
-                    "min": 1,
-                    "max": 32,
-                    "tooltip": "Number of parallel subprocesses (parallel mode only)",
-                    "visible_when": {"execution_mode": ["parallel"]},
-                }),
-                "timeout": ("INT", {
-                    "default": 120,
-                    "min": 10,
-                    "max": 600,
-                    "tooltip": "Timeout per model in seconds (parallel mode only)",
-                    "visible_when": {"execution_mode": ["parallel"]},
-                }),
-            }
-        }
-
-    RETURN_TYPES = ("CAD_MODEL", "STRING",)
-    RETURN_NAMES = ("sewn_models", "info",)
-    OUTPUT_IS_LIST = (True, False,)
-    FUNCTION = "sew_faces"
-    CATEGORY = "CADabra/Utility"
-
-    def sew_faces(self, cad_model, tolerance, execution_mode="single_core", num_workers=4, timeout=120):
+    def execute(cls, cad_model, tolerance, execution_mode="single_core"):
         """Sew faces - dispatches to sequential or parallel based on execution_mode."""
         # Extract scalar values from lists (INPUT_IS_LIST behavior)
-        execution_mode_val = execution_mode[0] if isinstance(execution_mode, list) else execution_mode
-        num_workers_val = num_workers[0] if isinstance(num_workers, list) else num_workers
-        timeout_val = timeout[0] if isinstance(timeout, list) else timeout
         tolerance_val = tolerance[0] if isinstance(tolerance, list) else tolerance
+
+        # Extract execution_mode and optional parallel params from DynamicCombo
+        if isinstance(execution_mode, list):
+            execution_mode = execution_mode[0]
+        if isinstance(execution_mode, dict):
+            execution_mode_val = execution_mode.get("execution_mode", "single_core")
+            num_workers_val = execution_mode.get("num_workers", 4)
+            timeout_val = execution_mode.get("timeout", 120)
+        else:
+            execution_mode_val = execution_mode if isinstance(execution_mode, str) else "single_core"
+            num_workers_val = 4
+            timeout_val = 120
 
         # Ensure cad_model is a list
         cad_models = cad_model if isinstance(cad_model, list) else [cad_model]
 
         if execution_mode_val == "parallel":
-            return self._sew_parallel(cad_models, num_workers_val, timeout_val, tolerance_val)
+            return cls._sew_parallel(cad_models, num_workers_val, timeout_val, tolerance_val)
         else:
-            return self._sew_sequential(cad_models, tolerance_val)
+            return cls._sew_sequential(cad_models, tolerance_val)
 
-    def _sew_sequential(self, cad_models, tolerance):
+    @classmethod
+    def _sew_sequential(cls, cad_models, tolerance):
         """Process models sequentially in main process."""
         import time
         from datetime import datetime
@@ -201,14 +193,15 @@ class CADSewFaces:
             filename = os.path.basename(file_path)
             all_report_lines.append(f"\n{'='*60}\nModel {model_idx + 1}/{len(cad_models)}: {filename}\n{'='*60}")
 
-            result, report = self._sew_single(cad_model, tolerance)
+            result, report = cls._sew_single(cad_model, tolerance)
             results.append(result)
             all_report_lines.append(report)
 
         combined_report = "\n".join(all_report_lines)
-        return (results, combined_report)
+        return io.NodeOutput(results, combined_report)
 
-    def _sew_single(self, cad_model, tolerance=1.0):
+    @classmethod
+    def _sew_single(cls, cad_model, tolerance=1.0):
         """Sew faces using OCC BRepBuilderAPI_Sewing."""
         import time
         from datetime import datetime
@@ -248,7 +241,7 @@ class CADSewFaces:
         # Count connected components before sewing
         _log_msg(f"[CADabra] Counting connected components before sewing...")
         t0 = time.time()
-        components_before = self._count_connected_components(shape)
+        components_before = cls._count_connected_components(shape)
         _log_msg(f"[CADabra] [TIMING] count_components_before: {time.time() - t0:.3f}s ({components_before} components)")
 
         # Count free edges before sewing
@@ -848,7 +841,7 @@ class CADSewFaces:
         return (sewn_models, report)
 
 
-class CADGetFilename:
+class CADGetFilename(io.ComfyNode):
     """
     Extract filename (without extension) from a CAD model.
 
@@ -858,23 +851,23 @@ class CADGetFilename:
     Supports batch processing: input a list of CAD models, get a list of filenames.
     """
 
-    INPUT_IS_LIST = True
+    @classmethod
+    def define_schema(cls):
+        return io.Schema(
+            node_id="CADGetFilename",
+            display_name="CAD Get Filename",
+            category="CADabra/Utility",
+            is_input_list=True,
+            inputs=[
+                io.Custom("CAD_MODEL").Input("cad_model"),
+            ],
+            outputs=[
+                io.String.Output(display_name="filename", is_output_list=True),
+            ],
+        )
 
     @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "cad_model": ("CAD_MODEL",),
-            },
-        }
-
-    RETURN_TYPES = ("STRING",)
-    RETURN_NAMES = ("filename",)
-    OUTPUT_IS_LIST = (True,)
-    FUNCTION = "get_filename"
-    CATEGORY = "CADabra/Utility"
-
-    def get_filename(self, cad_model):
+    def execute(cls, cad_model):
         import os
 
         # Handle both single and batch inputs
@@ -891,10 +884,10 @@ class CADGetFilename:
                 filenames.append("unknown")
 
         log.info(f" Extracted {len(filenames)} filename(s)")
-        return (filenames,)
+        return io.NodeOutput(filenames)
 
 
-class CADCheckOverlappingFaces:
+class CADCheckOverlappingFaces(io.ComfyNode):
     """
     Detect overlapping or duplicate faces in CAD models.
 
@@ -907,32 +900,28 @@ class CADCheckOverlappingFaces:
     """
 
     @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "cad_model": ("CAD_MODEL", {
-                    "tooltip": "CAD model to check for overlapping faces"
-                }),
-                "method": (["bbox_centroid", "self_intersect", "mesh_distance"], {
-                    "default": "bbox_centroid",
-                    "tooltip": "Detection method: bbox_centroid (fast), self_intersect (medium), mesh_distance (slow)"
-                }),
-                "tolerance": ("FLOAT", {
-                    "default": 0.01,
-                    "min": 1e-6,
-                    "max": 10.0,
-                    "step": 0.001,
-                    "tooltip": "Distance tolerance for considering faces as overlapping (in model units)"
-                }),
-            }
-        }
+    def define_schema(cls):
+        return io.Schema(
+            node_id="CADCheckOverlappingFaces",
+            display_name="Check Overlapping Faces",
+            category="CADabra/Utility",
+            inputs=[
+                io.Custom("CAD_MODEL").Input("cad_model", tooltip="CAD model to check for overlapping faces"),
+                io.Combo.Input("method", options=["bbox_centroid", "self_intersect", "mesh_distance"],
+                               default="bbox_centroid",
+                               tooltip="Detection method: bbox_centroid (fast), self_intersect (medium), mesh_distance (slow)"),
+                io.Float.Input("tolerance", default=0.01, min=1e-6, max=10.0, step=0.001,
+                               tooltip="Distance tolerance for considering faces as overlapping (in model units)"),
+            ],
+            outputs=[
+                io.Custom("CAD_MODEL").Output(display_name="cad_model"),
+                io.Int.Output(display_name="overlapping_count"),
+                io.String.Output(display_name="info"),
+            ],
+        )
 
-    RETURN_TYPES = ("CAD_MODEL", "INT", "STRING")
-    RETURN_NAMES = ("cad_model", "overlapping_count", "info")
-    FUNCTION = "check_overlapping"
-    CATEGORY = "CADabra/Utility"
-
-    def check_overlapping(self, cad_model, method, tolerance):
+    @classmethod
+    def execute(cls, cad_model, method, tolerance):
         """Check for overlapping faces using the selected method."""
         import time
         from math import sqrt
@@ -943,21 +932,22 @@ class CADCheckOverlappingFaces:
         t0 = time.time()
 
         if method == "bbox_centroid":
-            overlaps = self._check_bbox_centroid(shape, tolerance)
+            overlaps = cls._check_bbox_centroid(shape, tolerance)
         elif method == "self_intersect":
-            overlaps = self._check_self_intersect(shape, tolerance)
+            overlaps = cls._check_self_intersect(shape, tolerance)
         else:  # mesh_distance
-            overlaps = self._check_mesh_distance(shape, tolerance)
+            overlaps = cls._check_mesh_distance(shape, tolerance)
 
         elapsed = time.time() - t0
         log.info(f" Overlap detection completed in {elapsed:.3f}s, found {len(overlaps)} overlapping pairs")
 
         # Build detailed report
-        report = self._build_report(method, tolerance, overlaps, elapsed)
+        report = cls._build_report(method, tolerance, overlaps, elapsed)
 
-        return (cad_model, len(overlaps), report)
+        return io.NodeOutput(cad_model, len(overlaps), report)
 
-    def _check_bbox_centroid(self, shape, tolerance):
+    @staticmethod
+    def _check_bbox_centroid(shape, tolerance):
         """Fast duplicate detection using bounding box, centroid, and area comparison."""
         from OCC.Core.BRepBndLib import brepbndlib
         from OCC.Core.Bnd import Bnd_Box
@@ -1034,7 +1024,8 @@ class CADCheckOverlappingFaces:
 
         return overlaps
 
-    def _check_self_intersect(self, shape, tolerance):
+    @staticmethod
+    def _check_self_intersect(shape, tolerance):
         """Use OCCT's built-in self-intersection checker."""
         from OCC.Core.BOPAlgo import BOPAlgo_CheckerSI
         from OCC.Core.TopTools import TopTools_ListOfShape
@@ -1097,7 +1088,8 @@ class CADCheckOverlappingFaces:
 
         return overlaps
 
-    def _check_mesh_distance(self, shape, tolerance):
+    @staticmethod
+    def _check_mesh_distance(shape, tolerance):
         """Check mesh vertex distances between faces using BRepExtrema."""
         from OCC.Core.BRepMesh import BRepMesh_IncrementalMesh
         from OCC.Core.BRepExtrema import BRepExtrema_DistShapeShape
@@ -1165,7 +1157,8 @@ class CADCheckOverlappingFaces:
         log.info(f"   Performed {comparisons} precise distance calculations")
         return overlaps
 
-    def _build_report(self, method, tolerance, overlaps, elapsed):
+    @staticmethod
+    def _build_report(method, tolerance, overlaps, elapsed):
         """Build a detailed text report of findings."""
         report_lines = [
             "Overlapping Faces Report",
@@ -1212,7 +1205,7 @@ class CADCheckOverlappingFaces:
         return "\n".join(report_lines)
 
 
-class CADSave:
+class CADSave(io.ComfyNode):
     """
     Save a CAD model to file in various formats.
 
@@ -1221,39 +1214,27 @@ class CADSave:
     """
 
     @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "cad_model": ("CAD_MODEL", {
-                    "tooltip": "CAD model to save"
-                }),
-                "filename": ("STRING", {
-                    "default": "output",
-                    "tooltip": "Output filename (without extension)"
-                }),
-                "format": (["step", "iges", "brep", "stl"], {
-                    "default": "step",
-                    "tooltip": "Output format: STEP (.stp), IGES (.igs), BREP (.brep), or STL (.stl)"
-                }),
-            },
-            "optional": {
-                "stl_linear_deflection": ("FLOAT", {
-                    "default": 0.1,
-                    "min": 0.001,
-                    "max": 1.0,
-                    "step": 0.001,
-                    "tooltip": "Linear deflection for STL tessellation (lower = finer mesh)"
-                }),
-            }
-        }
+    def define_schema(cls):
+        return io.Schema(
+            node_id="CADSave",
+            display_name="Save CAD",
+            category="CADabra/IO",
+            is_output_node=True,
+            inputs=[
+                io.Custom("CAD_MODEL").Input("cad_model", tooltip="CAD model to save"),
+                io.String.Input("filename", default="output", tooltip="Output filename (without extension)"),
+                io.Combo.Input("format", options=["step", "iges", "brep", "stl"], default="step",
+                               tooltip="Output format: STEP (.stp), IGES (.igs), BREP (.brep), or STL (.stl)"),
+                io.Float.Input("stl_linear_deflection", default=0.1, min=0.001, max=1.0, step=0.001, optional=True,
+                               tooltip="Linear deflection for STL tessellation (lower = finer mesh)"),
+            ],
+            outputs=[
+                io.String.Output(display_name="file_path"),
+            ],
+        )
 
-    RETURN_TYPES = ("STRING",)
-    RETURN_NAMES = ("file_path",)
-    FUNCTION = "save_cad"
-    CATEGORY = "CADabra/IO"
-    OUTPUT_NODE = True
-
-    def save_cad(self, cad_model, filename, format, stl_linear_deflection=0.1):
+    @classmethod
+    def execute(cls, cad_model, filename, format, stl_linear_deflection=0.1):
         """Save CAD model to file."""
         from OCC.Core.BRepTools import breptools
         from OCC.Core.STEPControl import STEPControl_Writer, STEPControl_AsIs
@@ -1320,35 +1301,31 @@ class CADSave:
 
         log.info(f" Saved CAD model to: {output_path}")
 
-        return (output_path,)
+        return io.NodeOutput(output_path)
 
 
-class CADSplitComponents:
-    """
-    Split a CAD model into separate models based on connected components.
-
-    Uses face adjacency (shared edges) to identify disconnected regions.
-    Each component becomes a separate CAD_MODEL output, useful for debugging
-    why sewing produces multiple components.
-    """
+class CADSplitComponents(io.ComfyNode):
+    """Split a CAD model into separate models based on connected components."""
 
     @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "cad_model": ("CAD_MODEL", {
-                    "tooltip": "CAD model to split into components"
-                }),
-            }
-        }
+    def define_schema(cls):
+        return io.Schema(
+            node_id="CADSplitComponents",
+            display_name="Split Components",
+            category="CADabra/Utility",
+            inputs=[
+                io.Custom("CAD_MODEL").Input("cad_model", tooltip="CAD model to split into components"),
+            ],
+            outputs=[
+                io.Custom("CAD_MODEL").Output(display_name="components", is_output_list=True),
+                io.Int.Output(display_name="num_components"),
+                io.String.Output(display_name="face_counts"),
+                io.String.Output(display_name="info"),
+            ],
+        )
 
-    RETURN_TYPES = ("CAD_MODEL", "INT", "STRING", "STRING")
-    RETURN_NAMES = ("components", "num_components", "face_counts", "info")
-    OUTPUT_IS_LIST = (True, False, False, False)
-    FUNCTION = "split_components"
-    CATEGORY = "CADabra/Utility"
-
-    def split_components(self, cad_model):
+    @classmethod
+    def execute(cls, cad_model):
         """Split CAD model into separate models per connected component."""
         shape = _get_occ_shape(cad_model)
 
@@ -1453,115 +1430,81 @@ class CADSplitComponents:
 
         report = "\n".join(report_lines)
 
-        return (component_models, len(components_face_indices), face_counts_str, report)
+        return io.NodeOutput(component_models, len(components_face_indices), face_counts_str, report)
 
 
-class CADHealShape:
-    """
-    General-purpose CAD healing using OCCT ShapeFix.
-
-    Supports batch processing with optional parallel execution for
-    OS-level timeout and crash isolation.
-
-    Fixes common CAD issues:
-    - Small/sliver faces (spot and strip faces)
-    - Small edges
-    - Wire gaps
-    - General topology issues
-    - Fragmented edges (merge colinear)
-    """
-
-    INPUT_IS_LIST = True
+class CADHealShape(io.ComfyNode):
+    """General-purpose CAD healing using OCCT ShapeFix."""
 
     @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "cad_model": ("CAD_MODEL", {
-                    "tooltip": "CAD model(s) to heal"
-                }),
-                "precision": ("FLOAT", {"default": 0.01, "min": 0.0001, "max": 10.0, "step": 0.001}),
-                "max_tolerance": ("FLOAT", {"default": 1.0, "min": 0.01, "max": 100.0, "step": 0.1}),
-            },
-            "optional": {
-                "execution_mode": (["single_core", "parallel"], {
-                    "default": "single_core",
-                    "tooltip": "single_core: sequential in main process. parallel: subprocesses with timeout and crash isolation"
-                }),
-                "num_workers": ("INT", {
-                    "default": 4,
-                    "min": 1,
-                    "max": 32,
-                    "tooltip": "Number of parallel subprocesses (parallel mode only)"
-                }),
-                "timeout": ("INT", {
-                    "default": 120,
-                    "min": 10,
-                    "max": 600,
-                    "tooltip": "Timeout per model in seconds (parallel mode only)"
-                }),
-                "fix_small_faces": ("BOOLEAN", {"default": True}),
-                "small_face_precision": ("FLOAT", {"default": 0.1, "min": 0.001, "max": 10.0, "step": 0.01}),
-                "fix_small_edges": ("BOOLEAN", {"default": True}),
-                "fix_wire_gaps": ("BOOLEAN", {"default": True}),
-                "merge_colinear_edges": ("BOOLEAN", {
-                    "default": False,
-                    "tooltip": "Merge adjacent edges on same curve (fixes fragmented IGES trim curves)"
-                }),
-                "unify_faces": ("BOOLEAN", {
-                    "default": False,
-                    "tooltip": "Also unify adjacent faces on same surface (more aggressive simplification)"
-                }),
-                "angular_tolerance": ("FLOAT", {
-                    "default": 0.01,
-                    "min": 0.001,
-                    "max": 1.0,
-                    "step": 0.001,
-                    "tooltip": "Angular tolerance for curve matching in radians (higher = more aggressive)"
-                }),
-                "linear_tolerance": ("FLOAT", {
-                    "default": 0.001,
-                    "min": 0.0001,
-                    "max": 1.0,
-                    "step": 0.0001,
-                    "tooltip": "Linear tolerance for curve matching (higher = more aggressive)"
-                }),
-                "merge_g2_edges": ("BOOLEAN", {
-                    "default": False,
-                    "tooltip": "Merge adjacent edges with G2 curvature continuity (e.g. B-splines forming circles)"
-                }),
-                "g2_tolerance": ("FLOAT", {
-                    "default": 0.01,
-                    "min": 0.0001,
-                    "max": 1.0,
-                    "step": 0.001,
-                    "tooltip": "Curvature tolerance for G2 continuity detection"
-                }),
-                "preserve_quad_faces": ("BOOLEAN", {
-                    "default": True,
-                    "tooltip": "Don't merge edges on faces with exactly 4 edges"
-                }),
-            }
-        }
+    def define_schema(cls):
+        return io.Schema(
+            node_id="CADHealShape",
+            display_name="Heal CAD Shape",
+            category="CADabra/Utility",
+            is_input_list=True,
+            inputs=[
+                io.Custom("CAD_MODEL").Input("cad_model", tooltip="CAD model(s) to heal"),
+                io.Float.Input("precision", default=0.01, min=0.0001, max=10.0, step=0.001),
+                io.Float.Input("max_tolerance", default=1.0, min=0.01, max=100.0, step=0.1),
+                io.DynamicCombo.Input("execution_mode",
+                    tooltip="single_core: sequential in main process. parallel: subprocesses with timeout and crash isolation",
+                    options=[
+                        io.DynamicCombo.Option("single_core", []),
+                        io.DynamicCombo.Option("parallel", [
+                            io.Int.Input("num_workers", default=4, min=1, max=32,
+                                tooltip="Number of parallel subprocesses (parallel mode only)"),
+                            io.Int.Input("timeout", default=120, min=10, max=600,
+                                tooltip="Timeout per model in seconds (parallel mode only)"),
+                        ]),
+                    ],
+                ),
+                io.Boolean.Input("fix_small_faces", default=True, optional=True),
+                io.Float.Input("small_face_precision", default=0.1, min=0.001, max=10.0, step=0.01, optional=True),
+                io.Boolean.Input("fix_small_edges", default=True, optional=True),
+                io.Boolean.Input("fix_wire_gaps", default=True, optional=True),
+                io.Boolean.Input("merge_colinear_edges", default=False, optional=True,
+                    tooltip="Merge adjacent edges on same curve (fixes fragmented IGES trim curves)"),
+                io.Boolean.Input("unify_faces", default=False, optional=True,
+                    tooltip="Also unify adjacent faces on same surface (more aggressive simplification)"),
+                io.Float.Input("angular_tolerance", default=0.01, min=0.001, max=1.0, step=0.001, optional=True, advanced=True,
+                    tooltip="Angular tolerance for curve matching in radians (higher = more aggressive)"),
+                io.Float.Input("linear_tolerance", default=0.001, min=0.0001, max=1.0, step=0.0001, optional=True, advanced=True,
+                    tooltip="Linear tolerance for curve matching (higher = more aggressive)"),
+                io.Boolean.Input("merge_g2_edges", default=False, optional=True, advanced=True,
+                    tooltip="Merge adjacent edges with G2 curvature continuity"),
+                io.Float.Input("g2_tolerance", default=0.01, min=0.0001, max=1.0, step=0.001, optional=True, advanced=True,
+                    tooltip="Curvature tolerance for G2 continuity detection"),
+                io.Boolean.Input("preserve_quad_faces", default=True, optional=True,
+                    tooltip="Don't merge edges on faces with exactly 4 edges"),
+            ],
+            outputs=[
+                io.Custom("CAD_MODEL").Output(display_name="healed_models", is_output_list=True),
+                io.String.Output(display_name="info"),
+            ],
+        )
 
-    RETURN_TYPES = ("CAD_MODEL", "STRING")
-    RETURN_NAMES = ("healed_models", "info")
-    OUTPUT_IS_LIST = (True, False)
-    FUNCTION = "heal_shape"
-    CATEGORY = "CADabra/Utility"
-
-    def heal_shape(self, cad_model, precision, max_tolerance,
-                   execution_mode="single_core", num_workers=4, timeout=120,
-                   fix_small_faces=True, small_face_precision=0.1,
-                   fix_small_edges=True, fix_wire_gaps=True,
-                   merge_colinear_edges=False, unify_faces=False,
-                   angular_tolerance=0.01, linear_tolerance=0.001,
-                   merge_g2_edges=False, g2_tolerance=0.01, preserve_quad_faces=True):
+    @classmethod
+    def execute(cls, cad_model, precision, max_tolerance,
+                execution_mode="single_core", num_workers=4, timeout=120,
+                fix_small_faces=True, small_face_precision=0.1,
+                fix_small_edges=True, fix_wire_gaps=True,
+                merge_colinear_edges=False, unify_faces=False,
+                angular_tolerance=0.01, linear_tolerance=0.001,
+                merge_g2_edges=False, g2_tolerance=0.01, preserve_quad_faces=True):
         """Heal shapes - dispatches to sequential or parallel based on execution_mode."""
         # Extract scalar values from lists (INPUT_IS_LIST behavior)
-        execution_mode_val = execution_mode[0] if isinstance(execution_mode, list) else execution_mode
-        num_workers_val = num_workers[0] if isinstance(num_workers, list) else num_workers
-        timeout_val = timeout[0] if isinstance(timeout, list) else timeout
+        # Handle DynamicCombo for execution_mode
+        if isinstance(execution_mode, list):
+            execution_mode = execution_mode[0]
+        if isinstance(execution_mode, dict):
+            execution_mode_val = execution_mode.get("execution_mode", "single_core")
+            num_workers_val = execution_mode.get("num_workers", 4)
+            timeout_val = execution_mode.get("timeout", 120)
+        else:
+            execution_mode_val = execution_mode if isinstance(execution_mode, str) else "single_core"
+            num_workers_val = num_workers[0] if isinstance(num_workers, list) else num_workers
+            timeout_val = timeout[0] if isinstance(timeout, list) else timeout
         precision_val = precision[0] if isinstance(precision, list) else precision
         max_tolerance_val = max_tolerance[0] if isinstance(max_tolerance, list) else max_tolerance
         fix_small_faces_val = fix_small_faces[0] if isinstance(fix_small_faces, list) else fix_small_faces
@@ -1580,21 +1523,22 @@ class CADHealShape:
         cad_models = cad_model if isinstance(cad_model, list) else [cad_model]
 
         if execution_mode_val == "parallel":
-            return self._heal_parallel(
+            return cls._heal_parallel(
                 cad_models, num_workers_val, timeout_val, precision_val, max_tolerance_val,
                 fix_small_faces_val, small_face_precision_val, fix_small_edges_val, fix_wire_gaps_val,
                 merge_colinear_val, unify_faces_val, angular_tolerance_val, linear_tolerance_val,
                 merge_g2_val, g2_tolerance_val, preserve_quad_faces_val
             )
         else:
-            return self._heal_sequential(
+            return cls._heal_sequential(
                 cad_models, precision_val, max_tolerance_val,
                 fix_small_faces_val, small_face_precision_val, fix_small_edges_val, fix_wire_gaps_val,
                 merge_colinear_val, unify_faces_val, angular_tolerance_val, linear_tolerance_val,
                 merge_g2_val, g2_tolerance_val, preserve_quad_faces_val
             )
 
-    def _heal_sequential(self, cad_models, precision, max_tolerance,
+    @classmethod
+    def _heal_sequential(cls, cad_models, precision, max_tolerance,
                          fix_small_faces, small_face_precision, fix_small_edges, fix_wire_gaps,
                          merge_colinear_edges, unify_faces, angular_tolerance, linear_tolerance,
                          merge_g2_edges=False, g2_tolerance=0.01, preserve_quad_faces=True):
@@ -1607,7 +1551,7 @@ class CADHealShape:
             filename = os.path.basename(file_path)
             all_report_lines.append(f"\n{'='*60}\nModel {model_idx + 1}/{len(cad_models)}: {filename}\n{'='*60}")
 
-            result, report = self._heal_single(
+            result, report = cls._heal_single(
                 cad_model, precision, max_tolerance,
                 fix_small_faces, small_face_precision, fix_small_edges, fix_wire_gaps,
                 merge_colinear_edges, unify_faces, angular_tolerance, linear_tolerance,
@@ -1617,9 +1561,10 @@ class CADHealShape:
             all_report_lines.append(report)
 
         combined_report = "\n".join(all_report_lines)
-        return (results, combined_report)
+        return io.NodeOutput(results, combined_report)
 
-    def _heal_single(self, cad_model, precision, max_tolerance,
+    @staticmethod
+    def _heal_single(cad_model, precision, max_tolerance,
                      fix_small_faces=True, small_face_precision=0.1,
                      fix_small_edges=True, fix_wire_gaps=True,
                      merge_colinear_edges=False, unify_faces=False,
@@ -1947,7 +1892,8 @@ class CADHealShape:
 
         return (result_model, report)
 
-    def _heal_parallel(self, cad_models, num_workers, timeout, precision, max_tolerance,
+    @classmethod
+    def _heal_parallel(cls, cad_models, num_workers, timeout, precision, max_tolerance,
                        fix_small_faces, small_face_precision, fix_small_edges, fix_wire_gaps,
                        merge_colinear_edges, unify_faces, angular_tolerance, linear_tolerance,
                        merge_g2_edges=False, g2_tolerance=0.01, preserve_quad_faces=True):
@@ -2168,54 +2114,33 @@ class CADHealShape:
                 log.warning(f"Heal Parallel: Could not clean temp dir: {e}")
 
         report = "\n".join(report_lines)
-        return (healed_models, report)
+        return io.NodeOutput(healed_models, report)
 
 
-# CADHealShapeParallel has been deleted - unified into CADHealShape
-class CADMergeVertices:
-    """
-    Merge duplicate vertices in mesh using PyVista/VTK clean.
-
-    Use this node after OCC meshing to merge vertices at face boundaries.
-    OCC meshes each CAD face independently, creating duplicate vertices
-    at shared edges. This node merges vertices within a tolerance.
-
-    NOTE: OCC BRepMesh guarantees that shared boundary edges have identical
-    vertex positions on both adjacent faces. Therefore, a very small tolerance
-    (1e-6) is sufficient to merge boundary vertices without collapsing any
-    internal geometry.
-    """
+class CADMergeVertices(io.ComfyNode):
+    """Merge duplicate vertices in mesh using PyVista/VTK clean."""
 
     @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "trimesh": ("TRIMESH",),
-                "tolerance": ("FLOAT", {
-                    "default": 1e-6,
-                    "min": 1e-9,
-                    "max": 10.0,
-                    "step": 0.000001,
-                    "tooltip": "Distance tolerance for merging vertices. Default 1e-6 is safe for OCC meshes."
-                }),
-                "min_component_ratio": ("FLOAT", {
-                    "default": 0.0,
-                    "min": 0.0,
-                    "max": 0.1,
-                    "step": 0.001,
-                    "tooltip": "Remove mesh components smaller than this ratio of total faces (0=keep all)"
-                }),
-            }
-        }
+    def define_schema(cls):
+        return io.Schema(
+            node_id="CADMergeVertices",
+            display_name="Merge Vertices",
+            category="CADabra/Utility",
+            is_input_list=True,
+            inputs=[
+                io.Custom("TRIMESH").Input("trimesh"),
+                io.Float.Input("tolerance", default=1e-6, min=1e-9, max=10.0, step=0.000001,
+                               tooltip="Distance tolerance for merging vertices. Default 1e-6 is safe for OCC meshes."),
+                io.Float.Input("min_component_ratio", default=0.0, min=0.0, max=0.1, step=0.001,
+                               tooltip="Remove mesh components smaller than this ratio of total faces (0=keep all)"),
+            ],
+            outputs=[
+                io.Custom("TRIMESH").Output(display_name="trimesh", is_output_list=True),
+            ],
+        )
 
-    RETURN_TYPES = ("TRIMESH",)
-    RETURN_NAMES = ("trimesh",)
-    INPUT_IS_LIST = True
-    OUTPUT_IS_LIST = (True,)
-    FUNCTION = "merge_vertices"
-    CATEGORY = "CADabra/Utility"
-
-    def merge_vertices(self, trimesh, tolerance, min_component_ratio):
+    @classmethod
+    def execute(cls, trimesh, tolerance, min_component_ratio):
         """Merge duplicate vertices using PyVista's clean() which wraps VTK's vtkCleanPolyData."""
         import pyvista as pv
         import numpy as np
@@ -2355,7 +2280,7 @@ class CADMergeVertices:
 
             results.append(new_mesh)
 
-        return (results,)
+        return io.NodeOutput(results)
 
 
 def _replace_degenerate_face(face, iterations, max_degree):
@@ -2419,91 +2344,58 @@ def _replace_degenerate_face(face, iterations, max_degree):
         return None, "No face in result"
 
 
-class CADFixDegenerateFaces:
-    """
-    Replace degenerate CAD faces with valid filled surfaces.
-
-    Supports batch processing with optional parallel execution for
-    OS-level timeout and crash isolation.
-
-    Degenerate faces have edges that collapse to a single point (poles/singularities).
-    These cause mesh connectivity issues because BRepMesh outputs only 1 vertex
-    for the entire degenerate edge.
-
-    This node detects faces with degenerate edges and replaces them using
-    BRepOffsetAPI_MakeFilling, which creates a new BSpline surface through
-    the non-degenerate boundary edges.
-
-    Handles all types of degenerate faces:
-    - Triangles: 3 real + 1 degenerate edge (most common ~84%)
-    - Pentagons: 4 real + 1 degenerate edge (~8%)
-    - Slivers: 2 real + 2 degenerate edges (~2%)
-    - Other: 5+ real + degenerate edges (~6%)
-    """
-
-    INPUT_IS_LIST = True
+class CADFixDegenerateFaces(io.ComfyNode):
+    """Replace degenerate CAD faces with valid filled surfaces."""
 
     @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "cad_model": ("CAD_MODEL", {
-                    "tooltip": "CAD model(s) with degenerate faces to fix"
-                }),
-                "iterations": ("INT", {
-                    "default": 5,
-                    "min": 1,
-                    "max": 20,
-                    "step": 1,
-                    "tooltip": "Smoothness iterations for filling surface (higher = smoother)"
-                }),
-                "max_degree": ("INT", {
-                    "default": 8,
-                    "min": 3,
-                    "max": 14,
-                    "step": 1,
-                    "tooltip": "Maximum BSpline degree for replacement surface"
-                }),
-                "sew_tolerance": ("FLOAT", {
-                    "default": 0.001,
-                    "min": 1e-6,
-                    "max": 1.0,
-                    "step": 0.0001,
-                    "tooltip": "Tolerance for sewing faces back together after replacement"
-                }),
-            },
-            "optional": {
-                "execution_mode": (["single_core", "parallel"], {
-                    "default": "single_core",
-                    "tooltip": "single_core: sequential in main process. parallel: subprocesses with timeout and crash isolation"
-                }),
-                "num_workers": ("INT", {
-                    "default": 4,
-                    "min": 1,
-                    "max": 32,
-                    "tooltip": "Number of parallel subprocesses (parallel mode only)"
-                }),
-                "timeout": ("INT", {
-                    "default": 120,
-                    "min": 10,
-                    "max": 600,
-                    "tooltip": "Timeout per model in seconds (parallel mode only)"
-                }),
-            }
-        }
+    def define_schema(cls):
+        return io.Schema(
+            node_id="CADFixDegenerateFaces",
+            display_name="Fix Degenerate Faces",
+            category="CADabra/Utility",
+            is_input_list=True,
+            inputs=[
+                io.Custom("CAD_MODEL").Input("cad_model", tooltip="CAD model(s) with degenerate faces to fix"),
+                io.Int.Input("iterations", default=5, min=1, max=20, step=1,
+                             tooltip="Smoothness iterations for filling surface (higher = smoother)"),
+                io.Int.Input("max_degree", default=8, min=3, max=14, step=1,
+                             tooltip="Maximum BSpline degree for replacement surface"),
+                io.Float.Input("sew_tolerance", default=0.001, min=1e-6, max=1.0, step=0.0001,
+                               tooltip="Tolerance for sewing faces back together after replacement"),
+                io.DynamicCombo.Input("execution_mode",
+                    tooltip="single_core: sequential in main process. parallel: subprocesses with timeout and crash isolation",
+                    options=[
+                        io.DynamicCombo.Option("single_core", []),
+                        io.DynamicCombo.Option("parallel", [
+                            io.Int.Input("num_workers", default=4, min=1, max=32,
+                                tooltip="Number of parallel subprocesses (parallel mode only)"),
+                            io.Int.Input("timeout", default=120, min=10, max=600,
+                                tooltip="Timeout per model in seconds (parallel mode only)"),
+                        ]),
+                    ],
+                ),
+            ],
+            outputs=[
+                io.Custom("CAD_MODEL").Output(display_name="cad_model", is_output_list=True),
+                io.String.Output(display_name="info"),
+            ],
+        )
 
-    RETURN_TYPES = ("CAD_MODEL", "STRING")
-    RETURN_NAMES = ("cad_model", "info")
-    OUTPUT_IS_LIST = (True, False)
-    FUNCTION = "fix_degenerate_faces"
-    CATEGORY = "CADabra/Utility"
-
-    def fix_degenerate_faces(self, cad_model, iterations, max_degree, sew_tolerance, execution_mode="single_core", num_workers=4, timeout=120):
+    @classmethod
+    def execute(cls, cad_model, iterations, max_degree, sew_tolerance, execution_mode="single_core"):
         """Fix degenerate faces - dispatches to sequential or parallel based on execution_mode."""
-        # Extract scalar values from lists (INPUT_IS_LIST behavior)
-        execution_mode_val = execution_mode[0] if isinstance(execution_mode, list) else execution_mode
-        num_workers_val = num_workers[0] if isinstance(num_workers, list) else num_workers
-        timeout_val = timeout[0] if isinstance(timeout, list) else timeout
+        # Handle DynamicCombo for execution_mode
+        if isinstance(execution_mode, list):
+            execution_mode = execution_mode[0]
+        if isinstance(execution_mode, dict):
+            execution_mode_val = execution_mode.get("execution_mode", "single_core")
+            num_workers_val = execution_mode.get("num_workers", 4)
+            timeout_val = execution_mode.get("timeout", 120)
+        else:
+            execution_mode_val = execution_mode if isinstance(execution_mode, str) else "single_core"
+            num_workers_val = 4
+            timeout_val = 120
+
         iter_val = iterations[0] if isinstance(iterations, list) else iterations
         deg_val = max_degree[0] if isinstance(max_degree, list) else max_degree
         tol_val = sew_tolerance[0] if isinstance(sew_tolerance, list) else sew_tolerance
@@ -2512,16 +2404,16 @@ class CADFixDegenerateFaces:
         cad_models = cad_model if isinstance(cad_model, list) else [cad_model]
 
         if execution_mode_val == "parallel":
-            return self._fix_parallel(cad_models, num_workers_val, timeout_val, iter_val, deg_val, tol_val)
+            return cls._fix_parallel(cad_models, num_workers_val, timeout_val, iter_val, deg_val, tol_val)
         else:
-            return self._fix_sequential(cad_models, iter_val, deg_val, tol_val)
+            return cls._fix_sequential(cad_models, iter_val, deg_val, tol_val)
 
-    def _fix_sequential(self, cad_models, iterations, max_degree, sew_tolerance):
+    @classmethod
+    def _fix_sequential(cls, cad_models, iterations, max_degree, sew_tolerance):
         """Process all CAD models, replacing degenerate faces."""
         from OCC.Core.BRep import BRep_Tool
 
-        # Handle batch input and list params
-        cad_models = cad_model if isinstance(cad_model, list) else [cad_model]
+        # Handle list params
         iter_val = iterations[0] if isinstance(iterations, list) else iterations
         deg_val = max_degree[0] if isinstance(max_degree, list) else max_degree
         tol_val = sew_tolerance[0] if isinstance(sew_tolerance, list) else sew_tolerance
@@ -2619,9 +2511,10 @@ class CADFixDegenerateFaces:
         report = "\n".join(report_lines)
         log.info(f"FixDegenerateFaces: Processed {len(cad_models)} model(s)")
 
-        return (results, report)
+        return io.NodeOutput(results, report)
 
-    def _fix_parallel(self, cad_models, num_workers, timeout, iterations, max_degree, sew_tolerance):
+    @classmethod
+    def _fix_parallel(cls, cad_models, num_workers, timeout, iterations, max_degree, sew_tolerance):
         """Fix degenerate faces using subprocess per model with OS-level timeout."""
         from concurrent.futures import ThreadPoolExecutor, as_completed
         from OCC.Core.BRepTools import breptools
@@ -2816,7 +2709,7 @@ class CADFixDegenerateFaces:
             except Exception as e:
                 log.warning(f"FixDegenerateFaces Parallel: Could not clean temp dir: {e}")
 
-        return (fixed_models, report)
+        return io.NodeOutput(fixed_models, report)
 
 
 # Node mappings for registration
