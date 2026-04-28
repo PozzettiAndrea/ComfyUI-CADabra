@@ -1,4 +1,4 @@
-comfy-env==0.3.31
+comfy-env==0.3.32
 comfy-3d-viewers==0.2.41
 comfy-dynamic-widgets
 trimesh
