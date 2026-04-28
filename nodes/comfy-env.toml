@@ -4,9 +4,8 @@ python = "3.12"  # Required by OCC
 channels = ["cadquery", "conda-forge", "pozzettiandrea"]
 
 [dependencies]
-pythonocc-core = { version = "==7.8.1", build = "*_202" }
+pythonocc-core = "==7.8.1"
 cadquery = "==2.6.1"
-occt = { version = "==7.8.1", build = "*_202" }
 occt-rt = ">=1.1.0"
 sqlite = "*"
 
