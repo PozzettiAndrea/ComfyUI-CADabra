@@ -25,6 +25,8 @@ from OCC.Core.Bnd import Bnd_Box
 from OCC.Core.BRepBndLib import brepbndlib
 import math
 
+from comfy_api.latest import io
+
 def _get_occ_shape(cad_model):
     """Get OCC shape from CAD_MODEL dict (loads from brep_path)."""
     try:
@@ -270,7 +272,33 @@ def _project_wire_to_plane(wire, proj_face, proj_dir):
         stats["reason"] = str(e)
         return None, stats
 
-class CADProjectFaces2D:
+
+def _resolve_plane(plane, plane_origin_x, plane_origin_y, plane_origin_z,
+                   plane_normal_x, plane_normal_y, plane_normal_z):
+    """
+    Return (origin: gp_Pnt, normal: gp_Dir) for the selected plane mode.
+    """
+    if plane == "XY":
+        return gp_Pnt(0, 0, 0), gp_Dir(0, 0, 1)
+    elif plane == "XZ":
+        return gp_Pnt(0, 0, 0), gp_Dir(0, 1, 0)
+    elif plane == "YZ":
+        return gp_Pnt(0, 0, 0), gp_Dir(1, 0, 0)
+    else:  # Custom
+        nx, ny, nz = plane_normal_x, plane_normal_y, plane_normal_z
+        mag = math.sqrt(nx * nx + ny * ny + nz * nz)
+        if mag < 1e-12:
+            raise ValueError(
+                "Custom plane normal must be non-zero. "
+                f"Got ({nx}, {ny}, {nz})."
+            )
+        return (
+            gp_Pnt(plane_origin_x, plane_origin_y, plane_origin_z),
+            gp_Dir(nx, ny, nz),  # gp_Dir normalises automatically
+        )
+
+
+class CADProjectFaces2D(io.ComfyNode):
     """
     Project CAD faces onto an arbitrary 2D plane with EXACT curve geometry.
 
@@ -285,94 +313,41 @@ class CADProjectFaces2D:
     """
 
     @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "cad_model": ("CAD_MODEL", {
-                    "tooltip": "3D CAD model to project"
-                }),
-                "plane": (["XY", "XZ", "YZ", "Custom"], {
-                    "default": "XY",
-                    "tooltip": (
-                        "Projection plane. XY projects along Z, XZ along Y, "
-                        "YZ along X. Custom uses the origin/normal parameters."
-                    ),
-                }),
-            },
-            "optional": {
-                "plane_origin_x": ("FLOAT", {
-                    "default": 0.0,
-                    "step": 0.1,
-                    "tooltip": "X coordinate of a point on the custom plane",
-                }),
-                "plane_origin_y": ("FLOAT", {
-                    "default": 0.0,
-                    "step": 0.1,
-                    "tooltip": "Y coordinate of a point on the custom plane",
-                }),
-                "plane_origin_z": ("FLOAT", {
-                    "default": 0.0,
-                    "step": 0.1,
-                    "tooltip": "Z coordinate of a point on the custom plane",
-                }),
-                "plane_normal_x": ("FLOAT", {
-                    "default": 0.0,
-                    "step": 0.01,
-                    "tooltip": "X component of the custom plane normal",
-                }),
-                "plane_normal_y": ("FLOAT", {
-                    "default": 0.0,
-                    "step": 0.01,
-                    "tooltip": "Y component of the custom plane normal",
-                }),
-                "plane_normal_z": ("FLOAT", {
-                    "default": 1.0,
-                    "step": 0.01,
-                    "tooltip": "Z component of the custom plane normal (default 1 = XY plane)",
-                }),
-            },
-        }
+    def define_schema(cls):
+        return io.Schema(
+            node_id="CADProjectFaces2D",
+            display_name="CAD Project Faces to 2D",
+            category="CADabra/Analysis",
+            inputs=[
+                io.Custom("CAD_MODEL").Input("cad_model", tooltip="3D CAD model to project"),
+                io.Combo.Input("plane", options=["XY", "XZ", "YZ", "Custom"], default="XY",
+                               tooltip=(
+                                   "Projection plane. XY projects along Z, XZ along Y, "
+                                   "YZ along X. Custom uses the origin/normal parameters."
+                               )),
+                io.Float.Input("plane_origin_x", default=0.0, step=0.1,
+                               tooltip="X coordinate of a point on the custom plane", optional=True),
+                io.Float.Input("plane_origin_y", default=0.0, step=0.1,
+                               tooltip="Y coordinate of a point on the custom plane", optional=True),
+                io.Float.Input("plane_origin_z", default=0.0, step=0.1,
+                               tooltip="Z coordinate of a point on the custom plane", optional=True),
+                io.Float.Input("plane_normal_x", default=0.0, step=0.01,
+                               tooltip="X component of the custom plane normal", optional=True),
+                io.Float.Input("plane_normal_y", default=0.0, step=0.01,
+                               tooltip="Y component of the custom plane normal", optional=True),
+                io.Float.Input("plane_normal_z", default=1.0, step=0.01,
+                               tooltip="Z component of the custom plane normal (default 1 = XY plane)",
+                               optional=True),
+            ],
+            outputs=[
+                io.Custom("CAD_MODEL").Output(display_name="projected_2d"),
+                io.Custom("FACE_MAPPING").Output(display_name="face_mapping"),
+            ],
+        )
 
-    RETURN_TYPES = ("CAD_MODEL", "FACE_MAPPING")
-    RETURN_NAMES = ("projected_2d", "face_mapping")
-    FUNCTION = "project_faces"
-    CATEGORY = "CADabra/Analysis"
-
-    # -----------------------------------------------------------------
-    # Internal helpers
-    # -----------------------------------------------------------------
-
-    @staticmethod
-    def _resolve_plane(plane, plane_origin_x, plane_origin_y, plane_origin_z,
-                       plane_normal_x, plane_normal_y, plane_normal_z):
-        """
-        Return (origin: gp_Pnt, normal: gp_Dir) for the selected plane mode.
-        """
-        if plane == "XY":
-            return gp_Pnt(0, 0, 0), gp_Dir(0, 0, 1)
-        elif plane == "XZ":
-            return gp_Pnt(0, 0, 0), gp_Dir(0, 1, 0)
-        elif plane == "YZ":
-            return gp_Pnt(0, 0, 0), gp_Dir(1, 0, 0)
-        else:  # Custom
-            nx, ny, nz = plane_normal_x, plane_normal_y, plane_normal_z
-            mag = math.sqrt(nx * nx + ny * ny + nz * nz)
-            if mag < 1e-12:
-                raise ValueError(
-                    "Custom plane normal must be non-zero. "
-                    f"Got ({nx}, {ny}, {nz})."
-                )
-            return (
-                gp_Pnt(plane_origin_x, plane_origin_y, plane_origin_z),
-                gp_Dir(nx, ny, nz),  # gp_Dir normalises automatically
-            )
-
-    # -----------------------------------------------------------------
-    # Main entry point
-    # -----------------------------------------------------------------
-
-    def project_faces(
-        self,
+    @classmethod
+    def execute(
+        cls,
         cad_model,
         plane="XY",
         plane_origin_x=0.0,
@@ -397,7 +372,7 @@ class CADProjectFaces2D:
             from .utils.brep_cache import save_shape
 
         # ------ resolve plane origin / normal ------
-        origin, normal_dir = self._resolve_plane(
+        origin, normal_dir = _resolve_plane(
             plane, plane_origin_x, plane_origin_y, plane_origin_z,
             plane_normal_x, plane_normal_y, plane_normal_z,
         )
@@ -579,7 +554,7 @@ class CADProjectFaces2D:
             "plane_normal": (normal_dir.X(), normal_dir.Y(), normal_dir.Z()),
         }
 
-        return (projected_cad, face_mapping_result)
+        return io.NodeOutput(projected_cad, face_mapping_result)
 
 
 # Node mappings for registration

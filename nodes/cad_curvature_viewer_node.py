@@ -9,6 +9,7 @@ from __future__ import annotations
 import numpy as np
 import trimesh
 
+from comfy_api.latest import io
 from .utils.occ_logging import logger
 
 from OCC.Core.TopExp import TopExp_Explorer
@@ -24,7 +25,7 @@ from OCC.Core.BRepBndLib import brepbndlib
 from OCC.Core.Precision import precision
 
 
-class CADCurvature:
+class CADCurvature(io.ComfyNode):
     """
     Compute surface curvature from CAD geometry.
 
@@ -36,43 +37,12 @@ class CADCurvature:
     """
 
     @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "cad_model": ("CAD_MODEL", {
-                    "tooltip": "CAD model to analyze"
-                }),
-                "linear_deflection": ("FLOAT", {
-                    "default": 0.1,
-                    "min": 0.001,
-                    "max": 1.0,
-                    "step": 0.01,
-                    "tooltip": "Linear deflection for tessellation (lower = finer mesh)"
-                }),
-                "angular_deflection": ("FLOAT", {
-                    "default": 0.5,
-                    "min": 0.1,
-                    "max": 1.0,
-                    "step": 0.1,
-                    "tooltip": "Angular deflection in radians for tessellation"
-                }),
-            },
-            "optional": {
-                "clamp_percentile": ("FLOAT", {
-                    "default": 1.0,
-                    "min": 0.0,
-                    "max": 10.0,
-                    "step": 0.5,
-                    "tooltip": "Percentile clamping for outliers (0=no clamping, 1=P1-P99)"
-                }),
-            }
-        }
-
-    RETURN_TYPES = ("TRIMESH", "CAD_MODEL", "STRING")
-    RETURN_NAMES = ("mesh", "cad_model", "info")
-    FUNCTION = "compute_curvature"
-    CATEGORY = "CADabra/Analysis"
-    DESCRIPTION = """
+    def define_schema(cls):
+        return io.Schema(
+            node_id="CADCurvature",
+            display_name="CAD Curvature",
+            category="CADabra/Analysis",
+            description="""
     Compute surface curvature from CAD geometry.
 
     Outputs a TRIMESH with curvature in vertex_attributes:
@@ -83,10 +53,27 @@ class CADCurvature:
     - face_id: CAD face index for each vertex
 
     Connect to GeometryPack's "Preview Mesh (VTK)" for 3D visualization.
-    """
+    """,
+            inputs=[
+                io.Custom("CAD_MODEL").Input("cad_model", tooltip="CAD model to analyze"),
+                io.Float.Input("linear_deflection", default=0.1, min=0.001, max=1.0, step=0.01,
+                               tooltip="Linear deflection for tessellation (lower = finer mesh)"),
+                io.Float.Input("angular_deflection", default=0.5, min=0.1, max=1.0, step=0.1,
+                               tooltip="Angular deflection in radians for tessellation"),
+                io.Float.Input("clamp_percentile", default=1.0, min=0.0, max=10.0, step=0.5,
+                               tooltip="Percentile clamping for outliers (0=no clamping, 1=P1-P99)",
+                               optional=True),
+            ],
+            outputs=[
+                io.Custom("TRIMESH").Output(display_name="mesh"),
+                io.Custom("CAD_MODEL").Output(display_name="cad_model"),
+                io.String.Output(display_name="info"),
+            ],
+        )
 
-    def compute_curvature(self, cad_model, linear_deflection, angular_deflection,
-                          clamp_percentile=1.0):
+    @classmethod
+    def execute(cls, cad_model, linear_deflection, angular_deflection,
+                clamp_percentile=1.0):
         """Compute curvature and return as TRIMESH with vertex attributes."""
         # Get OCC shape from brep_path
         from .utils.brep_cache import get_occ_shape
@@ -103,7 +90,7 @@ class CADCurvature:
         bounds_max = [xmax, ymax, zmax]
 
         # Count faces
-        num_faces = sum(1 for _ in self._iter_occ(occ_shape, TopAbs_FACE))
+        num_faces = sum(1 for _ in _iter_occ(occ_shape, TopAbs_FACE))
         logger.info(f"[CADCurvature] Processing {num_faces} faces")
 
         # Tessellate the shape
@@ -124,7 +111,7 @@ class CADCurvature:
         vertex_offset = 0
 
         # Process each CAD face
-        for face_idx, face in enumerate(self._iter_occ(occ_shape, TopAbs_FACE)):
+        for face_idx, face in enumerate(_iter_occ(occ_shape, TopAbs_FACE)):
             occ_face = topods.Face(face)
             loc = TopLoc_Location()
             triangulation = BRep_Tool.Triangulation(occ_face, loc)
@@ -245,7 +232,7 @@ class CADCurvature:
         tm.metadata['undefined_count'] = undefined_count
 
         # Build report
-        report = self._build_report(
+        report = _build_report(
             num_faces, len(vertices), len(faces),
             undefined_count, bounds_min, bounds_max,
             curvature_stats, clamp_percentile
@@ -253,57 +240,59 @@ class CADCurvature:
 
         logger.info(f"[CADCurvature] Output TRIMESH with vertex_attributes: {list(tm.vertex_attributes.keys())}")
 
-        return (tm, cad_model, report)
+        return io.NodeOutput(tm, cad_model, report)
 
-    def _iter_occ(self, shape, topology_type):
-        """Helper to iterate over OCC TopExp_Explorer results."""
-        explorer = TopExp_Explorer(shape, topology_type)
-        while explorer.More():
-            yield explorer.Current()
-            explorer.Next()
 
-    def _build_report(self, num_faces, num_vertices, num_triangles,
-                      undefined_count, bounds_min, bounds_max,
-                      curvature_stats, clamp_percentile):
-        """Build text report."""
-        lines = []
-        lines.append("=" * 60)
-        lines.append("CAD CURVATURE REPORT")
-        lines.append("=" * 60)
-        lines.append("")
+def _iter_occ(shape, topology_type):
+    """Helper to iterate over OCC TopExp_Explorer results."""
+    explorer = TopExp_Explorer(shape, topology_type)
+    while explorer.More():
+        yield explorer.Current()
+        explorer.Next()
 
-        lines.append("--- MESH STATISTICS ---")
-        lines.append(f"CAD Faces: {num_faces}")
-        lines.append(f"Vertices: {num_vertices:,}")
-        lines.append(f"Triangles: {num_triangles:,}")
-        lines.append(f"Undefined curvature: {undefined_count} vertices")
-        lines.append("")
 
-        lines.append("--- BOUNDING BOX ---")
-        lines.append(f"Min: ({bounds_min[0]:.2f}, {bounds_min[1]:.2f}, {bounds_min[2]:.2f})")
-        lines.append(f"Max: ({bounds_max[0]:.2f}, {bounds_max[1]:.2f}, {bounds_max[2]:.2f})")
-        lines.append("")
+def _build_report(num_faces, num_vertices, num_triangles,
+                  undefined_count, bounds_min, bounds_max,
+                  curvature_stats, clamp_percentile):
+    """Build text report."""
+    lines = []
+    lines.append("=" * 60)
+    lines.append("CAD CURVATURE REPORT")
+    lines.append("=" * 60)
+    lines.append("")
 
-        lines.append("--- CURVATURE STATISTICS ---")
-        lines.append(f"Percentile clamping: P{clamp_percentile}-P{100-clamp_percentile}")
-        lines.append("")
+    lines.append("--- MESH STATISTICS ---")
+    lines.append(f"CAD Faces: {num_faces}")
+    lines.append(f"Vertices: {num_vertices:,}")
+    lines.append(f"Triangles: {num_triangles:,}")
+    lines.append(f"Undefined curvature: {undefined_count} vertices")
+    lines.append("")
 
-        for name in ["gaussian", "mean", "min", "max"]:
-            stats = curvature_stats.get(name, {})
-            if stats:
-                lines.append(f"{name.upper()}:")
-                lines.append(f"  Raw:     [{stats['raw_min']:.4g}, {stats['raw_max']:.4g}]")
-                lines.append(f"  Clamped: [{stats['clamped_min']:.4g}, {stats['clamped_max']:.4g}]")
-                lines.append(f"  Mean: {stats['mean']:.4g}, Std: {stats['std']:.4g}")
-        lines.append("")
+    lines.append("--- BOUNDING BOX ---")
+    lines.append(f"Min: ({bounds_min[0]:.2f}, {bounds_min[1]:.2f}, {bounds_min[2]:.2f})")
+    lines.append(f"Max: ({bounds_max[0]:.2f}, {bounds_max[1]:.2f}, {bounds_max[2]:.2f})")
+    lines.append("")
 
-        lines.append("--- VERTEX ATTRIBUTES ---")
-        lines.append("gaussian, mean, min_curvature, max_curvature, face_id")
-        lines.append("")
-        lines.append("Use GeometryPack 'Preview Mesh (VTK)' to visualize.")
-        lines.append("=" * 60)
+    lines.append("--- CURVATURE STATISTICS ---")
+    lines.append(f"Percentile clamping: P{clamp_percentile}-P{100-clamp_percentile}")
+    lines.append("")
 
-        return "\n".join(lines)
+    for name in ["gaussian", "mean", "min", "max"]:
+        stats = curvature_stats.get(name, {})
+        if stats:
+            lines.append(f"{name.upper()}:")
+            lines.append(f"  Raw:     [{stats['raw_min']:.4g}, {stats['raw_max']:.4g}]")
+            lines.append(f"  Clamped: [{stats['clamped_min']:.4g}, {stats['clamped_max']:.4g}]")
+            lines.append(f"  Mean: {stats['mean']:.4g}, Std: {stats['std']:.4g}")
+    lines.append("")
+
+    lines.append("--- VERTEX ATTRIBUTES ---")
+    lines.append("gaussian, mean, min_curvature, max_curvature, face_id")
+    lines.append("")
+    lines.append("Use GeometryPack 'Preview Mesh (VTK)' to visualize.")
+    lines.append("=" * 60)
+
+    return "\n".join(lines)
 
 
 # Node mappings for registration

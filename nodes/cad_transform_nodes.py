@@ -7,35 +7,39 @@ from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_Transform
 from OCC.Core.Bnd import Bnd_Box
 from OCC.Core.BRepBndLib import brepbndlib
 
+from comfy_api.latest import io
 
-class CADTransform:
+
+class CADTransform(io.ComfyNode):
     """Apply rotation/translation/scale to CAD shapes."""
 
     @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "cad_model": ("CAD_MODEL",),
-                "translate_x": ("FLOAT", {"default": 0.0, "step": 1.0}),
-                "translate_y": ("FLOAT", {"default": 0.0, "step": 1.0}),
-                "translate_z": ("FLOAT", {"default": 0.0, "step": 1.0}),
-                "rotate_x": ("FLOAT", {"default": 0.0, "min": -360.0, "max": 360.0, "step": 5.0,
-                                       "tooltip": "Rotation around X axis (degrees)"}),
-                "rotate_y": ("FLOAT", {"default": 0.0, "min": -360.0, "max": 360.0, "step": 5.0,
-                                       "tooltip": "Rotation around Y axis (degrees)"}),
-                "rotate_z": ("FLOAT", {"default": 0.0, "min": -360.0, "max": 360.0, "step": 5.0,
-                                       "tooltip": "Rotation around Z axis (degrees)"}),
-                "scale": ("FLOAT", {"default": 1.0, "min": 0.001, "max": 1000.0, "step": 0.1}),
-            },
-        }
+    def define_schema(cls):
+        return io.Schema(
+            node_id="CADTransform",
+            display_name="Transform CAD",
+            category="CADabra/Transform",
+            inputs=[
+                io.Custom("CAD_MODEL").Input("cad_model"),
+                io.Float.Input("translate_x", default=0.0, step=1.0),
+                io.Float.Input("translate_y", default=0.0, step=1.0),
+                io.Float.Input("translate_z", default=0.0, step=1.0),
+                io.Float.Input("rotate_x", default=0.0, min=-360.0, max=360.0, step=5.0,
+                               tooltip="Rotation around X axis (degrees)"),
+                io.Float.Input("rotate_y", default=0.0, min=-360.0, max=360.0, step=5.0,
+                               tooltip="Rotation around Y axis (degrees)"),
+                io.Float.Input("rotate_z", default=0.0, min=-360.0, max=360.0, step=5.0,
+                               tooltip="Rotation around Z axis (degrees)"),
+                io.Float.Input("scale", default=1.0, min=0.001, max=1000.0, step=0.1),
+            ],
+            outputs=[
+                io.Custom("CAD_MODEL").Output(display_name="cad_model"),
+            ],
+        )
 
-    RETURN_TYPES = ("CAD_MODEL",)
-    RETURN_NAMES = ("cad_model",)
-    FUNCTION = "transform"
-    CATEGORY = "CADabra/Transform"
-
-    def transform(self, cad_model, translate_x, translate_y, translate_z,
-                  rotate_x, rotate_y, rotate_z, scale):
+    @classmethod
+    def execute(cls, cad_model, translate_x, translate_y, translate_z,
+                rotate_x, rotate_y, rotate_z, scale):
         # Get OCC shape from brep_path
         from .utils.brep_cache import get_occ_shape, make_cad_model
         shape = get_occ_shape(cad_model)
@@ -75,26 +79,37 @@ class CADTransform:
 
         result = make_cad_model(transformer.Shape(), cad_model, "transformed")
 
-        return (result,)
+        return io.NodeOutput(result)
 
 
-class CADBoundingBox:
+class CADBoundingBox(io.ComfyNode):
     """Get bounding box of a CAD shape."""
 
     @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "cad_model": ("CAD_MODEL",),
-            },
-        }
+    def define_schema(cls):
+        return io.Schema(
+            node_id="CADBoundingBox",
+            display_name="CAD Bounding Box",
+            category="CADabra/Transform",
+            inputs=[
+                io.Custom("CAD_MODEL").Input("cad_model"),
+            ],
+            outputs=[
+                io.Float.Output(display_name="x_min"),
+                io.Float.Output(display_name="x_max"),
+                io.Float.Output(display_name="y_min"),
+                io.Float.Output(display_name="y_max"),
+                io.Float.Output(display_name="z_min"),
+                io.Float.Output(display_name="z_max"),
+                io.Float.Output(display_name="width"),
+                io.Float.Output(display_name="height"),
+                io.Float.Output(display_name="depth"),
+                io.String.Output(display_name="info"),
+            ],
+        )
 
-    RETURN_TYPES = ("FLOAT", "FLOAT", "FLOAT", "FLOAT", "FLOAT", "FLOAT", "FLOAT", "FLOAT", "FLOAT", "STRING")
-    RETURN_NAMES = ("x_min", "x_max", "y_min", "y_max", "z_min", "z_max", "width", "height", "depth", "info")
-    FUNCTION = "get_bbox"
-    CATEGORY = "CADabra/Transform"
-
-    def get_bbox(self, cad_model):
+    @classmethod
+    def execute(cls, cad_model):
         # Get OCC shape from brep_path
         from .utils.brep_cache import get_occ_shape
         shape = get_occ_shape(cad_model)
@@ -113,43 +128,43 @@ class CADBoundingBox:
             f"Z: [{z_min:.3f}, {z_max:.3f}] (depth: {depth:.3f})"
         )
 
-        return (x_min, x_max, y_min, y_max, z_min, z_max, width, height, depth, info)
+        return io.NodeOutput(x_min, x_max, y_min, y_max, z_min, z_max, width, height, depth, info)
 
 
-class FloatMath:
+class FloatMath(io.ComfyNode):
     """Simple float math operations (negate, add, multiply, etc.)"""
 
     @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "value": ("FLOAT", {"default": 0.0, "forceInput": True}),
-                "operation": (["negate", "add", "subtract", "multiply", "divide", "abs"],),
-            },
-            "optional": {
-                "operand": ("FLOAT", {"default": 1.0}),
-            },
-        }
+    def define_schema(cls):
+        return io.Schema(
+            node_id="FloatMath",
+            display_name="Float Math",
+            category="CADabra/Utils",
+            inputs=[
+                io.Float.Input("value", default=0.0, force_input=True),
+                io.Combo.Input("operation", options=["negate", "add", "subtract", "multiply", "divide", "abs"]),
+                io.Float.Input("operand", default=1.0, optional=True),
+            ],
+            outputs=[
+                io.Float.Output(display_name="result"),
+            ],
+        )
 
-    RETURN_TYPES = ("FLOAT",)
-    RETURN_NAMES = ("result",)
-    FUNCTION = "compute"
-    CATEGORY = "CADabra/Utils"
-
-    def compute(self, value, operation, operand=1.0):
+    @classmethod
+    def execute(cls, value, operation, operand=1.0):
         if operation == "negate":
-            return (-value,)
+            return io.NodeOutput(-value)
         elif operation == "add":
-            return (value + operand,)
+            return io.NodeOutput(value + operand)
         elif operation == "subtract":
-            return (value - operand,)
+            return io.NodeOutput(value - operand)
         elif operation == "multiply":
-            return (value * operand,)
+            return io.NodeOutput(value * operand)
         elif operation == "divide":
-            return (value / operand if operand != 0 else 0.0,)
+            return io.NodeOutput(value / operand if operand != 0 else 0.0)
         elif operation == "abs":
-            return (abs(value),)
-        return (value,)
+            return io.NodeOutput(abs(value))
+        return io.NodeOutput(value)
 
 
 NODE_CLASS_MAPPINGS = {

@@ -13,6 +13,8 @@ import trimesh
 import os
 from typing import Dict, List, Tuple, Any
 
+from comfy_api.latest import io
+
 log = logging.getLogger("cadabra")
 
 import pyransac3d as pyrsc
@@ -39,7 +41,7 @@ from OCC.Core.BRep import BRep_Builder
 # Node 1: QuadRemeshNode
 # ============================================================================
 
-class QuadRemeshNode:
+class QuadRemeshNode(io.ComfyNode):
     """
     Improves mesh quality through remeshing.
     Phase 1: Uses trimesh subdivision and smoothing
@@ -47,35 +49,26 @@ class QuadRemeshNode:
     """
 
     @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "mesh": ("TRIMESH",),
-                "target_edge_length": ("FLOAT", {
-                    "default": 0.1,
-                    "min": 0.001,
-                    "max": 10.0,
-                    "step": 0.01,
-                    "display": "slider"
-                }),
-                "iterations": ("INT", {
-                    "default": 3,
-                    "min": 1,
-                    "max": 10,
-                    "step": 1
-                }),
-            },
-            "optional": {
-                "metadata": ("MESH_METADATA",),
-                "smooth": ("BOOLEAN", {"default": True}),
-            }
-        }
+    def define_schema(cls):
+        return io.Schema(
+            node_id="QuadRemesh",
+            display_name="Quad Remesh (Mesh Reconstruction)",
+            category="CADabra/Mesh Reconstruction",
+            inputs=[
+                io.Custom("TRIMESH").Input("mesh"),
+                io.Float.Input("target_edge_length", default=0.1, min=0.001, max=10.0, step=0.01, display_mode="slider"),
+                io.Int.Input("iterations", default=3, min=1, max=10, step=1),
+                io.Custom("MESH_METADATA").Input("metadata", optional=True),
+                io.Boolean.Input("smooth", default=True, optional=True),
+            ],
+            outputs=[
+                io.Custom("TRIMESH").Output(display_name="TRIMESH"),
+                io.Custom("MESH_METADATA").Output(display_name="MESH_METADATA"),
+            ],
+        )
 
-    RETURN_TYPES = ("TRIMESH", "MESH_METADATA")
-    FUNCTION = "remesh"
-    CATEGORY = "CADabra/Mesh Reconstruction"
-
-    def remesh(self, mesh, target_edge_length: float, iterations: int, metadata=None, smooth: bool = True) -> Tuple:
+    @classmethod
+    def execute(cls, mesh, target_edge_length: float, iterations: int, metadata=None, smooth: bool = True):
         """
         Remesh the input triangle mesh to improve quality
 
@@ -87,7 +80,7 @@ class QuadRemeshNode:
             smooth: Whether to apply smoothing
 
         Returns:
-            Tuple containing refined TRIMESH object and updated metadata
+            NodeOutput containing refined TRIMESH object and updated metadata
         """
         log.info(f"[reload] QuadRemesh: Processing mesh with {len(mesh.vertices)} vertices, {len(mesh.faces)} faces")
 
@@ -139,14 +132,14 @@ class QuadRemeshNode:
 
         log.info(f"[OK] QuadRemesh: Output {len(tm.vertices)} vertices, {len(tm.faces)} faces")
 
-        return (tm, metadata)
+        return io.NodeOutput(tm, metadata)
 
 
 # ============================================================================
 # Node 2: PointCloudSegmentationNode
 # ============================================================================
 
-class PointCloudSegmentationNode:
+class PointCloudSegmentationNode(io.ComfyNode):
     """
     Segments point clouds into regions using clustering.
     Phase 1: KMeans clustering (simple, no training required)
@@ -154,34 +147,25 @@ class PointCloudSegmentationNode:
     """
 
     @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "input_data": ("TRIMESH,POINT_CLOUD",),
-                "num_segments": ("INT", {
-                    "default": 5,
-                    "min": 2,
-                    "max": 50,
-                    "step": 1
-                }),
-                "use_normals": ("BOOLEAN", {"default": True}),
-            },
-            "optional": {
-                "sample_points": ("INT", {
-                    "default": 10000,
-                    "min": 100,
-                    "max": 100000,
-                    "step": 100
-                }),
-            }
-        }
+    def define_schema(cls):
+        return io.Schema(
+            node_id="PointCloudSegmentation",
+            display_name="Point Cloud Segmentation",
+            category="CADabra/Mesh Reconstruction",
+            inputs=[
+                io.Custom("TRIMESH,POINT_CLOUD").Input("input_data"),
+                io.Int.Input("num_segments", default=5, min=2, max=50, step=1),
+                io.Boolean.Input("use_normals", default=True),
+                io.Int.Input("sample_points", default=10000, min=100, max=100000, step=100, optional=True),
+            ],
+            outputs=[
+                io.Custom("SEGMENTED_CLOUD").Output(display_name="SEGMENTED_CLOUD"),
+            ],
+        )
 
-    RETURN_TYPES = ("SEGMENTED_CLOUD",)
-    FUNCTION = "segment"
-    CATEGORY = "CADabra/Mesh Reconstruction"
-
-    def segment(self, input_data, num_segments: int, use_normals: bool = True,
-                sample_points: int = 10000) -> Tuple[Dict]:
+    @classmethod
+    def execute(cls, input_data, num_segments: int, use_normals: bool = True,
+                sample_points: int = 10000):
         """
         Segment point cloud using KMeans clustering
 
@@ -192,7 +176,7 @@ class PointCloudSegmentationNode:
             sample_points: Number of points to sample (if input is mesh)
 
         Returns:
-            Tuple containing SEGMENTED_CLOUD dict
+            NodeOutput containing SEGMENTED_CLOUD dict
         """
         # Convert input to point cloud
         if isinstance(input_data, trimesh.Trimesh):
@@ -260,14 +244,14 @@ class PointCloudSegmentationNode:
 
         log.info(f"[OK] Segmentation: Created {num_segments} segments")
 
-        return (output,)
+        return io.NodeOutput(output)
 
 
 # ============================================================================
 # Node 2.5: MeshFaceSegmentationNode
 # ============================================================================
 
-class MeshFaceSegmentationNode:
+class MeshFaceSegmentationNode(io.ComfyNode):
     """
     Segment mesh faces using various methods optimized for CAD reconstruction.
 
@@ -282,63 +266,45 @@ class MeshFaceSegmentationNode:
     """
 
     @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "mesh": ("TRIMESH",),
-                "method": ([
+    def define_schema(cls):
+        return io.Schema(
+            node_id="MeshFaceSegmentation",
+            display_name="Mesh Face Segmentation",
+            category="CADabra/Reconstruction",
+            description="Segment mesh faces for CAD reconstruction using various methods",
+            inputs=[
+                io.Custom("TRIMESH").Input("mesh"),
+                io.Combo.Input("method", options=[
                     "facets_coplanar",
                     "cluster_normals",
                     "region_grow_normals",
                     "cluster_curvature"
-                ],),
-            },
-            "optional": {
-                # For facets_coplanar
-                "facets_angle_threshold": ("FLOAT", {
-                    "default": 0.1,
-                    "min": 0.001,
-                    "max": 1.57,  # pi/2
-                    "step": 0.01,
-                    "tooltip": "Max angle (radians) between normals for coplanar faces. 0.1 rad ~ 5.7°"
-                }),
-                # For cluster methods
-                "cluster_num_segments": ("INT", {
-                    "default": 10,
-                    "min": 2,
-                    "max": 100,
-                    "step": 1,
-                    "tooltip": "Number of segments for clustering methods"
-                }),
-                # For region_grow_normals
-                "region_grow_normal_threshold": ("FLOAT", {
-                    "default": 0.95,
-                    "min": 0.5,
-                    "max": 1.0,
-                    "step": 0.01,
-                    "tooltip": "Cosine similarity threshold (0.95 ~ 18° max difference)"
-                }),
-                "region_grow_min_faces": ("INT", {
-                    "default": 10,
-                    "min": 1,
-                    "max": 1000,
-                    "step": 1,
-                    "tooltip": "Minimum faces per segment (smaller segments marked as noise)"
-                }),
-            }
-        }
+                ]),
+                io.Float.Input("facets_angle_threshold", default=0.1, min=0.001, max=1.57, step=0.01,
+                               tooltip="Max angle (radians) between normals for coplanar faces. 0.1 rad ~ 5.7°",
+                               optional=True),
+                io.Int.Input("cluster_num_segments", default=10, min=2, max=100, step=1,
+                             tooltip="Number of segments for clustering methods",
+                             optional=True),
+                io.Float.Input("region_grow_normal_threshold", default=0.95, min=0.5, max=1.0, step=0.01,
+                               tooltip="Cosine similarity threshold (0.95 ~ 18° max difference)",
+                               optional=True),
+                io.Int.Input("region_grow_min_faces", default=10, min=1, max=1000, step=1,
+                             tooltip="Minimum faces per segment (smaller segments marked as noise)",
+                             optional=True),
+            ],
+            outputs=[
+                io.Custom("TRIMESH").Output(display_name="TRIMESH",
+                                            tooltip="Segmented mesh with face labels in face_attributes"),
+            ],
+        )
 
-    RETURN_TYPES = ("TRIMESH",)
-    OUTPUT_TOOLTIPS = ("Segmented mesh with face labels in face_attributes",)
-    FUNCTION = "segment_mesh"
-    CATEGORY = "CADabra/Reconstruction"
-    DESCRIPTION = "Segment mesh faces for CAD reconstruction using various methods"
-
-    def segment_mesh(self, mesh, method,
-                    facets_angle_threshold=0.1,
-                    cluster_num_segments=10,
-                    region_grow_normal_threshold=0.95,
-                    region_grow_min_faces=10):
+    @classmethod
+    def execute(cls, mesh, method,
+                facets_angle_threshold=0.1,
+                cluster_num_segments=10,
+                region_grow_normal_threshold=0.95,
+                region_grow_min_faces=10):
         """
         Segment mesh faces using selected method.
 
@@ -347,7 +313,7 @@ class MeshFaceSegmentationNode:
             method: Segmentation method to use
 
         Returns:
-            Trimesh with face_labels stored in face_attributes['segment_id']
+            NodeOutput with Trimesh with face_labels stored in face_attributes['segment_id']
         """
         import trimesh
         import numpy as np
@@ -357,26 +323,26 @@ class MeshFaceSegmentationNode:
 
         # Select and run segmentation method
         if method == "facets_coplanar":
-            face_labels, num_segments = self._segment_facets(
+            face_labels, num_segments = cls._segment_facets(
                 mesh, facets_angle_threshold
             )
         elif method == "cluster_normals":
-            face_labels, num_segments = self._segment_cluster_normals(
+            face_labels, num_segments = cls._segment_cluster_normals(
                 mesh, cluster_num_segments
             )
         elif method == "region_grow_normals":
-            face_labels, num_segments = self._segment_region_grow(
+            face_labels, num_segments = cls._segment_region_grow(
                 mesh, region_grow_normal_threshold, region_grow_min_faces
             )
         elif method == "cluster_curvature":
-            face_labels, num_segments = self._segment_cluster_curvature(
+            face_labels, num_segments = cls._segment_cluster_curvature(
                 mesh, cluster_num_segments
             )
         else:
             raise ValueError(f"Unknown segmentation method: {method}")
 
         # Calculate segment statistics
-        segment_info = self._calculate_segment_info(mesh, face_labels, num_segments)
+        segment_info = cls._calculate_segment_info(mesh, face_labels, num_segments)
 
         # Embed segmentation data as face attributes on the mesh
         if not hasattr(mesh, 'face_attributes'):
@@ -406,9 +372,10 @@ class MeshFaceSegmentationNode:
             log.info(f"... and {num_segments - 5} more segments")
         log.info(f"Segmentation stored in mesh.face_attributes['segment_id']")
 
-        return (mesh,)
+        return io.NodeOutput(mesh)
 
-    def _segment_facets(self, mesh, angle_threshold):
+    @staticmethod
+    def _segment_facets(mesh, angle_threshold):
         """
         Segment using trimesh facets - groups coplanar adjacent faces.
 
@@ -434,7 +401,8 @@ class MeshFaceSegmentationNode:
 
         return face_labels, num_segments
 
-    def _segment_cluster_normals(self, mesh, num_segments):
+    @staticmethod
+    def _segment_cluster_normals(mesh, num_segments):
         """
         Segment using K-means clustering on face normals.
 
@@ -494,7 +462,8 @@ class MeshFaceSegmentationNode:
 
         return final_labels, current_id
 
-    def _segment_region_grow(self, mesh, normal_threshold, min_faces):
+    @staticmethod
+    def _segment_region_grow(mesh, normal_threshold, min_faces):
         """
         Segment using region growing based on normal similarity.
 
@@ -563,7 +532,8 @@ class MeshFaceSegmentationNode:
 
         return face_labels, segment_id
 
-    def _segment_cluster_curvature(self, mesh, num_segments):
+    @classmethod
+    def _segment_cluster_curvature(cls, mesh, num_segments):
         """
         Segment using Gaussian curvature + face normals.
 
@@ -583,7 +553,7 @@ class MeshFaceSegmentationNode:
         except Exception as e:
             log.info(f"[ClusterCurvature] Warning: Curvature computation failed: {e}")
             log.info(f"[ClusterCurvature] Falling back to normal clustering only")
-            return self._segment_cluster_normals(mesh, num_segments)
+            return cls._segment_cluster_normals(mesh, num_segments)
 
         # Convert vertex curvature to face curvature (average of face vertices)
         face_curvature = np.mean(vertex_curvature[mesh.faces], axis=1)
@@ -609,7 +579,8 @@ class MeshFaceSegmentationNode:
 
         return face_labels, num_segments
 
-    def _calculate_segment_info(self, mesh, face_labels, num_segments):
+    @staticmethod
+    def _calculate_segment_info(mesh, face_labels, num_segments):
         """Calculate statistics for each segment."""
         import numpy as np
 
@@ -642,7 +613,7 @@ class MeshFaceSegmentationNode:
 # Node 2b: MeshSegmentToPointCloudNode
 # ============================================================================
 
-class MeshSegmentToPointCloudNode:
+class MeshSegmentToPointCloudNode(io.ComfyNode):
     """
     Convert face-segmented mesh to point cloud for primitive fitting.
 
@@ -655,20 +626,23 @@ class MeshSegmentToPointCloudNode:
     """
 
     @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "mesh": ("TRIMESH",),
-            },
-        }
+    def define_schema(cls):
+        return io.Schema(
+            node_id="MeshSegmentToPointCloud",
+            display_name="Mesh Segment to Point Cloud",
+            category="CADabra/Reconstruction",
+            description="Convert face-segmented mesh to point cloud using face centroids",
+            inputs=[
+                io.Custom("TRIMESH").Input("mesh"),
+            ],
+            outputs=[
+                io.Custom("TRIMESH").Output(display_name="TRIMESH",
+                                            tooltip="Point cloud as TRIMESH with vertex_attributes['segment_id']"),
+            ],
+        )
 
-    RETURN_TYPES = ("TRIMESH",)
-    OUTPUT_TOOLTIPS = ("Point cloud as TRIMESH with vertex_attributes['segment_id']",)
-    FUNCTION = "convert"
-    CATEGORY = "CADabra/Reconstruction"
-    DESCRIPTION = "Convert face-segmented mesh to point cloud using face centroids"
-
-    def convert(self, mesh):
+    @classmethod
+    def execute(cls, mesh):
         """
         Convert face-segmented mesh to point cloud.
 
@@ -676,7 +650,7 @@ class MeshSegmentToPointCloudNode:
             mesh: Input trimesh with face_attributes['segment_id']
 
         Returns:
-            TRIMESH point cloud with vertex_attributes['segment_id']
+            NodeOutput with TRIMESH point cloud with vertex_attributes['segment_id']
         """
         import numpy as np
 
@@ -732,14 +706,14 @@ class MeshSegmentToPointCloudNode:
         log.info(f"Filtered: {np.sum(~valid_mask)} noise faces")
         log.info(f"Point cloud stored as TRIMESH with vertex_attributes")
 
-        return (point_cloud,)
+        return io.NodeOutput(point_cloud)
 
 
 # ============================================================================
 # Node 3: PrimitiveFittingNode
 # ============================================================================
 
-class PrimitiveFittingNode:
+class PrimitiveFittingNode(io.ComfyNode):
     """
     Fits geometric primitives to segmented point cloud.
 
@@ -751,36 +725,26 @@ class PrimitiveFittingNode:
     """
 
     @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "segmented_cloud": ("TRIMESH,SEGMENTED_CLOUD",),
-                "primitive_type": (["auto", "plane", "cylinder", "sphere", "cone"],),
-                "ransac_threshold": ("FLOAT", {
-                    "default": 0.01,
-                    "min": 0.001,
-                    "max": 0.1,
-                    "step": 0.001,
-                    "display": "slider"
-                }),
-            },
-            "optional": {
-                "min_points": ("INT", {
-                    "default": 100,
-                    "min": 10,
-                    "max": 1000,
-                    "step": 10
-                }),
-            }
-        }
+    def define_schema(cls):
+        return io.Schema(
+            node_id="PrimitiveFitting",
+            display_name="Primitive Fitting (RANSAC)",
+            category="CADabra/Mesh Reconstruction",
+            inputs=[
+                io.Custom("TRIMESH,SEGMENTED_CLOUD").Input("segmented_cloud"),
+                io.Combo.Input("primitive_type", options=["auto", "plane", "cylinder", "sphere", "cone"]),
+                io.Float.Input("ransac_threshold", default=0.01, min=0.001, max=0.1, step=0.001, display_mode="slider"),
+                io.Int.Input("min_points", default=100, min=10, max=1000, step=10, optional=True),
+            ],
+            outputs=[
+                io.Custom("PRIMITIVES").Output(display_name="primitives"),
+                io.String.Output(display_name="summary"),
+            ],
+        )
 
-    RETURN_TYPES = ("PRIMITIVES", "STRING")
-    RETURN_NAMES = ("primitives", "summary")
-    FUNCTION = "fit_primitives"
-    CATEGORY = "CADabra/Mesh Reconstruction"
-
-    def fit_primitives(self, segmented_cloud, primitive_type: str,
-                      ransac_threshold: float, min_points: int = 100) -> Tuple[Dict, str]:
+    @classmethod
+    def execute(cls, segmented_cloud, primitive_type: str,
+                ransac_threshold: float, min_points: int = 100):
         """
         Fit geometric primitives to each segment using RANSAC
 
@@ -791,7 +755,7 @@ class PrimitiveFittingNode:
             min_points: Minimum points required for fitting
 
         Returns:
-            Tuple containing PRIMITIVES dict and summary string
+            NodeOutput containing PRIMITIVES dict and summary string
         """
         # Convert input to standard format (points, labels, num_segments)
         if isinstance(segmented_cloud, trimesh.Trimesh):
@@ -857,10 +821,10 @@ class PrimitiveFittingNode:
             # Fit primitive based on type
             if primitive_type == "auto":
                 # Try different primitives and pick best fit
-                best_primitive = self._fit_best_primitive(segment_points, ransac_threshold)
+                best_primitive = cls._fit_best_primitive(segment_points, ransac_threshold)
             else:
                 # Fit specific primitive type
-                best_primitive = self._fit_primitive(segment_points, primitive_type, ransac_threshold)
+                best_primitive = cls._fit_primitive(segment_points, primitive_type, ransac_threshold)
 
             if best_primitive is not None:
                 best_primitive['segment_id'] = segment_id
@@ -913,9 +877,10 @@ Total Points: {len(points)}
 
         log.info(f"[OK] Primitive Fitting: Fitted {len(primitives)} primitives")
 
-        return (output, summary)
+        return io.NodeOutput(output, summary)
 
-    def _fit_primitive(self, points: np.ndarray, prim_type: str, threshold: float) -> Dict:
+    @staticmethod
+    def _fit_primitive(points: np.ndarray, prim_type: str, threshold: float) -> Dict:
         """Fit a specific primitive type to points"""
         try:
             if prim_type == "plane":
@@ -973,13 +938,14 @@ Total Points: {len(points)}
 
         return None
 
-    def _fit_best_primitive(self, points: np.ndarray, threshold: float) -> Dict:
+    @classmethod
+    def _fit_best_primitive(cls, points: np.ndarray, threshold: float) -> Dict:
         """Try fitting different primitives and return the best one"""
         best_primitive = None
         best_score = 0.0
 
         for prim_type in ["plane", "cylinder", "sphere"]:
-            primitive = self._fit_primitive(points, prim_type, threshold)
+            primitive = cls._fit_primitive(points, prim_type, threshold)
             if primitive is not None and primitive['confidence'] > best_score:
                 best_score = primitive['confidence']
                 best_primitive = primitive
@@ -991,7 +957,7 @@ Total Points: {len(points)}
 # Node 4: BrepGenerationNode
 # ============================================================================
 
-class BrepGenerationNode:
+class BrepGenerationNode(io.ComfyNode):
     """
     Generates B-rep CAD model from fitted primitives.
     Uses pythonocc-core (OpenCASCADE) directly for B-rep construction.
@@ -999,33 +965,26 @@ class BrepGenerationNode:
     """
 
     @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "primitives": ("PRIMITIVES",),
-                "output_path": ("STRING", {
-                    "default": "output/reconstructed.step",
-                    "multiline": False
-                }),
-            },
-            "optional": {
-                "combine_shapes": ("BOOLEAN", {"default": True}),
-                "tolerance": ("FLOAT", {
-                    "default": 0.001,
-                    "min": 0.0001,
-                    "max": 0.1,
-                    "step": 0.0001
-                }),
-            }
-        }
+    def define_schema(cls):
+        return io.Schema(
+            node_id="BrepGeneration",
+            display_name="B-rep Generation (CAD)",
+            category="CADabra/Mesh Reconstruction",
+            inputs=[
+                io.Custom("PRIMITIVES").Input("primitives"),
+                io.String.Input("output_path", default="output/reconstructed.step", multiline=False),
+                io.Boolean.Input("combine_shapes", default=True, optional=True),
+                io.Float.Input("tolerance", default=0.001, min=0.0001, max=0.1, step=0.0001, optional=True),
+            ],
+            outputs=[
+                io.Custom("CAD_MODEL").Output(display_name="cad_model"),
+                io.String.Output(display_name="file_path"),
+            ],
+        )
 
-    RETURN_TYPES = ("CAD_MODEL", "STRING")
-    RETURN_NAMES = ("cad_model", "file_path")
-    FUNCTION = "generate_brep"
-    CATEGORY = "CADabra/Mesh Reconstruction"
-
-    def generate_brep(self, primitives: Dict, output_path: str,
-                     combine_shapes: bool = True, tolerance: float = 0.001) -> Tuple[Dict, str]:
+    @classmethod
+    def execute(cls, primitives: Dict, output_path: str,
+                combine_shapes: bool = True, tolerance: float = 0.001):
         """
         Generate B-rep CAD model from primitives using pythonocc-core
 
@@ -1036,7 +995,7 @@ class BrepGenerationNode:
             tolerance: Geometric tolerance for operations
 
         Returns:
-            Tuple containing CAD_MODEL dict and file path
+            NodeOutput containing CAD_MODEL dict and file path
         """
         primitives_list = primitives['primitives']
 
@@ -1051,21 +1010,21 @@ class BrepGenerationNode:
             try:
                 if prim_type == "plane":
                     # Create a bounded planar face
-                    shape = self._create_plane_face(params, prim['points'])
+                    shape = cls._create_plane_face(params, prim['points'])
                     if shape is not None:
                         shapes.append(shape)
                         log.info(f"Primitive {i}: Plane -> Face")
 
                 elif prim_type == "cylinder":
                     # Create cylindrical solid
-                    shape = self._create_cylinder(params, prim['points'])
+                    shape = cls._create_cylinder(params, prim['points'])
                     if shape is not None:
                         shapes.append(shape)
                         log.info(f"Primitive {i}: Cylinder -> Solid")
 
                 elif prim_type == "sphere":
                     # Create spherical solid
-                    shape = self._create_sphere(params)
+                    shape = cls._create_sphere(params)
                     if shape is not None:
                         shapes.append(shape)
                         log.info(f"Primitive {i}: Sphere -> Solid")
@@ -1096,11 +1055,11 @@ class BrepGenerationNode:
                 log.info(f"Failed to combine shapes: {e}")
                 log.info(f"Keeping shapes in compound")
                 # Create compound of all shapes
-                occ_shape = self._make_compound(shapes)
+                occ_shape = cls._make_compound(shapes)
         elif len(shapes) == 1:
             occ_shape = shapes[0]
         else:
-            occ_shape = self._make_compound(shapes)
+            occ_shape = cls._make_compound(shapes)
 
         # Ensure output directory exists
         os.makedirs(os.path.dirname(output_path) if os.path.dirname(output_path) else ".", exist_ok=True)
@@ -1117,7 +1076,7 @@ class BrepGenerationNode:
             raise RuntimeError(f"Failed to write STEP file to {output_path}: {e}")
 
         # Get topology statistics using TopExp_Explorer
-        topology = self._count_topology(occ_shape)
+        topology = cls._count_topology(occ_shape)
 
         # Save to BREP file for brep_path
         from .utils.brep_cache import save_shape
@@ -1136,9 +1095,10 @@ class BrepGenerationNode:
               f"{topology['faces']} faces, {topology['edges']} edges, {topology['vertices']} vertices")
         log.info(f" Saved to: {output_path}")
 
-        return (output, output_path)
+        return io.NodeOutput(output, output_path)
 
-    def _make_compound(self, shapes: List):
+    @staticmethod
+    def _make_compound(shapes: List):
         """Create a compound from multiple shapes"""
         compound = TopoDS_Compound()
         builder = BRep_Builder()
@@ -1147,7 +1107,8 @@ class BrepGenerationNode:
             builder.Add(compound, shape)
         return compound
 
-    def _count_topology(self, shape) -> Dict[str, int]:
+    @staticmethod
+    def _count_topology(shape) -> Dict[str, int]:
         """Count topological entities in a shape"""
         counts = {"faces": 0, "edges": 0, "vertices": 0, "volumes": 0}
 
@@ -1160,7 +1121,8 @@ class BrepGenerationNode:
 
         return counts
 
-    def _create_plane_face(self, params: Dict, points: np.ndarray):
+    @staticmethod
+    def _create_plane_face(params: Dict, points: np.ndarray):
         """Create a bounded planar face from plane parameters and points using OCC"""
         # Get plane normal and point
         normal = params['normal']
@@ -1211,7 +1173,8 @@ class BrepGenerationNode:
 
         return face_builder.Face()
 
-    def _create_cylinder(self, params: Dict, points: np.ndarray):
+    @staticmethod
+    def _create_cylinder(params: Dict, points: np.ndarray):
         """Create a cylinder from parameters using OCC"""
         center = params['center']
         axis = params['axis']
@@ -1238,7 +1201,8 @@ class BrepGenerationNode:
 
         return cylinder.Shape()
 
-    def _create_sphere(self, params: Dict):
+    @staticmethod
+    def _create_sphere(params: Dict):
         """Create a sphere from parameters using OCC"""
         center = params['center']
         radius = params['radius']

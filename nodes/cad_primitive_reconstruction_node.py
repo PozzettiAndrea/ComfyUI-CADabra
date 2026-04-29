@@ -17,6 +17,8 @@ from OCC.Core.BRepTools import BRepTools_ReShape
 from OCC.Core.ShapeAnalysis import ShapeAnalysis_Curve
 from .utils.occ_logging import logger
 
+from comfy_api.latest import io
+
 
 def _sample_curve_points(edge: TopoDS_Edge, n_samples: int = 20) -> np.ndarray:
     """
@@ -289,13 +291,13 @@ def _create_circle_edge(circle_info: Dict, edge: TopoDS_Edge) -> Optional[TopoDS
         angle_end = normalize_angle(point_to_angle(end_pnt))
 
         from math import degrees
-        logger.info(f"[CircleEdge] Angles: start={degrees(angle_start):.1f}°, mid={degrees(angle_mid):.1f}°, end={degrees(angle_end):.1f}°, R={radius:.1f}")
+        logger.info(f"[CircleEdge] Angles: start={degrees(angle_start):.1f}\u00b0, mid={degrees(angle_mid):.1f}\u00b0, end={degrees(angle_end):.1f}\u00b0, R={radius:.1f}")
 
         # Check for degenerate arc (all points at same angle, or wrapping around)
         angle_tolerance = 0.01  # ~0.5 degrees
         angle_diff = abs(angle_start - angle_end)
         if angle_diff < angle_tolerance or angle_diff > (2 * pi - angle_tolerance):
-            logger.warning(f"[CircleEdge] Degenerate arc (start~end, diff={degrees(angle_diff):.2f}°), skipping replacement")
+            logger.warning(f"[CircleEdge] Degenerate arc (start~end, diff={degrees(angle_diff):.2f}\u00b0), skipping replacement")
             return None
 
         # Determine correct arc direction by checking if midpoint is on the path
@@ -313,7 +315,7 @@ def _create_circle_edge(circle_info: Dict, edge: TopoDS_Edge) -> Optional[TopoDS
         else:
             mid_in_ccw = angle_mid >= angle_start or angle_mid <= angle_end
 
-        logger.info(f"[CircleEdge] CCW span={degrees(ccw_span):.1f}°, mid_in_ccw={mid_in_ccw}")
+        logger.info(f"[CircleEdge] CCW span={degrees(ccw_span):.1f}\u00b0, mid_in_ccw={mid_in_ccw}")
 
         if mid_in_ccw:
             # Counterclockwise arc is correct
@@ -326,7 +328,7 @@ def _create_circle_edge(circle_info: Dict, edge: TopoDS_Edge) -> Optional[TopoDS
             param_end = angle_start - cw_span
 
         arc_span = abs(param_end - param_start)
-        logger.info(f"[CircleEdge] Final arc: {degrees(param_start):.1f}° to {degrees(param_end):.1f}° (span={degrees(arc_span):.1f}°)")
+        logger.info(f"[CircleEdge] Final arc: {degrees(param_start):.1f}\u00b0 to {degrees(param_end):.1f}\u00b0 (span={degrees(arc_span):.1f}\u00b0)")
 
         # Create edge with explicit parameter range
         builder = BRepBuilderAPI_MakeEdge(circle, param_start, param_end)
@@ -364,58 +366,45 @@ def _create_line_edge(line_info: Dict) -> Optional[TopoDS_Edge]:
         logger.warning(f"Failed to create line edge: {e}")
         return None
 
-class CADPrimitiveReconstruction:
+class CADPrimitiveReconstruction(io.ComfyNode):
     """
     Detect B-spline edges that are geometrically circles or lines,
     and optionally replace them with true OCC primitives.
     """
 
     @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "cad_model": ("CAD_MODEL",),
-                "circle_tolerance": ("FLOAT", {
-                    "default": 1e-4,
-                    "min": 1e-10,
-                    "max": 1.0,
-                    "step": 1e-5,
-                    "tooltip": "Max deviation for circle detection (smaller = stricter)"
-                }),
-                "line_tolerance": ("FLOAT", {
-                    "default": 1e-6,
-                    "min": 1e-10,
-                    "max": 1.0,
-                    "step": 1e-7,
-                    "tooltip": "Max deviation for line detection (smaller = stricter)"
-                }),
-            },
-            "optional": {
-                "replace_circles": ("BOOLEAN", {"default": True}),
-                "replace_lines": ("BOOLEAN", {"default": True}),
-                "n_samples": ("INT", {
-                    "default": 20,
-                    "min": 5,
-                    "max": 100,
-                    "tooltip": "Number of points to sample for detection"
-                }),
-            }
-        }
+    def define_schema(cls):
+        return io.Schema(
+            node_id="CADPrimitiveReconstruction",
+            display_name="CAD Primitive Reconstruction",
+            category="CADabra/Processing",
+            inputs=[
+                io.Custom("CAD_MODEL").Input("cad_model"),
+                io.Float.Input("circle_tolerance", default=1e-4, min=1e-10, max=1.0, step=1e-5,
+                               tooltip="Max deviation for circle detection (smaller = stricter)"),
+                io.Float.Input("line_tolerance", default=1e-6, min=1e-10, max=1.0, step=1e-7,
+                               tooltip="Max deviation for line detection (smaller = stricter)"),
+                io.Boolean.Input("replace_circles", default=True, optional=True),
+                io.Boolean.Input("replace_lines", default=True, optional=True),
+                io.Int.Input("n_samples", default=20, min=5, max=100,
+                             tooltip="Number of points to sample for detection", optional=True),
+            ],
+            outputs=[
+                io.Custom("CAD_MODEL").Output(display_name="cad_model"),
+                io.String.Output(display_name="info"),
+            ],
+        )
 
-    RETURN_TYPES = ("CAD_MODEL", "STRING")
-    RETURN_NAMES = ("cad_model", "info")
-    FUNCTION = "reconstruct_primitives"
-    CATEGORY = "CADabra/Processing"
-
-    def reconstruct_primitives(
-        self,
-        cad_model: Dict,
-        circle_tolerance: float = 1e-4,
-        line_tolerance: float = 1e-6,
-        replace_circles: bool = True,
-        replace_lines: bool = True,
-        n_samples: int = 20
-    ) -> Tuple[Dict, str]:
+    @classmethod
+    def execute(
+        cls,
+        cad_model,
+        circle_tolerance=1e-4,
+        line_tolerance=1e-6,
+        replace_circles=True,
+        replace_lines=True,
+        n_samples=20,
+    ):
         """
         Detect and optionally replace B-spline primitives.
         """
@@ -429,10 +418,10 @@ class CADPrimitiveReconstruction:
             shape = get_occ_shape(cad_model)
         except Exception as e:
             logger.error(f"[PrimitiveReconstruction] Failed to load shape: {e}")
-            return cad_model, json.dumps({"error": str(e)})
+            return io.NodeOutput(cad_model, json.dumps({"error": str(e)}))
         logger.info(f"[PrimitiveReconstruction] Shape type: {type(shape)}, is None: {shape is None}")
         if shape is None or not isinstance(shape, TopoDS_Shape):
-            return cad_model, json.dumps({"error": "Invalid CAD model"})
+            return io.NodeOutput(cad_model, json.dumps({"error": "Invalid CAD model"}))
 
         # Results tracking
         detected_circles = []
@@ -567,7 +556,7 @@ class CADPrimitiveReconstruction:
             from .utils.brep_cache import make_cad_model
         new_cad_model = make_cad_model(new_shape, cad_model, "primitive_recon")
 
-        return new_cad_model, report_text
+        return io.NodeOutput(new_cad_model, report_text)
 
 
 # Node registration

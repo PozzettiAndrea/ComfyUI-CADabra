@@ -1,4 +1,3 @@
-comfy-env==0.2.13
-comfy-3d-viewers==0.2.35
-comfy-dynamic-widgets
-trimesh
+comfy-env==0.3.37
+comfy-3d-viewers==0.2.41
+trimesh[easy]

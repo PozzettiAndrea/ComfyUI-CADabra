@@ -9,6 +9,8 @@ import os
 import numpy as np
 import folder_paths
 
+from comfy_api.latest import io
+
 log = logging.getLogger("cadabra")
 from OCC.Core.BRepMesh import BRepMesh_IncrementalMesh
 from OCC.Core.TopExp import TopExp_Explorer
@@ -54,7 +56,7 @@ def generate_face_colors(num_faces, seed=42):
 
 
 
-class CADROISelector:
+class CADROISelector(io.ComfyNode):
     """
     Interactive node for selecting a Region of Interest on a CAD model.
     Displays the model in an iframe and allows click-drag rectangle selection.
@@ -62,39 +64,28 @@ class CADROISelector:
     """
 
     @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "cad_model": ("CAD_MODEL",),
-                "linear_deflection": ("FLOAT", {
-                    "default": 0.1,
-                    "min": 0.001,
-                    "max": 10.0,
-                    "step": 0.01,
-                    "tooltip": "Tessellation linear deflection (lower = finer mesh)"
-                }),
-                "angular_deflection": ("FLOAT", {
-                    "default": 0.5,
-                    "min": 0.01,
-                    "max": 3.14,
-                    "step": 0.01,
-                    "tooltip": "Tessellation angular deflection in radians"
-                }),
-                "roi_value": ("STRING", {
-                    "default": "",
-                    "multiline": False,
-                    "tooltip": "Selected ROI (X1,Y1,X2,Y2) - updated by clicking on viewer"
-                }),
-            },
-        }
+    def define_schema(cls):
+        return io.Schema(
+            node_id="CADROISelector",
+            display_name="CAD ROI Selector",
+            category="CADabra/Analysis",
+            is_output_node=True,
+            inputs=[
+                io.Custom("CAD_MODEL").Input("cad_model"),
+                io.Float.Input("linear_deflection", default=0.1, min=0.001, max=10.0, step=0.01,
+                               tooltip="Tessellation linear deflection (lower = finer mesh)"),
+                io.Float.Input("angular_deflection", default=0.5, min=0.01, max=3.14, step=0.01,
+                               tooltip="Tessellation angular deflection in radians"),
+                io.String.Input("roi_value", default="", multiline=False,
+                                tooltip="Selected ROI (X1,Y1,X2,Y2) - updated by clicking on viewer"),
+            ],
+            outputs=[
+                io.String.Output(display_name="roi"),
+            ],
+        )
 
-    RETURN_TYPES = ("STRING",)
-    RETURN_NAMES = ("roi",)
-    FUNCTION = "select_roi"
-    CATEGORY = "CADabra/Analysis"
-    OUTPUT_NODE = True
-
-    def select_roi(self, cad_model, linear_deflection, angular_deflection, roi_value=""):
+    @classmethod
+    def execute(cls, cad_model, linear_deflection, angular_deflection, roi_value=""):
         log.info(f"select_roi called with roi_value='{roi_value}'")
         shape = get_occ_shape(cad_model)
 
@@ -197,7 +188,7 @@ class CADROISelector:
         glb_filename = f"roi_selector_{id(cad_model)}.glb"
         glb_filepath = os.path.join(folder_paths.get_temp_directory(), glb_filename)
 
-        self._export_glb_with_colors(vertices_array, faces_array, colors_array, glb_filepath)
+        cls._export_glb_with_colors(vertices_array, faces_array, colors_array, glb_filepath)
 
         file_size_kb = os.path.getsize(glb_filepath) / 1024
         log.info(f"ROI Selector mesh exported: {glb_filename} ({file_size_kb:.1f} KB)")
@@ -216,9 +207,10 @@ class CADROISelector:
 
         log.info(f"Returning roi_value='{roi_value}'")
 
-        return {"ui": ui_data, "result": (roi_value,)}
+        return io.NodeOutput(roi_value, ui=ui_data)
 
-    def _export_glb(self, vertices_array, faces_array, filepath):
+    @staticmethod
+    def _export_glb(vertices_array, faces_array, filepath):
         """Export mesh to GLB format using pygltflib."""
         from pygltflib import GLTF2, Scene, Node, Mesh, Primitive, Buffer, BufferView, Accessor
         from pygltflib import ARRAY_BUFFER, ELEMENT_ARRAY_BUFFER
@@ -268,7 +260,8 @@ class CADROISelector:
         gltf.set_binary_blob(buffer_data)
         gltf.save(filepath)
 
-    def _export_glb_with_colors(self, vertices_array, faces_array, colors_array, filepath):
+    @staticmethod
+    def _export_glb_with_colors(vertices_array, faces_array, colors_array, filepath):
         """Export mesh to GLB format with vertex colors using pygltflib."""
         from pygltflib import GLTF2, Scene, Node, Mesh, Primitive, Buffer, BufferView, Accessor
         from pygltflib import ARRAY_BUFFER, ELEMENT_ARRAY_BUFFER
