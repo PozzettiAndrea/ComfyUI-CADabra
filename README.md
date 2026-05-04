@@ -1,6 +1,26 @@
 # ComfyUI-CADabra
 
-CAD file processing and surface reconstruction nodes for ComfyUI.
+## Installation
+
+Three options, in order of speed → reliability:
+
+1. **ComfyUI Manager (nightly, recommended)** — search for `ComfyUI-CADabra` in the Manager and click Install **from the nightly version**. Do **NOT** use any numbered version like `0.2.4` — they are outdated.
+2. **Manager via Git URL** — in ComfyUI Manager: "Install via Git URL" with `https://github.com/PozzettiAndrea/ComfyUI-CADabra.git`.
+3. **Manual (most reliable)**:
+   ```bash
+   cd ComfyUI/custom_nodes
+   git clone https://github.com/PozzettiAndrea/ComfyUI-CADabra.git
+   cd ComfyUI-CADabra
+   pip install -r requirements.txt --upgrade
+   python install.py
+   ```
+
+> **Please report any problems** you hit during installation or use of my nodes — open a [Discussion](https://github.com/PozzettiAndrea/ComfyUI-CADabra/discussions) or [Issue](https://github.com/PozzettiAndrea/ComfyUI-CADabra/issues). Very grateful for your help! 🙏
+
+---
+
+
+CAD file processing and ML-based surface reconstruction nodes for ComfyUI.
 
 <div align="center">
 <a href="https://pozzettiandrea.github.io/ComfyUI-CADabra/">
@@ -11,25 +31,6 @@ CAD file processing and surface reconstruction nodes for ComfyUI.
 </div>
 
 
-https://github.com/user-attachments/assets/6e3c250b-d011-43e5-a972-e96aa70cc8fa
-
-
-## Standalone Model Packages
-
-The following ML-based reconstruction models are also available as standalone ComfyUI extensions:
-
-| Package | Description |
-|---------|-------------|
-| [ComfyUI-Point2CAD](https://github.com/PozzettiAndrea/ComfyUI-Point2CAD) | Point cloud to CAD reconstruction (CVPR 2024) |
-| [ComfyUI-SECADNET](https://github.com/PozzettiAndrea/ComfyUI-SECADNET) | Sketch-extrude CAD reconstruction from voxels |
-| [ComfyUI-Cadrille](https://github.com/PozzettiAndrea/ComfyUI-Cadrille) | Multi-modal CAD from point clouds, images, or text |
-| [ComfyUI-BGPSeg](https://github.com/PozzettiAndrea/ComfyUI-BGPSeg) | Boundary-guided primitive segmentation (IEEE TIP 2025) |
-| [ComfyUI-NeurCADRecon](https://github.com/PozzettiAndrea/ComfyUI-NeurCADRecon) | Neural implicit CAD reconstruction (SIGGRAPH 2024) |
-
-## Notes
-
-- ML nodes are currently stubs - integrate HuggingFace models as needed
-- For publishing to Comfy Registry, see [PUBLISHING.md](PUBLISHING.md)
 
 ## Resources
 
