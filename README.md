@@ -10,11 +10,6 @@ CAD file processing and ML-based surface reconstruction nodes for ComfyUI.
 <b><a href="https://pozzettiandrea.github.io/ComfyUI-CADabra/">View Live Test Gallery →</a></b>
 </div>
 
-## Notes
-
-- ML nodes are currently stubs - integrate HuggingFace models as needed
-- For publishing to Comfy Registry, see [PUBLISHING.md](PUBLISHING.md)
-
 ## Resources
 
 - [Awesome-3D-Generation](https://github.com/BunnySoCrazy/Awesome-3D-Generation) - Curated list of 3D generative AI papers with visual previews
