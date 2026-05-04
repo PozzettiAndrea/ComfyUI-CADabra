@@ -15,6 +15,9 @@ Three options, in order of speed → reliability:
    python install.py
    ```
 
+---
+
+
 
 CAD file processing and ML-based surface reconstruction nodes for ComfyUI.
 
@@ -26,7 +29,6 @@ CAD file processing and ML-based surface reconstruction nodes for ComfyUI.
 <b><a href="https://pozzettiandrea.github.io/ComfyUI-CADabra/">View Live Test Gallery →</a></b>
 </div>
 
----
 
 
 ## Resources
