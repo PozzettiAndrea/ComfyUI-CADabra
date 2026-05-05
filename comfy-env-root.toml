@@ -5,3 +5,7 @@ ComfyUI-Multiband = "PozzettiAndrea/ComfyUI-Multiband"
 [dependencies]
 av = "*"
 ffmpeg = "*"
+
+[target.osx-arm64.dependencies]
+av = "*"
+ffmpeg = "*"
