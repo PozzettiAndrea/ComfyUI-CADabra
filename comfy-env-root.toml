@@ -2,6 +2,6 @@
 ComfyUI-GeometryPack = "PozzettiAndrea/ComfyUI-GeometryPack"
 ComfyUI-Multiband = "PozzettiAndrea/ComfyUI-Multiband"
 
-[target.osx-arm64.dependencies]
+[dependencies]
 av = "*"
 ffmpeg = "*"
