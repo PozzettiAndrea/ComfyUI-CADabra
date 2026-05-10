@@ -8,6 +8,7 @@ pythonocc-core = "==7.8.1"
 cadquery = "==2.6.1"
 occt-rt = ">=1.1.0"
 sqlite = "*"
+av = "*"
 
 [target.linux-64.dependencies]
 libstdcxx-ng = ">=12.0"
