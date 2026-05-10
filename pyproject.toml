@@ -1,7 +1,7 @@
 [project]
 name = "comfyui-cadabra"
 description = "CAD file processing nodes for ComfyUI with interactive 3D OCC CAD viewer. Load STEP, IGES, BREP files and generate meshes using OCC, GMSH."
-version = "1.0.19"
+version = "1.0.20"
 license = {file = "LICENSE"}
 requires-python = ">=3.10"
 classifiers = [
