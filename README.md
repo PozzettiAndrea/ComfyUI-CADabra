@@ -1,5 +1,5 @@
 > [!WARNING]
-> Warning, uses experimental package `comfy-env` to attempt a one click isolated install.
+> Warning, uses experimental package `comfy-env` to attempt a one click isolated install. Will download and use pixi package manager.
 
 # ComfyUI-CADabra
 
