@@ -1,3 +1,6 @@
+> [!WARNING]
+> Warning, uses experimental package `comfy-env` to attempt a one click isolated install.
+
 # ComfyUI-CADabra
 
 ## Installation
