@@ -1,6 +1,6 @@
 [project]
 name = "comfyui-cadabra"
-description = "CAD file processing nodes for ComfyUI with interactive 3D OCC CAD viewer. Load STEP, IGES, BREP files and generate meshes using OCC, GMSH."
+description = "Warning, uses experimental package `comfy-env`. Will install pixi package manager. CAD file processing nodes for ComfyUI with interactive 3D OCC CAD viewer. Load STEP, IGES, BREP files and generate meshes using OCC, GMSH."
 version = "1.0.25"
 license = {file = "LICENSE"}
 requires-python = ">=3.10"
