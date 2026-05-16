@@ -1,6 +1,3 @@
-> [!WARNING]
-> Uses experimental package `comfy-env`. Will install pixi package manager.
-
 # ComfyUI-CADabra
 
 ## Installation
