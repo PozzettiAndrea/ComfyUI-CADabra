@@ -186,7 +186,11 @@ class CADROISelector(io.ComfyNode):
 
         # Export to GLB for viewer (with vertex colors)
         glb_filename = f"roi_selector_{id(cad_model)}.glb"
-        glb_filepath = os.path.join(folder_paths.get_temp_directory(), glb_filename)
+        temp_dir = folder_paths.get_temp_directory()
+        # ComfyUI Desktop doesn't create resources/ComfyUI/temp/ until it's
+        # needed, so a node that writes there on first use must mkdir it.
+        os.makedirs(temp_dir, exist_ok=True)
+        glb_filepath = os.path.join(temp_dir, glb_filename)
 
         cls._export_glb_with_colors(vertices_array, faces_array, colors_array, glb_filepath)
 
