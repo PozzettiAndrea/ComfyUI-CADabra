@@ -1529,7 +1529,7 @@ class CADHealShape(io.ComfyNode):
                                 tooltip="Don't merge edges bordering a face that has exactly 4 edges — keeps clean quad/rectangular faces intact (important for downstream quad meshing). Turn off to merge everywhere."),
                         ]),
                     ]),
-                io.DynamicCombo.Input("merge_g2_edges", advanced=True,
+                io.DynamicCombo.Input("merge_g2_edges",
                     tooltip="Also merge adjacent edges that are CURVATURE-continuous (G2), not just tangent (G1) — more aggressive curve simplification.",
                     options=[
                         io.DynamicCombo.Option("disabled", []),

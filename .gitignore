@@ -50,3 +50,6 @@ web/
 
 # comfy-test output
 .comfy-test-logs/
+
+# GMSH debug post-processing dumps
+*.pos
