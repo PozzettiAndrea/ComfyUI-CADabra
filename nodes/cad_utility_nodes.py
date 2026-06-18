@@ -1437,7 +1437,45 @@ class CADSplitComponents(io.ComfyNode):
 
 
 class CADHealShape(io.ComfyNode):
-    """General-purpose CAD healing using OCCT ShapeFix."""
+    """Repair imported-CAD defects with OpenCASCADE ShapeFix / ShapeUpgrade.
+
+    STEP/IGES files often arrive with translation artifacts: gaps between faces,
+    edges that don't quite meet, zero-length/sliver edges, tiny degenerate faces,
+    wrong tolerances, and fragmented trim curves. Healing snaps/fixes anything
+    below 'precision' and closes gaps up to 'max_tolerance', producing a valid,
+    (ideally) watertight, clean solid that meshes and booleans correctly.
+
+    Each operation below is an independent toggle; its parameters only appear when
+    the operation is enabled.
+    """
+
+    # --- helpers for reading is_input_list + DynamicCombo toggle values ---
+    @staticmethod
+    def _first(x):
+        return x[0] if isinstance(x, list) else x
+
+    @classmethod
+    def _toggle(cls, raw, name, default_enabled=False):
+        """Return (enabled: bool, params: dict) from a DynamicCombo input value.
+        Handles is_input_list wrapping and flat or 'name.'-prefixed param keys."""
+        v = cls._first(raw)
+        if isinstance(v, dict):
+            sel = v.get(name)
+            params = {}
+            for k, val in v.items():
+                kk = k.rsplit(".", 1)[-1]
+                if kk == name:
+                    sel = sel if sel is not None else val
+                else:
+                    params[kk] = val
+            if sel is None:
+                return default_enabled, params
+            return (str(sel) == "enabled"), params
+        if isinstance(v, str):
+            return v == "enabled", {}
+        if v is None:
+            return default_enabled, {}
+        return bool(v), {}
 
     @classmethod
     def define_schema(cls):
@@ -1448,8 +1486,10 @@ class CADHealShape(io.ComfyNode):
             is_input_list=True,
             inputs=[
                 io.Custom("CAD_MODEL").Input("cad_model", tooltip="CAD model(s) to heal"),
-                io.Float.Input("precision", default=0.01, min=0.0001, max=10.0, step=0.001),
-                io.Float.Input("max_tolerance", default=1.0, min=0.01, max=100.0, step=0.1),
+                io.Float.Input("precision", default=0.01, min=0.0001, max=10.0, step=0.001,
+                    tooltip="Working precision in MODEL UNITS (STEP is usually mm) = the smallest real detail size. Sub-features (edges, faces, gaps) smaller than this are treated as translation noise and snapped/removed/fixed. Too LARGE destroys genuine small features; too SMALL leaves defects unfixed. Typical 0.001-0.1 for mm-scale parts."),
+                io.Float.Input("max_tolerance", default=1.0, min=0.01, max=100.0, step=0.1,
+                    tooltip="Upper bound (model units) on how far healing may move/grow geometry to CLOSE a defect (gaps, mismatched edges, bad tolerances). Defects bigger than this are left alone (assumed intentional). Too SMALL = big gaps stay open / not watertight; too LARGE = distinct features get fused and the shape distorts. Usually a few x precision (e.g. precision 0.01, max_tolerance 1.0)."),
                 io.DynamicCombo.Input("execution_mode",
                     tooltip="single_core: sequential in main process. parallel: subprocesses with timeout and crash isolation",
                     options=[
@@ -1462,24 +1502,44 @@ class CADHealShape(io.ComfyNode):
                         ]),
                     ],
                 ),
-                io.Boolean.Input("fix_small_faces", default=True, optional=True),
-                io.Float.Input("small_face_precision", default=0.1, min=0.001, max=10.0, step=0.01, optional=True),
-                io.Boolean.Input("fix_small_edges", default=True, optional=True),
-                io.Boolean.Input("fix_wire_gaps", default=True, optional=True),
-                io.Boolean.Input("merge_colinear_edges", default=False, optional=True,
-                    tooltip="Merge adjacent edges on same curve (fixes fragmented IGES trim curves)"),
+                # ── Healing operations: each is a toggle; its parameters appear only when enabled ──
+                io.DynamicCombo.Input("fix_small_faces",
+                    tooltip="Remove degenerate 'spot' (collapsed-to-a-point) and 'strip' (thin sliver) faces left by CAD translation, which break meshing and booleans. (OCC ShapeFix_FixSmallFace.)",
+                    options=[
+                        io.DynamicCombo.Option("enabled", [
+                            io.Float.Input("small_face_precision", default=0.1, min=0.001, max=10.0, step=0.01,
+                                tooltip="A face is treated as 'small' (and removed/merged into its neighbours) if its size is below this, in model units (e.g. mm). LARGER = removes bigger faces (more aggressive cleanup, but risks deleting genuine small features)."),
+                        ]),
+                        io.DynamicCombo.Option("disabled", []),
+                    ]),
+                io.Boolean.Input("fix_small_edges", default=True, optional=True,
+                    tooltip="Collapse/remove degenerate edges shorter than 'precision' (zero- and near-zero-length edges from translation). (OCC ShapeFix_Wireframe.FixSmallEdges.)"),
+                io.Boolean.Input("fix_wire_gaps", default=True, optional=True,
+                    tooltip="Close gaps between consecutive edges in each face's boundary loop (in 3D and in the surface's UV space) so the wires form closed loops. Fixes the 'edges don't quite meet' defect from STEP/IGES import. (OCC ShapeFix_Wireframe.FixWireGaps.)"),
+                io.DynamicCombo.Input("merge_colinear_edges",
+                    tooltip="Merge chains of adjacent edges that lie on the SAME underlying curve (tangent / G1-continuous) into single edges. Fixes fragmented trim curves (common from IGES) and lowers edge count.",
+                    options=[
+                        io.DynamicCombo.Option("disabled", []),
+                        io.DynamicCombo.Option("enabled", [
+                            io.Float.Input("linear_tolerance", default=0.001, min=0.0001, max=1.0, step=0.0001,
+                                tooltip="Two adjacent edges are merged only if their endpoints/curves match within this DISTANCE (model units). Higher = more aggressive merging."),
+                            io.Float.Input("angular_tolerance", default=0.01, min=0.001, max=1.0, step=0.001,
+                                tooltip="Two adjacent edges are merged only if their tangent directions agree within this ANGLE, in RADIANS (0.01 rad ~ 0.6 deg). Higher = merges across sharper kinks (more aggressive)."),
+                            io.Boolean.Input("preserve_quad_faces", default=True,
+                                tooltip="Don't merge edges bordering a face that has exactly 4 edges — keeps clean quad/rectangular faces intact (important for downstream quad meshing). Turn off to merge everywhere."),
+                        ]),
+                    ]),
+                io.DynamicCombo.Input("merge_g2_edges", advanced=True,
+                    tooltip="Also merge adjacent edges that are CURVATURE-continuous (G2), not just tangent (G1) — more aggressive curve simplification.",
+                    options=[
+                        io.DynamicCombo.Option("disabled", []),
+                        io.DynamicCombo.Option("enabled", [
+                            io.Float.Input("g2_tolerance", default=0.01, min=0.0001, max=1.0, step=0.001,
+                                tooltip="Maximum curvature difference for two adjacent edges to count as G2-continuous when merging. Higher = merges across bigger curvature changes."),
+                        ]),
+                    ]),
                 io.Boolean.Input("unify_faces", default=False, optional=True,
-                    tooltip="Also unify adjacent faces on same surface (more aggressive simplification)"),
-                io.Float.Input("angular_tolerance", default=0.01, min=0.001, max=1.0, step=0.001, optional=True, advanced=True,
-                    tooltip="Angular tolerance for curve matching in radians (higher = more aggressive)"),
-                io.Float.Input("linear_tolerance", default=0.001, min=0.0001, max=1.0, step=0.0001, optional=True, advanced=True,
-                    tooltip="Linear tolerance for curve matching (higher = more aggressive)"),
-                io.Boolean.Input("merge_g2_edges", default=False, optional=True, advanced=True,
-                    tooltip="Merge adjacent edges with G2 curvature continuity"),
-                io.Float.Input("g2_tolerance", default=0.01, min=0.0001, max=1.0, step=0.001, optional=True, advanced=True,
-                    tooltip="Curvature tolerance for G2 continuity detection"),
-                io.Boolean.Input("preserve_quad_faces", default=True, optional=True,
-                    tooltip="Don't merge edges on faces with exactly 4 edges"),
+                    tooltip="Also merge adjacent faces that lie on the SAME underlying surface (e.g. two coplanar faces -> one face). Reduces face count; more aggressive simplification. (OCC ShapeUpgrade_UnifySameDomain.)"),
             ],
             outputs=[
                 io.Custom("CAD_MODEL").Output(display_name="healed_models", is_output_list=True),
@@ -1490,11 +1550,8 @@ class CADHealShape(io.ComfyNode):
     @classmethod
     def execute(cls, cad_model, precision, max_tolerance,
                 execution_mode="single_core", num_workers=4, timeout=120,
-                fix_small_faces=True, small_face_precision=0.1,
-                fix_small_edges=True, fix_wire_gaps=True,
-                merge_colinear_edges=False, unify_faces=False,
-                angular_tolerance=0.01, linear_tolerance=0.001,
-                merge_g2_edges=False, g2_tolerance=0.01, preserve_quad_faces=True):
+                fix_small_faces=None, fix_small_edges=True, fix_wire_gaps=True,
+                merge_colinear_edges=None, merge_g2_edges=None, unify_faces=False):
         """Heal shapes - dispatches to sequential or parallel based on execution_mode."""
         # Extract scalar values from lists (INPUT_IS_LIST behavior)
         # Handle DynamicCombo for execution_mode
@@ -1508,19 +1565,22 @@ class CADHealShape(io.ComfyNode):
             execution_mode_val = execution_mode if isinstance(execution_mode, str) else "single_core"
             num_workers_val = num_workers[0] if isinstance(num_workers, list) else num_workers
             timeout_val = timeout[0] if isinstance(timeout, list) else timeout
-        precision_val = precision[0] if isinstance(precision, list) else precision
-        max_tolerance_val = max_tolerance[0] if isinstance(max_tolerance, list) else max_tolerance
-        fix_small_faces_val = fix_small_faces[0] if isinstance(fix_small_faces, list) else fix_small_faces
-        small_face_precision_val = small_face_precision[0] if isinstance(small_face_precision, list) else small_face_precision
-        fix_small_edges_val = fix_small_edges[0] if isinstance(fix_small_edges, list) else fix_small_edges
-        fix_wire_gaps_val = fix_wire_gaps[0] if isinstance(fix_wire_gaps, list) else fix_wire_gaps
-        merge_colinear_val = merge_colinear_edges[0] if isinstance(merge_colinear_edges, list) else merge_colinear_edges
-        unify_faces_val = unify_faces[0] if isinstance(unify_faces, list) else unify_faces
-        angular_tolerance_val = angular_tolerance[0] if isinstance(angular_tolerance, list) else angular_tolerance
-        linear_tolerance_val = linear_tolerance[0] if isinstance(linear_tolerance, list) else linear_tolerance
-        merge_g2_val = merge_g2_edges[0] if isinstance(merge_g2_edges, list) else merge_g2_edges
-        g2_tolerance_val = g2_tolerance[0] if isinstance(g2_tolerance, list) else g2_tolerance
-        preserve_quad_faces_val = preserve_quad_faces[0] if isinstance(preserve_quad_faces, list) else preserve_quad_faces
+        precision_val = cls._first(precision)
+        max_tolerance_val = cls._first(max_tolerance)
+
+        # Operation toggles (DynamicCombo enabled/disabled) -> bool + nested params
+        fix_small_faces_val, _fsf_p = cls._toggle(fix_small_faces, "fix_small_faces", default_enabled=True)
+        small_face_precision_val = cls._first(_fsf_p.get("small_face_precision", 0.1))
+        merge_colinear_val, _merge_p = cls._toggle(merge_colinear_edges, "merge_colinear_edges", default_enabled=False)
+        linear_tolerance_val = cls._first(_merge_p.get("linear_tolerance", 0.001))
+        angular_tolerance_val = cls._first(_merge_p.get("angular_tolerance", 0.01))
+        preserve_quad_faces_val = cls._first(_merge_p.get("preserve_quad_faces", True))
+        merge_g2_val, _g2_p = cls._toggle(merge_g2_edges, "merge_g2_edges", default_enabled=False)
+        g2_tolerance_val = cls._first(_g2_p.get("g2_tolerance", 0.01))
+        # Plain boolean toggles
+        fix_small_edges_val = cls._first(fix_small_edges)
+        fix_wire_gaps_val = cls._first(fix_wire_gaps)
+        unify_faces_val = cls._first(unify_faces)
 
         # Ensure cad_model is a list
         cad_models = cad_model if isinstance(cad_model, list) else [cad_model]
@@ -1660,10 +1720,11 @@ class CADHealShape(io.ComfyNode):
                 edges_before = count_edges(result_shape)
                 faces_mid = count_faces(result_shape)
 
-                # UnifySameDomain merges adjacent edges that lie on the same curve
-                # Args: shape, UnifyFaces, UnifyEdges=True, ConcatBSplines=True
-                # UnifyFaces=True can be more aggressive in simplifying geometry
-                unifier = ShapeUpgrade_UnifySameDomain(result_shape, unify_faces, True, True)
+                # OCC signature: ShapeUpgrade_UnifySameDomain(shape, UnifyEdges, UnifyFaces, ConcatBSplines).
+                # 'merge_colinear_edges' being ON means we want to unify EDGES; 'unify_faces' (off by
+                # default) additionally merges coplanar faces. (Previously the edge/face args were swapped,
+                # which always merged faces and tied edge-merging to the unify_faces toggle.)
+                unifier = ShapeUpgrade_UnifySameDomain(result_shape, True, unify_faces, True)
 
                 # Set tolerances for curve matching - higher values = more aggressive merging
                 unifier.SetAngularTolerance(angular_tolerance)
@@ -2715,6 +2776,267 @@ class CADFixDegenerateFaces(io.ComfyNode):
         return io.NodeOutput(fixed_models, report)
 
 
+class CADHealShapeAdvanced(io.ComfyNode):
+    """Full ShapeFix_Shape control - every OCC sub-fixer mode + tolerance exposed.
+
+    Runs OCC's single coordinated ShapeFix_Shape pass (same engine as 'Heal CAD
+    Shape'), but exposes the entire ShapeFix mode system, grouped by topology level.
+    Each fix is tri-state:
+        auto = OCC default (the tool decides; ALL on 'auto' == the basic Heal node)
+        on   = force this fix ON
+        off  = force this fix OFF
+    Expand a section ('custom') to reveal its modes. See OpenCASCADE's Shape Healing
+    guide for the gory details of each.
+    """
+    MODE = ["auto", "on", "off"]
+
+    # (input_name, tool_key, OCC setter).  tool_key in {shape, solid, shell, face, wire}
+    _SHAPE_MODES = [
+        ("fix_solid", "shape", "SetFixSolidMode"),
+        ("fix_free_shell", "shape", "SetFixFreeShellMode"),
+        ("fix_free_face", "shape", "SetFixFreeFaceMode"),
+        ("fix_free_wire", "shape", "SetFixFreeWireMode"),
+        ("fix_same_parameter", "shape", "SetFixSameParameterMode"),
+        ("fix_vertex_position", "shape", "SetFixVertexPositionMode"),
+        ("fix_vertex_tolerance", "shape", "SetFixVertexTolMode"),
+    ]
+    _SHELL_SOLID_MODES = [
+        ("create_open_solid", "solid", "SetCreateOpenSolidMode"),
+        ("fix_shell", "solid", "SetFixShellMode"),
+        ("fix_shell_orientation_solid", "solid", "SetFixShellOrientationMode"),
+        ("fix_face_in_shell", "shell", "SetFixFaceMode"),
+        ("fix_face_orientation_in_shell", "shell", "SetFixOrientationMode"),
+        ("allow_non_manifold", "shell", "SetNonManifoldFlag"),
+    ]
+    _FACE_MODES = [
+        ("fix_wire_in_face", "face", "SetFixWireMode"),
+        ("fix_orientation", "face", "SetFixOrientationMode"),
+        ("fix_add_natural_bound", "face", "SetFixAddNaturalBoundMode"),
+        ("fix_missing_seam", "face", "SetFixMissingSeamMode"),
+        ("fix_small_area_wire", "face", "SetFixSmallAreaWireMode"),
+        ("remove_small_area_face", "face", "SetRemoveSmallAreaFaceMode"),
+        ("fix_intersecting_wires", "face", "SetFixIntersectingWiresMode"),
+        ("fix_loop_wires", "face", "SetFixLoopWiresMode"),
+        ("fix_split_face", "face", "SetFixSplitFaceMode"),
+        ("fix_periodic_degenerated", "face", "SetFixPeriodicDegeneratedMode"),
+        ("auto_correct_precision", "face", "SetAutoCorrectPrecisionMode"),
+    ]
+    _WIRE_MODES = [
+        ("modify_topology", "wire", "SetModifyTopologyMode"),
+        ("modify_geometry", "wire", "SetModifyGeometryMode"),
+        ("modify_remove_loop", "wire", "SetModifyRemoveLoopMode"),
+        ("closed_wire", "wire", "SetClosedWireMode"),
+        ("preference_pcurve", "wire", "SetPreferencePCurveMode"),
+        ("fix_reorder", "wire", "SetFixReorderMode"),
+        ("fix_small", "wire", "SetFixSmallMode"),
+        ("fix_connected", "wire", "SetFixConnectedMode"),
+        ("fix_edge_curves", "wire", "SetFixEdgeCurvesMode"),
+        ("fix_degenerated", "wire", "SetFixDegeneratedMode"),
+        ("fix_self_intersection", "wire", "SetFixSelfIntersectionMode"),
+        ("fix_self_intersecting_edge", "wire", "SetFixSelfIntersectingEdgeMode"),
+        ("fix_intersecting_edges", "wire", "SetFixIntersectingEdgesMode"),
+        ("fix_non_adjacent_intersecting_edges", "wire", "SetFixNonAdjacentIntersectingEdgesMode"),
+        ("fix_lacking", "wire", "SetFixLackingMode"),
+        ("fix_gaps_3d", "wire", "SetFixGaps3dMode"),
+        ("fix_gaps_2d", "wire", "SetFixGaps2dMode"),
+        ("fix_gaps_by_ranges", "wire", "SetFixGapsByRangesMode"),
+        ("fix_notched_edges", "wire", "SetFixNotchedEdgesMode"),
+        ("fix_tails", "wire", "SetFixTailMode"),
+        ("fix_seam", "wire", "SetFixSeamMode"),
+        ("fix_shifted", "wire", "SetFixShiftedMode"),
+        ("fix_reversed_2d", "wire", "SetFixReversed2dMode"),
+        ("fix_same_parameter_wire", "wire", "SetFixSameParameterMode"),
+        ("fix_vertex_tolerance_wire", "wire", "SetFixVertexToleranceMode"),
+        ("fix_add_curve_3d", "wire", "SetFixAddCurve3dMode"),
+        ("fix_add_pcurve", "wire", "SetFixAddPCurveMode"),
+        ("fix_remove_curve_3d", "wire", "SetFixRemoveCurve3dMode"),
+        ("fix_remove_pcurve", "wire", "SetFixRemovePCurveMode"),
+    ]
+    _TIP = {
+        "fix_solid": "Fix solids (build/repair the solid from its shells).",
+        "fix_free_shell": "Fix shells not contained in a solid.",
+        "fix_free_face": "Fix faces not contained in a shell.",
+        "fix_free_wire": "Fix wires not contained in a face.",
+        "fix_same_parameter": "Enforce same-parameter: reconcile each edge's 3D curve with its surface pcurves (reproject or grow tolerance). Can be slow on big models.",
+        "fix_vertex_position": "Move vertices to the average of the curve ends meeting there (close tiny positional mismatches).",
+        "fix_vertex_tolerance": "Grow vertex tolerances so they enclose the edges/faces meeting at them.",
+        "create_open_solid": "If a shell can't be closed, keep it as an OPEN solid instead of forcing/discarding. Relevant when the model isn't fully watertight.",
+        "fix_shell": "Fix the shell(s) inside the solid.",
+        "fix_shell_orientation_solid": "Orient the solid's shells (outer outward, voids inward).",
+        "fix_face_in_shell": "Fix each face within the shell.",
+        "fix_face_orientation_in_shell": "Propagate consistent face orientation across the shell (normals coherent/outward).",
+        "allow_non_manifold": "Permit non-manifold results (edges shared by >2 faces) instead of rejecting them.",
+        "fix_wire_in_face": "Fix each boundary wire of the face.",
+        "fix_orientation": "Choose the outer boundary vs holes by UV signed area and orient them so the material side is consistent.",
+        "fix_add_natural_bound": "Add the natural boundary to a face on a closed surface (e.g. full sphere) that has no wire.",
+        "fix_missing_seam": "Add the missing seam edge on periodic surfaces (cylinder/sphere/torus) and fix the U/V period.",
+        "fix_small_area_wire": "Remove inner wires enclosing negligible area.",
+        "remove_small_area_face": "Remove faces of negligible area.",
+        "fix_intersecting_wires": "Repair outer/inner wires that intersect in UV space.",
+        "fix_loop_wires": "Split/repair wires that form figure-eight loops.",
+        "fix_split_face": "Split a face whose wires divide it into disconnected regions.",
+        "fix_periodic_degenerated": "Fix degenerated edges on periodic faces (poles).",
+        "auto_correct_precision": "Let the face fixer adjust precision automatically from local geometry.",
+        "modify_topology": "Allow the wire fixer to change topology (split/merge edges), not just geometry.",
+        "modify_geometry": "Allow the wire fixer to modify curve geometry.",
+        "modify_remove_loop": "Allow removing small self-loops in the wire.",
+        "closed_wire": "Treat the wire as closed (expect a closed loop).",
+        "preference_pcurve": "On conflict, trust the 2D pcurve over the 3D curve (vs the reverse).",
+        "fix_reorder": "Reorder edges into a continuous head-to-tail, correctly-oriented loop.",
+        "fix_small": "Remove edges shorter than precision (sliver edges).",
+        "fix_connected": "Close gaps between consecutive edges so endpoints coincide.",
+        "fix_edge_curves": "Fix each edge's 3D curve / pcurves / parameter ranges.",
+        "fix_degenerated": "Add/repair degenerate edges (poles, collapsed edges).",
+        "fix_self_intersection": "Detect and repair a boundary loop that crosses itself (the expensive one).",
+        "fix_self_intersecting_edge": "Repair a single edge that self-intersects.",
+        "fix_intersecting_edges": "Repair adjacent edges in the wire that intersect.",
+        "fix_non_adjacent_intersecting_edges": "Repair non-adjacent edges in the wire that intersect.",
+        "fix_lacking": "Insert a 'lacking' edge to close an angular gap at a corner in UV space.",
+        "fix_gaps_3d": "Close 3D gaps between consecutive edge endpoints.",
+        "fix_gaps_2d": "Close 2D (pcurve) gaps between consecutive edges.",
+        "fix_gaps_by_ranges": "Close gaps by adjusting pcurve parameter ranges.",
+        "fix_notched_edges": "Remove notches (V-shaped backtracks) in the wire.",
+        "fix_tails": "Remove 'tail' spikes in the wire (uses max_tail_angle / max_tail_width).",
+        "fix_seam": "Fix the seam edge of a periodic face.",
+        "fix_shifted": "Fix pcurves shifted by a full surface period.",
+        "fix_reversed_2d": "Fix pcurves whose 2D orientation is reversed relative to the 3D edge.",
+        "fix_same_parameter_wire": "Same-parameter enforcement at the wire level.",
+        "fix_vertex_tolerance_wire": "Grow vertex tolerances at the wire level.",
+        "fix_add_curve_3d": "Build a missing 3D curve for an edge from its pcurve.",
+        "fix_add_pcurve": "Build a missing 2D pcurve for an edge by projecting its 3D curve.",
+        "fix_remove_curve_3d": "Remove a bad 3D curve.",
+        "fix_remove_pcurve": "Remove a bad 2D pcurve.",
+    }
+
+    @staticmethod
+    def _num(x):
+        x = x[0] if isinstance(x, list) else x
+        try:
+            return float(x)
+        except Exception:
+            return 0.0
+
+    @staticmethod
+    def _section(value, name):
+        """Return (is_custom, {mode_name: choice}) from a section DynamicCombo value."""
+        v = value[0] if isinstance(value, list) else value
+        if not isinstance(v, dict):
+            return False, {}
+        sel = v.get(name)
+        params = {}
+        for k, val in v.items():
+            kk = k.rsplit(".", 1)[-1]
+            if kk == name:
+                sel = sel if sel is not None else val
+            else:
+                params[kk] = val
+        return (str(sel) == "custom"), params
+
+    @classmethod
+    def define_schema(cls):
+        def combos(table):
+            return [io.Combo.Input(n, options=cls.MODE, default="auto",
+                        tooltip=cls._TIP.get(n, f"OCC {s} (auto=default / on=force / off=skip)"))
+                    for (n, _t, s) in table]
+        wire_inputs = combos(cls._WIRE_MODES) + [
+            io.Float.Input("max_tail_angle", default=0.0, min=0.0, max=3.15, step=0.01,
+                tooltip="Tail removal: max angle (radians) of a spike to treat as a tail. 0 = use OCC default. Only used when fix_tails is on."),
+            io.Float.Input("max_tail_width", default=0.0, min=0.0, max=1e6, step=0.1,
+                tooltip="Tail removal: max width (model units) of a tail to remove. 0 = use OCC default. Only used when fix_tails is on."),
+        ]
+        return io.Schema(
+            node_id="CADHealShapeAdvanced",
+            display_name="Heal CAD Shape (Advanced)",
+            category="CADabra/Utility",
+            inputs=[
+                io.Custom("CAD_MODEL").Input("cad_model", tooltip="CAD model to heal. Runs one coordinated OCC ShapeFix_Shape pass."),
+                io.Float.Input("precision", default=0.01, min=0.0001, max=10.0, step=0.001,
+                    tooltip="Working precision in model units = smallest real detail; finer features are treated as noise and snapped/removed. Same meaning as on the basic Heal node."),
+                io.Float.Input("min_tolerance", default=0.0, min=0.0, max=10.0, step=1e-5,
+                    tooltip="Floor on the tolerances ShapeFix may assign (model units). 0 = leave OCC's default minimum. The lower companion to max_tolerance."),
+                io.Float.Input("max_tolerance", default=1.0, min=0.01, max=100.0, step=0.1,
+                    tooltip="Ceiling on how far healing may move/grow geometry to close a defect (model units). Bigger defects are left alone."),
+                io.DynamicCombo.Input("shape_fixes",
+                    tooltip="Top-level ShapeFix_Shape orchestration: which sub-levels (solid/free shell/face/wire) to fix, plus same-parameter and vertex fixes. 'default' = OCC defaults.",
+                    options=[io.DynamicCombo.Option("default", []),
+                             io.DynamicCombo.Option("custom", combos(cls._SHAPE_MODES))]),
+                io.DynamicCombo.Input("wire_fixes",
+                    tooltip="Per-wire (face boundary loop) fixes - the richest set: reorder, gaps, self-intersection, lacking edges, degenerate, tails, seams, pcurves, etc.",
+                    options=[io.DynamicCombo.Option("default", []),
+                             io.DynamicCombo.Option("custom", wire_inputs)]),
+                io.DynamicCombo.Input("face_fixes",
+                    tooltip="Per-face fixes: orientation (outer vs holes), missing seam, natural bound, intersecting/loop wires, small-area wires/faces, periodic poles.",
+                    options=[io.DynamicCombo.Option("default", []),
+                             io.DynamicCombo.Option("custom", combos(cls._FACE_MODES))]),
+                io.DynamicCombo.Input("shell_solid_fixes",
+                    tooltip="Shell + solid fixes: face/shell orientation (outward normals), open-solid handling, non-manifold flag.",
+                    options=[io.DynamicCombo.Option("default", []),
+                             io.DynamicCombo.Option("custom", combos(cls._SHELL_SOLID_MODES))]),
+            ],
+            outputs=[
+                io.Custom("CAD_MODEL").Output(display_name="healed_model"),
+                io.String.Output(display_name="info"),
+            ],
+        )
+
+    @classmethod
+    def execute(cls, cad_model, precision=0.01, min_tolerance=0.0, max_tolerance=1.0,
+                shape_fixes=None, wire_fixes=None, face_fixes=None, shell_solid_fixes=None):
+        shape = _get_occ_shape(cad_model)
+        sf = ShapeFix_Shape(shape)
+        sf.SetPrecision(cls._num(precision))
+        sf.SetMaxTolerance(cls._num(max_tolerance))
+        if cls._num(min_tolerance) > 0:
+            sf.SetMinTolerance(cls._num(min_tolerance))
+
+        solid = sf.FixSolidTool()
+        shell = solid.FixShellTool()
+        face = shell.FixFaceTool()
+        wire = face.FixWireTool()
+        tools = {"shape": sf, "solid": solid, "shell": shell, "face": face, "wire": wire}
+        applied = []
+
+        def apply(value, name, table):
+            custom, params = cls._section(value, name)
+            if not custom:
+                return
+            for (mode_name, tool_key, setter) in table:
+                choice = str(params.get(mode_name, "auto"))
+                if choice == "auto":
+                    continue
+                fn = getattr(tools[tool_key], setter, None)
+                if fn is None:
+                    continue
+                v = 1 if choice == "on" else 0
+                try:
+                    fn(v)                      # integer Fix...Mode setters
+                except TypeError:
+                    fn(bool(v))                # boolean setters (CreateOpenSolid, NonManifold, shape-level)
+                applied.append(f"{mode_name}={choice}")
+            if name == "wire_fixes":
+                ta = cls._num(params.get("max_tail_angle", 0.0))
+                tw = cls._num(params.get("max_tail_width", 0.0))
+                if ta > 0:
+                    wire.SetMaxTailAngle(ta); applied.append(f"max_tail_angle={ta}")
+                if tw > 0:
+                    wire.SetMaxTailWidth(tw); applied.append(f"max_tail_width={tw}")
+
+        apply(shape_fixes, "shape_fixes", cls._SHAPE_MODES)
+        apply(wire_fixes, "wire_fixes", cls._WIRE_MODES)
+        apply(face_fixes, "face_fixes", cls._FACE_MODES)
+        apply(shell_solid_fixes, "shell_solid_fixes", cls._SHELL_SOLID_MODES)
+
+        sf.Perform()
+        healed = sf.Shape()
+        result = _make_cad_model(healed, cad_model)
+
+        info = (f"Heal CAD Shape (Advanced): precision={cls._num(precision):g}, "
+                f"min_tol={cls._num(min_tolerance):g}, max_tol={cls._num(max_tolerance):g}\n"
+                f"  non-default modes: {', '.join(applied) if applied else '(none - all OCC defaults)'}")
+        log.info("[HealAdvanced] %s", info)
+        return io.NodeOutput(result, info, ui={"text": [info]})
+
+
 # Node mappings for registration
 NODE_CLASS_MAPPINGS = {
     "CADExtractFaces": CADExtractFaces,
@@ -2724,6 +3046,7 @@ NODE_CLASS_MAPPINGS = {
     "CADSplitComponents": CADSplitComponents,
     "CADSave": CADSave,
     "CADHealShape": CADHealShape,
+    "CADHealShapeAdvanced": CADHealShapeAdvanced,
     "CADMergeVertices": CADMergeVertices,
     "CADFixDegenerateFaces": CADFixDegenerateFaces,
 }
@@ -2736,6 +3059,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "CADSplitComponents": "CAD Split Components",
     "CADSave": "CAD Save",
     "CADHealShape": "CAD Heal Shape",
+    "CADHealShapeAdvanced": "Heal CAD Shape (Advanced)",
     "CADMergeVertices": "CAD Merge Vertices",
     "CADFixDegenerateFaces": "CAD Fix Degenerate Faces",
 }

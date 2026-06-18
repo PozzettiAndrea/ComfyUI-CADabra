@@ -11,7 +11,7 @@ import trimesh
 from comfy_api.latest import io
 from .utils.occ_logging import log_operation
 
-log = logging.getLogger("cadabra")
+log = logging.getLogger("CADabra")  # use the configured logger (occ_logging) so these surface
 
 
 def _progress_bar(completed, total, elapsed, width=30, prefix=""):
@@ -361,14 +361,75 @@ class CAD_Load(io.ComfyNode):
 
 
 
+def _mesh_diagnostics(tm, occ_shape=None):
+    """Watertightness diagnostics for the CAD_Mesh info output.
+
+    open_edges = mesh edges used by only one triangle (cracks/holes in the output).
+    free_brep_edges = edges in the INPUT B-rep bounded by <2 faces (genuine open
+    boundaries in the CAD itself) -- these are the usual source of a non-watertight
+    output: the tessellation faithfully reproduces them and no vertex weld can close them.
+    """
+    d = {"watertight": None, "open_edges": None, "free_brep_edges": None}
+    try:
+        d["watertight"] = bool(tm.is_watertight)
+    except Exception:
+        pass
+    try:
+        import trimesh.grouping as _g
+        d["open_edges"] = int(len(tm.edges[_g.group_rows(tm.edges_sorted, require_count=1)]))
+    except Exception:
+        pass
+    if occ_shape is not None:
+        try:
+            from OCC.Core.TopExp import topexp
+            from OCC.Core.TopAbs import TopAbs_EDGE, TopAbs_FACE
+            from OCC.Core.TopTools import TopTools_IndexedDataMapOfShapeListOfShape
+            m = TopTools_IndexedDataMapOfShapeListOfShape()
+            topexp.MapShapesAndAncestors(occ_shape, TopAbs_EDGE, TopAbs_FACE, m)
+            d["free_brep_edges"] = int(sum(1 for i in range(1, m.Size() + 1)
+                                           if m.FindFromIndex(i).Size() < 2))
+        except Exception:
+            pass
+    return d
+
+
+def _mesh_info_str(backend, tm, metadata, diag):
+    """Human-readable summary shown in the CAD_Mesh 'info' output / text box."""
+    L = [f"CAD Mesh [{backend}]",
+         f"  output: {len(tm.vertices):,} verts, {len(tm.faces):,} faces"]
+    if metadata.get("num_cad_faces"):
+        L.append(f"  CAD B-rep faces: {metadata['num_cad_faces']:,}")
+    ld = metadata.get("linear_deflection")
+    if ld is not None:
+        L.append(f"  linear_deflection: {ld}  angular: {metadata.get('angular_deflection')}")
+    if metadata.get("size_mode"):
+        L.append(f"  size_mode: {metadata.get('size_mode')}  target: {metadata.get('target_size')}")
+    wt, oe, fe = diag.get("watertight"), diag.get("open_edges"), diag.get("free_brep_edges")
+    L.append(f"  watertight: {wt}" + (f"   (open edges: {oe})" if oe else ""))
+    if fe is not None:
+        L.append(f"  input B-rep free edges: {fe}"
+                 + ("   <- these become the open edges (heal/sew the CAD to close)"
+                    if fe else "   (closed solid)"))
+    if metadata.get("has_cad_face_ids"):
+        L.append("  cad_face_id: stored per triangle")
+    return "\n".join(L)
+
+
 def _flatten_dynamic(d):
-    """Flatten nested DynamicCombo dicts into a flat key-value dict."""
+    """Flatten DynamicCombo values into a flat kwargs dict.
+
+    A DynamicCombo delivers its selected option's child widgets either nested as
+    a sub-dict OR (in current ComfyUI) flattened with a 'comboName.' prefix, e.g.
+    {'size_mode': 'Absolute', 'size_mode.target_size': 0.5, ...}. We recurse into
+    sub-dicts AND strip any dotted prefix so children arrive under their bare
+    parameter name ('size_mode.target_size' -> 'target_size'); otherwise they land
+    in **kwargs and the node silently uses defaults (the target_size bug)."""
     flat = {}
     for k, v in d.items():
         if isinstance(v, dict):
             flat.update(_flatten_dynamic(v))
         else:
-            flat[k] = v
+            flat[k.rsplit(".", 1)[-1]] = v  # 'size_mode.target_size' -> 'target_size'
     return flat
 
 
@@ -383,84 +444,95 @@ class CAD_Mesh(io.ComfyNode):
             category="CADabra",
             inputs=[
                 io.Custom("CAD_MODEL").Input("cad_model"),
-                io.DynamicCombo.Input("backend", tooltip="BRepIncremental: fast OCC tessellation. GMSH: full-featured mesh generation with algorithm control", options=[
+                io.DynamicCombo.Input("backend", tooltip="Tessellation engine. BRepIncremental (OCC): fast, robust chordal tessellation — one triangulation per CAD face, so every triangle keeps its exact source face (ideal for cad_face_id segmentation). GMSH: slower, but full control over algorithms, element-size fields, quads, and 3D volume meshes.", options=[
                     io.DynamicCombo.Option("BRepIncremental", [
                         io.Float.Input("linear_deflection", default=0.1, min=0.001, max=100.0, step=0.01,
-                                       tooltip="Max distance between mesh and actual surface (smaller = finer mesh)"),
+                                       tooltip="Max chordal deviation — the largest allowed gap between a triangle and the true surface — in the SAME units as the CAD geometry (STEP is usually millimetres). NOT a fraction of the bounding box. Smaller = finer mesh / more triangles. Rule of thumb: ~0.1-1% of the part's size (e.g. a 100mm part: 0.1 -> very fine, 1.0 -> coarse). Planar faces are exact regardless of this value. If 'relative' is on, it is instead interpreted per-edge (see that tooltip)."),
                         io.Float.Input("angular_deflection", default=0.5, min=0.01, max=1.57, step=0.01,
-                                       tooltip="Angular deflection in radians (controls curvature sampling)"),
+                                       tooltip="Max angle between adjacent triangle normals on CURVED faces, in RADIANS (always absolute — NOT affected by 'relative'). Quick conversions (deg = rad x 57.3): 0.1 rad ~ 6 deg, 0.2 ~ 11 deg, 0.5 ~ 29 deg, 1.0 ~ 57 deg. Smaller = smoother curves / more triangles; typical 0.1-0.5. Sampled independently of linear_deflection — the mesher refines until BOTH limits are met, so lower both for a fine mesh on cylinders/spheres/fillets."),
                         io.Boolean.Input("merge_vertices", default=True,
-                                         tooltip="Merge duplicate vertices on shared edges (produces connected mesh)"),
+                                         tooltip="Weld coincident vertices along shared CAD edges into one vertex -> watertight, connected (manifold) mesh. Off = each CAD face is tessellated independently with duplicated boundary vertices (faces stay 'loose'; breaks adjacency but gives strictly per-face geometry). This is a post-process, not an OCC mesher parameter."),
                         io.Boolean.Input("relative", default=False, advanced=True,
-                                         tooltip="If True, deflection values are relative to edge size rather than absolute"),
+                                         tooltip="Applies to the LINEAR deflection ONLY (the angular deflection is always absolute radians). When ON, linear_deflection is interpreted relative to each EDGE's length — short edges get proportionally finer tessellation — relative to the edge, NOT the bounding box. Default OFF = absolute model units."),
                         io.Boolean.Input("parallel", default=False, advanced=True,
-                                         tooltip="Mesh in parallel using multiple CPU cores"),
+                                         tooltip="Tessellate independent CAD faces concurrently across CPU cores. Faster on large multi-face parts; geometry is identical."),
                         io.Float.Input("min_size", default=0.0, min=0.0, max=100.0, step=0.001, advanced=True,
-                                       tooltip="Minimum triangle edge length (0 = no minimum)"),
+                                       tooltip="Lower bound on triangle edge length, in model units. Prevents slivers / over-refinement on tiny features. 0 = no minimum (OCC picks one automatically)."),
+                        io.Boolean.Input("internal_vertices_mode", default=True, advanced=True,
+                                         tooltip="Insert vertices in the face INTERIOR (not just along boundaries/curvature) for better-shaped triangles. OFF = boundary/curvature-driven only -> fewer, more elongated interior triangles (faster, coarser interior). OCC IMeshTools 'InternalVerticesMode'."),
+                        io.Boolean.Input("control_surface_deflection", default=True, advanced=True,
+                                         tooltip="Enforce the deflection check across the surface INTERIOR, not only along edges. OFF = faster, but curved face interiors may bow out beyond linear_deflection. OCC IMeshTools 'ControlSurfaceDeflection'."),
                     ]),
                     io.DynamicCombo.Option("GMSH", [
-                        io.DynamicCombo.Input("output_dim", tooltip="2D Surface: mesh only surfaces. 3D Volume: mesh interior with tetrahedra", options=[
+                        io.DynamicCombo.Input("output_dim", tooltip="Mesh dimensionality. '2D Surface' tessellates only the outer faces into triangles — what you want for rendering, 3D printing, and segmentation. '3D Volume' additionally fills the solid interior with tetrahedra (for FEM/CFD); surfaces are meshed first, then the volume. 3D is much slower and only valid on watertight solids.", options=[
                             io.DynamicCombo.Option("2D Surface", []),
                             io.DynamicCombo.Option("3D Volume", [
                                 io.Combo.Input("algorithm_3d", options=["Delaunay", "Frontal (Netgen)", "HXT", "MMG3D"],
-                                               default="Delaunay", tooltip="3D volume meshing algorithm"),
+                                               default="Delaunay", tooltip="Tetrahedral (volume) mesher, used only for 3D Volume. Delaunay: robust general-purpose default. Frontal (Netgen): advancing-front, better-shaped tets near boundaries, slower. HXT: massively-parallel Delaunay — fastest for very large volumes. MMG3D: anisotropic / quality remeshing."),
                             ]),
                         ]),
                         io.Combo.Input("algorithm_2d", options=[
                             "Delaunay", "Automatic", "MeshAdapt", "Frontal-Delaunay",
                             "BAMG", "Frontal-Delaunay for Quads",
                             "Packing of Parallelograms", "Quasi-structured Quad"
-                        ], tooltip="2D surface meshing algorithm (always runs — surfaces are meshed first)"),
-                        io.DynamicCombo.Input("size_mode", tooltip="How to interpret mesh sizes", options=[
+                        ], tooltip="Surface (triangle) mesher — always runs, since surfaces are meshed before any 3D step. Delaunay: fast, robust, isotropic (good default). Automatic: gmsh chooses per surface. MeshAdapt: most robust on dirty/complex/near-degenerate CAD. Frontal-Delaunay: best triangle quality/uniformity (recommended for clean isotropic meshes). BAMG: anisotropic. 'Frontal-Delaunay for Quads' / 'Packing of Parallelograms' / 'Quasi-structured Quad' aim for quad-dominant or structured layouts — pair with 'recombine_to_quads' for full quads."),
+                        io.DynamicCombo.Input("size_mode", tooltip="How 'target_size' is interpreted. Absolute = edge length in model units. Relative to Bounds = fraction of the bounding-box diagonal. Curvature Adaptive = size driven purely by local curvature (target_size is ignored).", options=[
                             io.DynamicCombo.Option("Absolute", [
                                 io.Float.Input("target_size", default=1.0, min=0.0001, max=1000.0, step=0.001,
-                                               tooltip="Target element size"),
+                                               tooltip="Target triangle edge length in the SAME units as the CAD (STEP is usually mm). Element size is then clamped to [target x min_size_factor, target x max_size_factor]. Smaller = finer / more triangles. E.g. on a ~600mm-diagonal part: 1.0 -> very fine (~50k tris), 5 -> medium, 20 -> coarse."),
                                 io.Float.Input("size_factor", default=1.0, min=0.01, max=100.0, step=0.1,
-                                               tooltip="Global multiplier for all mesh sizes"),
+                                               tooltip="Global multiplier applied to ALL mesh sizes (gmsh Mesh.MeshSizeFactor), on top of target_size. 0.5 = everything twice as fine; 2.0 = twice as coarse. Quick global density knob."),
                                 io.Float.Input("min_size_factor", default=1.0, min=0.001, max=1.0, step=0.01,
-                                               tooltip="Minimum size as fraction of target"),
+                                               tooltip="Floor on element size as a fraction of target: min = target x this. 1.0 = nothing smaller than target (uniform). Lower (e.g. 0.1) lets tight features/curves refine below target."),
                                 io.Float.Input("max_size_factor", default=10.0, min=1.0, max=100.0, step=0.1,
-                                               tooltip="Maximum size as multiple of target"),
+                                               tooltip="Ceiling on element size as a multiple of target: max = target x this. 1.0 = uniform (cap at target). Higher (e.g. 10) lets flat regions use bigger triangles -> far fewer total elements."),
                             ]),
                             io.DynamicCombo.Option("Relative to Bounds", [
                                 io.Float.Input("target_size", default=1.0, min=0.0001, max=1000.0, step=0.001,
-                                               tooltip="Target element size. 0.05 = 5% of model diagonal"),
+                                               tooltip="Target edge length as a FRACTION of the bounding-box diagonal (unit/scale-independent across parts). 0.01 = 1% of the diagonal (fine), 0.05 = 5% (medium). Clamped to [x min_size_factor, x max_size_factor]. Use this for a consistent triangle count regardless of the part's absolute size."),
                                 io.Float.Input("size_factor", default=1.0, min=0.01, max=100.0, step=0.1,
-                                               tooltip="Global multiplier for all mesh sizes"),
+                                               tooltip="Global multiplier applied to ALL mesh sizes (gmsh Mesh.MeshSizeFactor), on top of target_size. 0.5 = twice as fine; 2.0 = twice as coarse."),
                                 io.Float.Input("min_size_factor", default=1.0, min=0.001, max=1.0, step=0.01,
-                                               tooltip="Minimum size as fraction of target"),
+                                               tooltip="Floor on element size as a fraction of target (target = fraction-of-diagonal here). 1.0 = uniform; lower lets fine features refine further."),
                                 io.Float.Input("max_size_factor", default=10.0, min=1.0, max=100.0, step=0.1,
-                                               tooltip="Maximum size as multiple of target"),
+                                               tooltip="Ceiling on element size as a multiple of target. 1.0 = uniform; higher lets flat regions coarsen for fewer elements."),
                             ]),
                             io.DynamicCombo.Option("Curvature Adaptive", [
                                 io.Int.Input("elements_per_2pi", default=20, min=4, max=100, step=1,
-                                             tooltip="Elements per 2*PI radians of curvature"),
+                                             tooltip="Curvature-driven sizing: number of elements placed around a FULL circle (2*PI) of curvature. 20 ~= 18 deg per segment; 40 = smoother curves / more triangles on cylinders, holes and fillets. Flat faces stay coarse. (gmsh MinimumCirclePoints.) target_size is not used in this mode."),
                                 io.Boolean.Input("extend_from_boundary", default=True,
-                                                 tooltip="Extend curvature-based sizing into volume interior"),
+                                                 tooltip="Propagate the (fine) curvature-driven size from curved boundaries into adjacent flatter regions so the size transitions smoothly. Off = flat interiors can be much coarser right next to fine curved edges (sharper size jumps)."),
+                                io.Float.Input("max_edge_length", default=0.0, min=0.0, max=10000.0, step=0.1,
+                                               tooltip="Upper bound on edge length in model units (mm). Curves still refine finer than this per 'elements_per_2pi', but FLAT faces are capped here instead of getting giant triangles. This is the key knob: curvature-guided where it matters, uniform-ish everywhere else. 0 = no cap (flat faces can be very coarse, up to 10x the bbox diagonal)."),
+                                io.Float.Input("min_edge_length", default=0.0, min=0.0, max=10000.0, step=0.001, advanced=True,
+                                               tooltip="Lower bound on edge length in model units (mm). Stops over-refinement on tiny high-curvature features (e.g. small fillets) from exploding the triangle count. 0 = auto (~0.0001 x bbox diagonal)."),
                             ]),
                         ]),
                         io.Combo.Input("element_order", options=["1", "2"],
-                                       tooltip="1 = linear, 2 = quadratic elements"),
+                                       tooltip="Polynomial order per element. 1 = linear, straight-sided triangles/tets — use for rendering, 3D printing, segmentation. 2 = quadratic (adds mid-edge nodes -> curved elements) — only for FEM accuracy; ~doubles the node count and is NOT useful for visualization."),
                         io.Int.Input("smoothing_steps", default=0, min=0, max=10, step=1,
-                                     tooltip="Elliptic smoother iterations. 0 = disabled"),
+                                     tooltip="Laplacian smoothing iterations applied DURING generation (gmsh Mesh.Smoothing): each pass nudges interior nodes toward their neighbours' average to improve triangle shape. Node movement only, no topology change. 0 = off; 1-5 is plenty. Cheap."),
                         io.Boolean.Input("optimize", default=False,
-                                         tooltip="Run mesh optimization after generation"),
+                                         tooltip="After generation, run a quality optimiser that relocates nodes and swaps edges/faces to remove badly-shaped or inverted elements (slivers). 2D = a mild Laplace2D pass; 3D Volume = the Netgen optimiser (the impactful one for tet quality). Off = use the raw mesher output."),
                         io.Int.Input("optimization_passes", default=1, min=0, max=10, step=1, advanced=True,
-                                     tooltip="Number of optimization passes"),
+                                     tooltip="How many times the optimiser (see 'optimize') runs back-to-back after generation — each pass further improves element quality with diminishing returns; 1-2 is almost always enough, >3 rarely helps. ONLY has an effect when 'optimize' is ON — ignored otherwise."),
                         io.Boolean.Input("recombine_to_quads", default=False,
-                                         tooltip="Recombine triangles into quadrangles"),
+                                         tooltip="After triangulation, merge adjacent triangle pairs into quadrilaterals (gmsh Mesh.RecombineAll) -> a quad-dominant (or all-quad) mesh. Pair with a quad-oriented 2D algorithm ('Frontal-Delaunay for Quads' / 'Quasi-structured Quad') for the cleanest quads."),
                         io.Combo.Input("subdivision", options=["None", "All Triangles", "All Quadrangles", "Barycentric"],
-                                       tooltip="Mesh refinement by subdivision"),
+                                       tooltip="Uniform refinement applied AFTER meshing (gmsh Mesh.SubdivisionAlgorithm). None = leave as generated. All Triangles = split each triangle 1->4. All Quadrangles = convert to an all-quad mesh. Barycentric = split via face centroids. Each multiplies the element count."),
+                        io.Int.Input("num_threads", default=0, min=0, max=256, step=1, advanced=True,
+                                     tooltip="CPU threads for meshing. gmsh is OpenMP-parallel but defaults to SINGLE-threaded, so this is usually free speed. 0 = use all cores. Biggest gains: 2D meshing of many-surface CAD (each surface on a thread — these parts have hundreds of faces) and the HXT 3D algorithm. Sequential Frontal meshing benefits little; results may differ slightly run-to-run when threaded."),
                         io.String.Input("gmsh_options", multiline=True, default="{}",
-                                        tooltip="Advanced Gmsh options as JSON"),
+                                        tooltip="Escape hatch: raw gmsh options as a JSON object, applied verbatim AFTER the settings above (numbers via setNumber, strings via setString), overriding them. e.g. {\"Mesh.MeshSizeFromCurvature\": 1, \"Mesh.AngleToleranceFacetOverlap\": 0.1}. See the gmsh reference manual for option names."),
                     ]),
                 ]),
                 io.Boolean.Input("extract_face_ids", default=True, optional=True,
-                                 tooltip="Store CAD face index for each mesh triangle as 'cad_face_id' face attribute"),
+                                 tooltip="Tag every triangle with the index of the CAD B-rep face it came from, as the 'cad_face_id' face attribute (one int per triangle). OCC tessellates each TopoDS_Face separately, so this is exact and free — the basis for per-face segmentation/colouring. IDs follow the face enumeration order: stable for a given shape, but renumbered for a different/edited model."),
             ],
             outputs=[
                 io.Custom("TRIMESH").Output(display_name="trimesh"),
                 io.Custom("MESH_METADATA").Output(display_name="metadata"),
+                io.String.Output(display_name="info"),
             ],
         )
 
@@ -481,6 +553,7 @@ class CAD_Mesh(io.ComfyNode):
     @classmethod
     def _mesh_brep(cls, cad_model, linear_deflection=0.1, angular_deflection=0.5,
                    relative=False, parallel=False, min_size=0.0,
+                   internal_vertices_mode=True, control_surface_deflection=True,
                    merge_vertices=True, extract_face_ids=True, **_kwargs):
         import trimesh
         from OCC.Core.BRepMesh import BRepMesh_IncrementalMesh
@@ -504,6 +577,11 @@ class CAD_Mesh(io.ComfyNode):
         params.Relative = relative
         params.InParallel = parallel
         params.MinSize = min_size
+        # Set defensively: these exist on OCC 7.x but guard in case of API drift.
+        for _attr, _val in (("InternalVerticesMode", internal_vertices_mode),
+                            ("ControlSurfaceDeflection", control_surface_deflection)):
+            if hasattr(params, _attr):
+                setattr(params, _attr, _val)
 
         with log_operation("BRepMesh", linear_deflection=linear_deflection, angular_deflection=angular_deflection,
                            relative=relative, parallel=parallel, min_size=min_size):
@@ -606,7 +684,11 @@ class CAD_Mesh(io.ComfyNode):
         log.info(f"CAD_Mesh [BRepIncremental]: {len(tm.vertices)} verts, {len(tm.faces)} faces "
                  f"from {cad_face_idx} CAD faces (merged={merge_vertices}, before={verts_before})")
 
-        return io.NodeOutput(tm, metadata)
+        diag = _mesh_diagnostics(tm, occ_shape)
+        metadata.update(diag)
+        info = _mesh_info_str("BRepIncremental", tm, metadata, diag)
+        log.info("[CAD_Mesh] %s", info.replace("\n", " | "))
+        return io.NodeOutput(tm, metadata, info, ui={"text": [info]})
 
     # -------------------------------------------------------------------------
     # GMSH backend
@@ -617,14 +699,35 @@ class CAD_Mesh(io.ComfyNode):
                    target_size=1.0, size_factor=1.0,
                    min_size_factor=1.0, max_size_factor=10.0,
                    elements_per_2pi=20, extend_from_boundary=True,
+                   max_edge_length=0.0, min_edge_length=0.0,
                    smoothing_steps=0, optimize=False, optimization_passes=1,
                    recombine_to_quads=False, subdivision="None",
-                   element_order="1", extract_face_ids=True, gmsh_options="{}", **_kwargs):
+                   element_order="1", extract_face_ids=True, num_threads=0, gmsh_options="{}", **_kwargs):
         try:
             import gmsh
             import json
         except ImportError:
             raise ImportError("Gmsh not installed. Run: pip install gmsh")
+
+        # --- DEBUG: exactly what reached the mesher (catches nested-DynamicCombo plumbing bugs) ---
+        log.info("[GMSH] launching meshing — mode=%s | 2D algo=%s | 3D algo=%s | target_size=%s | order=%s | "
+                 "optimize=%s (passes=%d) | smoothing=%d | recombine=%s | subdivision=%s | threads=%s | face_ids=%s",
+                 size_mode, algorithm_2d, (algorithm_3d if output_dim == "3D Volume" else "n/a (2D surface)"),
+                 target_size, element_order, ("yes" if optimize else "no"), optimization_passes,
+                 smoothing_steps, ("yes" if recombine_to_quads else "no"), subdivision,
+                 (num_threads if num_threads else "all"),
+                 ("yes" if extract_face_ids else "no"))
+        log.info("[GMSH] >>> _mesh_gmsh called")
+        log.info("[GMSH] size: size_mode=%r target_size=%r size_factor=%r min_size_factor=%r max_size_factor=%r",
+                 size_mode, target_size, size_factor, min_size_factor, max_size_factor)
+        log.info("[GMSH] curv: elements_per_2pi=%r extend_from_boundary=%r max_edge_length=%r min_edge_length=%r",
+                 elements_per_2pi, extend_from_boundary, max_edge_length, min_edge_length)
+        log.info("[GMSH] algo: output_dim=%r algorithm_2d=%r algorithm_3d=%r element_order=%r",
+                 output_dim, algorithm_2d, algorithm_3d, element_order)
+        log.info("[GMSH] post: smoothing_steps=%r optimize=%r optimization_passes=%r recombine=%r subdivision=%r extract_face_ids=%r",
+                 smoothing_steps, optimize, optimization_passes, recombine_to_quads, subdivision, extract_face_ids)
+        if _kwargs:
+            log.warning("[GMSH] UNCONSUMED kwargs (likely a widget-name/plumbing mismatch): %r", _kwargs)
 
         # 2D algorithm mappings (from Gmsh docs)
         algo_2d_map = {
@@ -703,13 +806,20 @@ class CAD_Mesh(io.ComfyNode):
                 gmsh.option.setNumber("Mesh.CharacteristicLengthFromCurvature", 0)
 
             elif size_mode == "Curvature Adaptive":
-                log.info(f" Curvature adaptive: elements_per_2pi={elements_per_2pi}, extend_from_boundary={extend_from_boundary}")
+                # Curvature drives the size; the Min/Max clamps bound it. A user-set
+                # max_edge_length caps flat faces (curves still refine finer); else
+                # the historical diagonal*10 (effectively uncapped) is used.
+                _cmax = max_edge_length if (max_edge_length and max_edge_length > 0) else diagonal * 10.0
+                _cmin = min_edge_length if (min_edge_length and min_edge_length > 0) else diagonal * 0.0001
+                log.info(f" Curvature adaptive: elements_per_2pi={elements_per_2pi}, extend_from_boundary={extend_from_boundary}, "
+                         f"max_edge={_cmax:.4f} ({'user' if max_edge_length>0 else 'auto'}), "
+                         f"min_edge={_cmin:.4f} ({'user' if min_edge_length>0 else 'auto'})")
 
                 gmsh.option.setNumber("Mesh.CharacteristicLengthFromCurvature", 1)
                 gmsh.option.setNumber("Mesh.MinimumCirclePoints", elements_per_2pi)
 
-                gmsh.option.setNumber("Mesh.CharacteristicLengthMin", diagonal * 0.0001)
-                gmsh.option.setNumber("Mesh.CharacteristicLengthMax", diagonal * 10.0)
+                gmsh.option.setNumber("Mesh.CharacteristicLengthMin", _cmin)
+                gmsh.option.setNumber("Mesh.CharacteristicLengthMax", _cmax)
 
                 if extend_from_boundary:
                     gmsh.option.setNumber("Mesh.CharacteristicLengthExtendFromBoundary", 1)
@@ -731,6 +841,18 @@ class CAD_Mesh(io.ComfyNode):
                 gmsh.option.setNumber("Mesh.CharacteristicLengthMax", actual_max_size)
                 gmsh.option.setNumber("Mesh.CharacteristicLengthFromCurvature", 0)
 
+            # --- DEBUG: the EFFECTIVE size options gmsh will actually use ---
+            log.info("[GMSH] sizing branch=%r diagonal=%.6f -> actual_target=%.6f actual_min=%.6f actual_max=%.6f",
+                     size_mode, diagonal, actual_target_size, actual_min_size, actual_max_size)
+            for _k in ("Mesh.MeshSizeFactor", "Mesh.MeshSizeMin", "Mesh.MeshSizeMax",
+                       "Mesh.CharacteristicLengthMin", "Mesh.CharacteristicLengthMax",
+                       "Mesh.MeshSizeFromCurvature", "Mesh.MeshSizeFromPoints",
+                       "Mesh.MeshSizeExtendFromBoundary", "Mesh.MinimumCirclePoints"):
+                try:
+                    log.info("[GMSH]   effective %s = %s", _k, gmsh.option.getNumber(_k))
+                except Exception as _e:
+                    log.info("[GMSH]   effective %s = <unavailable: %s>", _k, _e)
+
             # Set 2D algorithm (always used - surfaces are meshed first even for 3D)
             gmsh.option.setNumber("Mesh.Algorithm", algo_2d_map.get(algorithm_2d, 2))
 
@@ -738,6 +860,15 @@ class CAD_Mesh(io.ComfyNode):
             is_3d = output_dim == "3D Volume"
             if is_3d:
                 gmsh.option.setNumber("Mesh.Algorithm3D", algo_3d_map.get(algorithm_3d, 1))
+
+            # Threads (gmsh defaults to single-threaded). 0 = all cores.
+            import os as _os
+            _nthreads = int(num_threads) if num_threads and int(num_threads) > 0 else (_os.cpu_count() or 1)
+            gmsh.option.setNumber("General.NumThreads", _nthreads)
+            gmsh.option.setNumber("Mesh.MaxNumThreads1D", _nthreads)
+            gmsh.option.setNumber("Mesh.MaxNumThreads2D", _nthreads)
+            gmsh.option.setNumber("Mesh.MaxNumThreads3D", _nthreads)
+            log.info("[GMSH] threads = %d (num_threads input=%s, cores=%s)", _nthreads, num_threads, _os.cpu_count())
 
             # Set element order
             gmsh.option.setNumber("Mesh.ElementOrder", int(element_order))
@@ -782,6 +913,15 @@ class CAD_Mesh(io.ComfyNode):
             dim = 3 if is_3d else 2
             with log_operation("GMSH mesh.generate", dim=dim, algorithm_2d=algorithm_2d):
                 gmsh.model.mesh.generate(dim)
+
+            # --- DEBUG: resulting element counts (so a no-op change is obvious in the log) ---
+            try:
+                _e2 = gmsh.model.mesh.getElements(2)[1]
+                _ntri = sum(len(a) for a in _e2) if _e2 else 0
+                _nnodes = len(gmsh.model.mesh.getNodes()[0])
+                log.info("[GMSH] generated: %d surface elements, %d nodes (dim=%d)", _ntri, _nnodes, dim)
+            except Exception as _e:
+                log.info("[GMSH] could not count elements: %s", _e)
 
             # Write Gmsh logs to file
             logs = gmsh.logger.get()
@@ -971,7 +1111,13 @@ class CAD_Mesh(io.ComfyNode):
                      f"{len(vertices)} vertices, {len(triangulated_faces)} triangular faces, "
                      f"size: {actual_target_size:.4f} ({size_mode}), algo: {algorithm_2d}")
 
-            return io.NodeOutput(tm, metadata)
+            diag = _mesh_diagnostics(tm, occ_shape)
+            metadata.update(diag)
+            metadata.setdefault("size_mode", size_mode)
+            metadata.setdefault("target_size", actual_target_size)
+            info = _mesh_info_str("GMSH", tm, metadata, diag)
+            log.info("[CAD_Mesh] %s", info.replace("\n", " | "))
+            return io.NodeOutput(tm, metadata, info, ui={"text": [info]})
 
         except Exception as e:
             raise RuntimeError(f"GMSH mesh generation failed: {str(e)}")
