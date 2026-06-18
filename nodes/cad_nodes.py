@@ -293,6 +293,13 @@ class CAD_Load(io.ComfyNode):
         )
 
     @classmethod
+    def validate_inputs(cls, **kwargs):
+        """Accept any filename (execute() resolves/raises). This skips the combo
+        "Value not in list" check so just-uploaded CAD files -- added to the widget
+        client-side but not in the cached schema options -- still validate."""
+        return True
+
+    @classmethod
     def execute(cls, filename):
         import hashlib
 
