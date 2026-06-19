@@ -257,21 +257,143 @@ def _save_cache_metadata(metadata, path):
         json.dump(metadata, f)
 
 
+_CAD_EXTENSIONS = ['.step', '.stp', '.iges', '.igs', '.brep']
+_NO_CAD_FILES = "(no CAD files found in input/cad)"
+
+# Scan sources mirroring GeometryPack's Load Mesh: recursive input/cad (values
+# input-relative, e.g. "cad/foo.step") plus top-level files in the input root
+# (bare names). Shared by the initial snapshot (_get_cad_files) and the comfy-env
+# live-refresh marker so both produce identical option values.
+_CAD_SOURCES = [
+    {"dir": "cad", "recursive": True, "rel_to_input": True},
+    {"dir": "", "recursive": False, "rel_to_input": False},
+]
+
+
+def _scan_cad_sources(base, sources):
+    """Scan input sources for CAD files. Mirrors comfy-env's parent-side scanner
+    so the snapshot and live refresh agree. Returns sorted, de-duplicated values."""
+    names, seen = [], set()
+    for src in sources:
+        subdir = src.get("dir", "") or ""
+        recursive = bool(src.get("recursive", False))
+        rel_to_input = bool(src.get("rel_to_input", False))
+        root = os.path.join(base, subdir) if subdir else base
+        try:
+            if recursive:
+                walked = (
+                    (r, fn)
+                    for r, _d, files in os.walk(root)
+                    for fn in files
+                )
+                for r, fn in walked:
+                    if os.path.splitext(fn)[1].lower() not in _CAD_EXTENSIONS:
+                        continue
+                    rel = os.path.relpath(os.path.join(r, fn),
+                                          base if rel_to_input else root)
+                    val = rel.replace(os.sep, "/")
+                    if val not in seen:
+                        seen.add(val)
+                        names.append(val)
+            else:
+                for fn in os.listdir(root):
+                    if not os.path.isfile(os.path.join(root, fn)):
+                        continue
+                    if os.path.splitext(fn)[1].lower() not in _CAD_EXTENSIONS:
+                        continue
+                    val = (os.path.join(subdir, fn).replace(os.sep, "/")
+                           if rel_to_input and subdir else fn)
+                    if val not in seen:
+                        seen.add(val)
+                        names.append(val)
+        except Exception:
+            continue
+    names.sort()
+    return names
+
+
 def _get_cad_files():
-    """Get CAD files from input/cad directory."""
-    input_dir = folder_paths.get_input_directory()
-    cad_dir = os.path.join(input_dir, 'cad')
-    cad_files = []
-    if os.path.exists(cad_dir) and os.path.isdir(cad_dir):
-        cad_extensions = ['.step', '.stp', '.iges', '.igs', '.brep']
-        for filename in os.listdir(cad_dir):
-            ext = os.path.splitext(filename)[1].lower()
-            if ext in cad_extensions:
-                cad_files.append(filename)
-        cad_files.sort()
+    """Get available CAD files (input/cad recursively + input root top-level)."""
+    base = folder_paths.get_input_directory()
+    cad_files = _scan_cad_sources(base, _CAD_SOURCES)
     if not cad_files:
-        cad_files = ["(no CAD files found in input/cad)"]
+        cad_files = [_NO_CAD_FILES]
     return cad_files
+
+
+def _resolve_cad_path(file_path):
+    """Resolve a CAD file path the way GeometryPack's Load Mesh does: try
+    input/cad/<p>, then input/<p>, then as an absolute path. Returns the resolved
+    absolute path, or raises FileNotFoundError listing every location searched."""
+    if not file_path or not str(file_path).strip():
+        raise ValueError("CAD file path cannot be empty")
+    base = folder_paths.get_input_directory()
+    searched = []
+    for candidate in (
+        os.path.join(base, 'cad', file_path),
+        os.path.join(base, file_path),
+        file_path,
+    ):
+        searched.append(candidate)
+        if os.path.isfile(candidate):
+            return candidate
+    msg = f"CAD file not found: '{file_path}'\nSearched in:"
+    for p in searched:
+        msg += f"\n  - {p}"
+    raise FileNotFoundError(msg)
+
+
+def _load_cad_model(cad_file_path):
+    """Load a resolved CAD file into a CAD_MODEL dict, with BREP caching for
+    STEP/IGES. Shared by CAD_Load (combo) and CAD_Load_Path (string path)."""
+    import hashlib
+
+    name = os.path.basename(cad_file_path)
+    ext = os.path.splitext(cad_file_path)[1].lower()
+    metadata = {}
+
+    # BREP cache for STEP/IGES files (avoids expensive TransferRoots on reload)
+    if ext in ['.step', '.stp', '.iges', '.igs']:
+        cache_dir = os.path.join(os.path.dirname(cad_file_path), '.brep_cache')
+        os.makedirs(cache_dir, exist_ok=True)
+
+        # Cache key = absolute path + modification time (auto-invalidates on change)
+        mtime = os.path.getmtime(cad_file_path)
+        cache_key = hashlib.md5(f"{cad_file_path}_{mtime}".encode()).hexdigest()
+        cache_brep = os.path.join(cache_dir, f"{cache_key}.brep")
+        cache_meta = os.path.join(cache_dir, f"{cache_key}.json")
+
+        if os.path.exists(cache_brep):
+            # FAST PATH: Use cached BREP
+            log.info(f" Using cache: {name}")
+            metadata = _load_cache_metadata(cache_meta)
+            brep_path = cache_brep
+        else:
+            # SLOW PATH: Load original, create cache
+            log.info(f" Loading CAD file: {name}")
+            occ_shape, metadata = _load_step_or_iges(cad_file_path, ext, name)
+            _save_brep(occ_shape, cache_brep)
+            if metadata:
+                _save_cache_metadata(metadata, cache_meta)
+            log.info(f" Cached to BREP: {name}")
+            brep_path = cache_brep
+    else:
+        # BREP files - use directly (no caching needed, already native format)
+        log.info(f" Using BREP file: {name}")
+        brep_path = cad_file_path
+
+    # Build CAD_MODEL return dict with brep_path (not occ_shape) to avoid pickle
+    # issues when crossing process boundaries.
+    cad_data = {
+        "brep_path": brep_path,
+        "file_path": cad_file_path,
+        "format": ext,
+    }
+    if metadata:
+        cad_data["metadata"] = metadata
+
+    log.info(f" Ready: {name}")
+    return cad_data
 
 
 class CAD_Load(io.ComfyNode):
@@ -285,7 +407,16 @@ class CAD_Load(io.ComfyNode):
             category="CADabra",
             inputs=[
                 io.Combo.Input("filename", options=_get_cad_files(),
-                               tooltip="Select CAD file from input/cad folder"),
+                               tooltip="Select CAD file from input/cad folder",
+                               extra_dict={
+                                   # comfy-env: re-scan input/cad (and input root)
+                                   # live so newly uploaded files appear without a
+                                   # restart. Mirrors GeometryPack's Load Mesh.
+                                   "comfy_env_dynamic_dir": "cad",
+                                   "comfy_env_sources": _CAD_SOURCES,
+                                   "comfy_env_exts": _CAD_EXTENSIONS,
+                                   "comfy_env_placeholder": _NO_CAD_FILES,
+                               }),
             ],
             outputs=[
                 io.Custom("CAD_MODEL").Output(display_name="cad_model"),
@@ -301,8 +432,6 @@ class CAD_Load(io.ComfyNode):
 
     @classmethod
     def execute(cls, filename):
-        import hashlib
-
         # Check if placeholder (no files found)
         if filename.startswith("(no CAD files found"):
             raise FileNotFoundError(
@@ -310,61 +439,43 @@ class CAD_Load(io.ComfyNode):
                 "Please add .step, .stp, .iges, .igs, or .brep files to ComfyUI/input/cad/"
             )
 
-        # Build path to the CAD file
-        input_dir = folder_paths.get_input_directory()
-        cad_dir = os.path.join(input_dir, 'cad')
-        cad_file_path = os.path.join(cad_dir, filename)
+        cad_file_path = _resolve_cad_path(filename)
+        return io.NodeOutput(_load_cad_model(cad_file_path))
 
-        # Verify file exists
-        if not os.path.exists(cad_file_path):
-            raise FileNotFoundError(f"CAD file not found: {cad_file_path}")
 
-        ext = os.path.splitext(cad_file_path)[1].lower()
-        metadata = {}
+class CAD_Load_Path(io.ComfyNode):
+    """Load a CAD file (STEP, IGES, BREP) by typing its path, instead of picking
+    from the dropdown. Mirrors GeometryPack's Load Mesh (Path)."""
 
-        # BREP cache for STEP/IGES files (avoids expensive TransferRoots on reload)
-        if ext in ['.step', '.stp', '.iges', '.igs']:
-            cache_dir = os.path.join(cad_dir, '.brep_cache')
-            os.makedirs(cache_dir, exist_ok=True)
+    @classmethod
+    def define_schema(cls):
+        return io.Schema(
+            node_id="CAD_Load_Path",
+            display_name="Load CAD (Path)",
+            category="CADabra",
+            inputs=[
+                io.String.Input(
+                    "file_path", default="", multiline=False,
+                    tooltip="Path to a CAD file. Resolved against input/cad, then "
+                            "the input folder, then as an absolute path."),
+            ],
+            outputs=[
+                io.Custom("CAD_MODEL").Output(display_name="cad_model"),
+            ],
+        )
 
-            # Cache key = filename + modification time (auto-invalidates on file change)
-            mtime = os.path.getmtime(cad_file_path)
-            cache_key = hashlib.md5(f"{filename}_{mtime}".encode()).hexdigest()
-            cache_brep = os.path.join(cache_dir, f"{cache_key}.brep")
-            cache_meta = os.path.join(cache_dir, f"{cache_key}.json")
+    @classmethod
+    def fingerprint_inputs(cls, file_path):
+        """Force re-execution when the resolved file changes on disk."""
+        try:
+            return os.path.getmtime(_resolve_cad_path(file_path))
+        except Exception:
+            return file_path
 
-            if os.path.exists(cache_brep):
-                # FAST PATH: Use cached BREP
-                log.info(f" Using cache: {filename}")
-                metadata = _load_cache_metadata(cache_meta)
-                brep_path = cache_brep
-            else:
-                # SLOW PATH: Load original, create cache
-                log.info(f" Loading CAD file: {filename}")
-                occ_shape, metadata = _load_step_or_iges(cad_file_path, ext, filename)
-                _save_brep(occ_shape, cache_brep)
-                if metadata:
-                    _save_cache_metadata(metadata, cache_meta)
-                log.info(f" Cached to BREP: {filename}")
-                brep_path = cache_brep
-        else:
-            # BREP files - use directly (no caching needed, already native format)
-            log.info(f" Using BREP file: {filename}")
-            brep_path = cad_file_path
-
-        # Build CAD_MODEL return dict with brep_path (not occ_shape)
-        # This avoids pickle issues when crossing process boundaries
-        cad_data = {
-            "brep_path": brep_path,
-            "file_path": cad_file_path,
-            "format": ext,
-        }
-
-        if metadata:
-            cad_data["metadata"] = metadata
-
-        log.info(f" Ready: {filename}")
-        return io.NodeOutput(cad_data)
+    @classmethod
+    def execute(cls, file_path):
+        cad_file_path = _resolve_cad_path(file_path)
+        return io.NodeOutput(_load_cad_model(cad_file_path))
 
 
 
@@ -2622,6 +2733,7 @@ class PreviewCADBatch(io.ComfyNode):
 # Node registration
 NODE_CLASS_MAPPINGS = {
     "CAD_Load": CAD_Load,
+    "CAD_Load_Path": CAD_Load_Path,
     "CAD_Load_From_Glob": CAD_Load_From_Glob,
     "CAD_Mesh": CAD_Mesh,
     "CAD_Quality_Metrics": CAD_Quality_Metrics,
@@ -2631,6 +2743,7 @@ NODE_CLASS_MAPPINGS = {
 
 NODE_DISPLAY_NAME_MAPPINGS = {
     "CAD_Load": "Load CAD",
+    "CAD_Load_Path": "Load CAD (Path)",
     "CAD_Load_From_Glob": "Load CADs from Glob",
     "CAD_Mesh": "Mesh CAD",
     "CAD_Quality_Metrics": "CAD Quality Metrics",
