@@ -25,7 +25,6 @@ _CHANNELS_FULL = [
     "height", "normal_x", "normal_y", "normal_z",
     "position_x", "position_y", "position_z",
     "face_id", "curv_gauss", "curv_mean", "curv_min", "curv_max",
-    "curv_xx", "curv_yy", "curv_xy",
     "hit_mask",
 ]
 _CHANNELS_NORMALS = [
@@ -186,26 +185,9 @@ class CADRaytracerBVH(io.ComfyNode):
                     curv_min = np.zeros((H, W), dtype=np.float32)
                     curv_max = np.zeros((H, W), dtype=np.float32)
 
-                # Analytic height-field Hessian d2Z/dX2, d2Z/dY2, d2Z/dXdY (occt_rt >= 1.3.1).
-                # These feed the decode-ready full-Hessian curvature image
-                # (R=curv_xy, G=curv_xx, B=curv_yy).
-                if "curv_xx" in results:
-                    curv_xx = results["curv_xx"].astype(np.float32)
-                    curv_yy = results["curv_yy"].astype(np.float32)
-                    curv_xy = results["curv_xy"].astype(np.float32)
-                    curv_xx[~hits] = 0.0
-                    curv_yy[~hits] = 0.0
-                    curv_xy[~hits] = 0.0
-                else:
-                    log.warning(" occt_rt build lacks curv_xx/yy/xy (need >= 1.3.1); writing zeros")
-                    curv_xx = np.zeros((H, W), dtype=np.float32)
-                    curv_yy = np.zeros((H, W), dtype=np.float32)
-                    curv_xy = np.zeros((H, W), dtype=np.float32)
-
                 channels = [height, normal_x, normal_y, normal_z,
                             position_x, position_y, position_z,
                             face_id, curv_gauss, curv_mean, curv_min, curv_max,
-                            curv_xx, curv_yy, curv_xy,
                             hit_mask]
                 channel_names = list(_CHANNELS_FULL)
 
