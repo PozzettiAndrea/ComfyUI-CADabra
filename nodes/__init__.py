@@ -18,6 +18,8 @@ _MODULES = [
     ".cad_curve_plotter_node",
     ".cad_curvature_viewer_node",
     ".cad_primitive_reconstruction_node",
+    ".cad_preview_dual_node",
+    ".coord_system_to_transform_node",
 ]
 
 NODE_CLASS_MAPPINGS = {}

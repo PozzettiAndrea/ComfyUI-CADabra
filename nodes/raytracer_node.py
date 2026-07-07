@@ -64,15 +64,57 @@ class CADRaytracerBVH(io.ComfyNode):
                 io.String.Input("roi", default="",
                                 tooltip="ROI bounds (X1,Y1,X2,Y2) - connect from ROI Selector to crop render area",
                                 optional=True),
+                io.String.Input("npz_name", default="",
+                                tooltip="Output .npz base name. Leave BLANK for batches/ROIs: the file is "
+                                        "auto-named 'raycast_<hash of inputs>.npz' so identical inputs reuse the "
+                                        "same stable file (lets downstream Load Multiband / Z-Height cache instead "
+                                        "of re-running). Set a name only for a single render -> '<name>.npz' exactly.",
+                                optional=True),
             ],
             outputs=[
                 io.String.Output(display_name="npz_path"),
             ],
         )
 
+    @staticmethod
+    def _render_key(cad_model, resolution, deflection, backend, output_mode, roi):
+        """Stable hash of everything that affects the rendered .npz (NOT the file name)."""
+        import hashlib
+        h = hashlib.sha256()
+        cm = cad_model or {}
+        bp = cm.get("brep_path") or cm.get("file_path") or ""
+        h.update(str(bp).encode())
+        try:
+            h.update(str(os.path.getmtime(bp)).encode())
+        except Exception:
+            pass
+        for x in (int(resolution), float(deflection), str(backend), str(output_mode), str(roi or "")):
+            h.update(repr(x).encode())
+        return h.hexdigest()
+
+    @classmethod
+    def fingerprint_inputs(cls, cad_model, resolution, deflection,
+                           backend="embree", output_mode="full", roi="", npz_name=""):
+        """Content-based cache key so the (expensive) raytrace is skipped when nothing changed,
+        even if an upstream node re-executes and hands us a fresh-but-identical cad_model/roi."""
+        return cls._render_key(cad_model, resolution, deflection, backend, output_mode, roi) + "|" + str(npz_name or "")
+
     @classmethod
     def execute(cls, cad_model, resolution, deflection,
-                backend="embree", output_mode="full", roi=""):
+                backend="embree", output_mode="full", roi="", npz_name=""):
+        # Deterministic, idempotent output: the .npz name encodes every render input, so the
+        # SAME inputs always map to the SAME file. If it already exists we skip the (expensive)
+        # raytrace entirely and return it untouched -> its bytes never change -> Load Multiband's
+        # content-hash stays stable -> the whole downstream chain caches instead of re-running.
+        out_dir = folder_paths.get_output_directory()
+        _name = (npz_name or "").strip()
+        prefix = (_name + "_") if _name else "raycast_"
+        key = cls._render_key(cad_model, resolution, deflection, backend, output_mode, roi)
+        npz_path = os.path.join(out_dir, f"{prefix}{key[:12]}.npz")
+        if os.path.exists(npz_path):
+            log.info(f" Reusing cached raytrace (inputs unchanged): {npz_path}")
+            return io.NodeOutput(npz_path)
+
         from .utils.brep_cache import get_occ_shape
 
         shape = get_occ_shape(cad_model)
@@ -212,9 +254,7 @@ class CADRaytracerBVH(io.ComfyNode):
         # Stack into (1, C, H, W) and save as .npz
         stacked = np.stack(channels, axis=0)[np.newaxis, ...].astype(np.float32)
 
-        out_dir = folder_paths.get_output_directory()
-        npz_path = os.path.join(out_dir, f"raycast_{uuid.uuid4().hex[:8]}.npz")
-        np.savez_compressed(npz_path, samples=stacked,
+        np.savez_compressed(npz_path, samples=stacked,                # npz_path computed at top
                             channel_names=np.array(channel_names, dtype=object))
 
         log.info(f" Raytracing complete. {len(channels)} channels, shape: ({H}, {W})")

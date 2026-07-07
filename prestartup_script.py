@@ -20,6 +20,7 @@ copy_files(SCRIPT_DIR / "assets" / "3d", COMFYUI_DIR / "input" / "3d", "**/*")
 viewers = [
     "cad_analysis", "cad_curve", "cad_edge", "cad_edge_detail",
     "cad_edge_vtk", "cad_hierarchy", "cad_occ", "cad_roi", "cad_spline",
+    "cad_dual",
 ]
 for viewer in viewers:
     try:

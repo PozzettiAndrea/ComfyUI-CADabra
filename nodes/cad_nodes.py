@@ -357,21 +357,43 @@ def _load_cad_model(cad_file_path):
         cache_dir = os.path.join(os.path.dirname(cad_file_path), '.brep_cache')
         os.makedirs(cache_dir, exist_ok=True)
 
+        # Auto-apply the AutoForm draw-direction tipping from a sibling <stem>_axis.igs
+        # (IGES only), matching "Load CAD From Glob" / load_subprocess.py so every loader
+        # produces the same tipped geometry. The axis file's mtime is folded into the cache
+        # key so any pre-existing (un-tipped) cache is invalidated and a changed axis re-tips.
+        axis_path = None
+        cache_extra = ""
+        if ext in ['.iges', '.igs'] and not cad_file_path.endswith('_axis.igs'):
+            cand = os.path.splitext(cad_file_path)[0] + '_axis.igs'
+            if os.path.exists(cand):
+                axis_path = cand
+                cache_extra = f"_axis{os.path.getmtime(cand)}"
+
         # Cache key = absolute path + modification time (auto-invalidates on change)
         mtime = os.path.getmtime(cad_file_path)
-        cache_key = hashlib.md5(f"{cad_file_path}_{mtime}".encode()).hexdigest()
+        cache_key = hashlib.md5(f"{cad_file_path}_{mtime}{cache_extra}".encode()).hexdigest()
         cache_brep = os.path.join(cache_dir, f"{cache_key}.brep")
         cache_meta = os.path.join(cache_dir, f"{cache_key}.json")
 
         if os.path.exists(cache_brep):
-            # FAST PATH: Use cached BREP
+            # FAST PATH: Use cached BREP (already tipped if an axis applied when cached)
             log.info(f" Using cache: {name}")
             metadata = _load_cache_metadata(cache_meta)
             brep_path = cache_brep
         else:
-            # SLOW PATH: Load original, create cache
+            # SLOW PATH: Load original, (optionally) tip via _axis.igs, create cache
             log.info(f" Loading CAD file: {name}")
             occ_shape, metadata = _load_step_or_iges(cad_file_path, ext, name)
+            if axis_path:
+                axis_data = parse_axis_igs(axis_path)
+                if axis_data:
+                    trsf = build_axis_transform(axis_data)
+                    if trsf:
+                        occ_shape = apply_transform_to_shape(occ_shape, trsf)
+                        log.info(f" Applied axis transform from {os.path.basename(axis_path)}")
+                        if not isinstance(metadata, dict):
+                            metadata = {}
+                        metadata["axis_transform_applied"] = True
             _save_brep(occ_shape, cache_brep)
             if metadata:
                 _save_cache_metadata(metadata, cache_meta)
