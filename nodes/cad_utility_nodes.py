@@ -49,6 +49,8 @@ from OCC.Core.TopExp import TopExp_Explorer, topexp
 from OCC.Core.TopoDS import TopoDS_Compound, topods
 from OCC.Core.TopTools import TopTools_IndexedMapOfShape
 from OCC.Core.ShapeFix import ShapeFix_Shape, ShapeFix_FixSmallFace, ShapeFix_Wireframe
+from OCC.Core.GProp import GProp_GProps
+from OCC.Core.BRepGProp import brepgprop
 
 
 
@@ -62,6 +64,68 @@ def _make_cad_model(occ_shape, original_cad_model=None, name_hint="shape"):
     """Create new CAD_MODEL dict (saves shape to brep_path)."""
     from .utils.brep_cache import make_cad_model
     return make_cad_model(occ_shape, original_cad_model, name_hint)
+
+
+def _find_connected_face_components(shape):
+    """Group a shape's faces into connected components (faces linked via a shared edge).
+
+    Returns (faces, components_face_indices): faces is the flat list of every
+    TopoDS_Face in the shape; components_face_indices is a list of lists of
+    indices into faces, one list per connected component.
+    """
+    faces = []
+    explorer = TopExp_Explorer(shape, TopAbs_FACE)
+    while explorer.More():
+        faces.append(topods.Face(explorer.Current()))
+        explorer.Next()
+
+    if len(faces) == 0:
+        return faces, []
+
+    # Build adjacency using shared edges
+    edge_map = TopTools_IndexedMapOfShape()
+    topexp.MapShapes(shape, TopAbs_EDGE, edge_map)
+
+    edge_to_faces = {}
+    for face_idx, face in enumerate(faces):
+        edge_explorer = TopExp_Explorer(face, TopAbs_EDGE)
+        while edge_explorer.More():
+            edge = edge_explorer.Current()
+            edge_index = edge_map.FindIndex(edge)
+            if edge_index > 0:
+                if edge_index not in edge_to_faces:
+                    edge_to_faces[edge_index] = set()
+                edge_to_faces[edge_index].add(face_idx)
+            edge_explorer.Next()
+
+    adjacency = {i: set() for i in range(len(faces))}
+    for edge_index, face_indices in edge_to_faces.items():
+        face_list = list(face_indices)
+        for i in range(len(face_list)):
+            for j in range(i + 1, len(face_list)):
+                adjacency[face_list[i]].add(face_list[j])
+                adjacency[face_list[j]].add(face_list[i])
+
+    # Find connected components via BFS
+    visited = set()
+    components_face_indices = []
+
+    for start_face in range(len(faces)):
+        if start_face in visited:
+            continue
+        component = []
+        queue = [start_face]
+        visited.add(start_face)
+        while queue:
+            current = queue.pop(0)
+            component.append(current)
+            for neighbor in adjacency[current]:
+                if neighbor not in visited:
+                    visited.add(neighbor)
+                    queue.append(neighbor)
+        components_face_indices.append(component)
+
+    return faces, components_face_indices
 
 
 class CADExtractFaces(io.ComfyNode):
@@ -887,7 +951,8 @@ class CADGetFilename(io.ComfyNode):
                 filenames.append("unknown")
 
         log.info(f" Extracted {len(filenames)} filename(s)")
-        return io.NodeOutput(filenames)
+        info = "\n".join(filenames) if filenames else "(no filenames)"
+        return io.NodeOutput(filenames, ui={"text": [info]})
 
 
 class CADCheckOverlappingFaces(io.ComfyNode):
@@ -1332,60 +1397,11 @@ class CADSplitComponents(io.ComfyNode):
         """Split CAD model into separate models per connected component."""
         shape = _get_occ_shape(cad_model)
 
-        # Get all faces
-        faces = []
-        explorer = TopExp_Explorer(shape, TopAbs_FACE)
-        while explorer.More():
-            faces.append(topods.Face(explorer.Current()))
-            explorer.Next()
+        faces, components_face_indices = _find_connected_face_components(shape)
 
         if len(faces) == 0:
             log.info(" No faces found in CAD model")
-            return ([], 0, "")
-
-        # Build adjacency using shared edges
-        edge_map = TopTools_IndexedMapOfShape()
-        topexp.MapShapes(shape, TopAbs_EDGE, edge_map)
-
-        edge_to_faces = {}
-        for face_idx, face in enumerate(faces):
-            edge_explorer = TopExp_Explorer(face, TopAbs_EDGE)
-            while edge_explorer.More():
-                edge = edge_explorer.Current()
-                edge_index = edge_map.FindIndex(edge)
-                if edge_index > 0:
-                    if edge_index not in edge_to_faces:
-                        edge_to_faces[edge_index] = set()
-                    edge_to_faces[edge_index].add(face_idx)
-                edge_explorer.Next()
-
-        # Build adjacency graph
-        adjacency = {i: set() for i in range(len(faces))}
-        for edge_index, face_indices in edge_to_faces.items():
-            face_list = list(face_indices)
-            for i in range(len(face_list)):
-                for j in range(i + 1, len(face_list)):
-                    adjacency[face_list[i]].add(face_list[j])
-                    adjacency[face_list[j]].add(face_list[i])
-
-        # Find connected components via BFS
-        visited = set()
-        components_face_indices = []
-
-        for start_face in range(len(faces)):
-            if start_face in visited:
-                continue
-            component = []
-            queue = [start_face]
-            visited.add(start_face)
-            while queue:
-                current = queue.pop(0)
-                component.append(current)
-                for neighbor in adjacency[current]:
-                    if neighbor not in visited:
-                        visited.add(neighbor)
-                        queue.append(neighbor)
-            components_face_indices.append(component)
+            return io.NodeOutput([], 0, "", "No faces found in CAD model")
 
         # Build separate CAD_MODEL for each component
         component_models = []
@@ -1434,6 +1450,83 @@ class CADSplitComponents(io.ComfyNode):
         report = "\n".join(report_lines)
 
         return io.NodeOutput(component_models, len(components_face_indices), face_counts_str, report)
+
+
+class CADExtractLargestComponent(io.ComfyNode):
+    """Split a CAD model into connected components (faces linked via a shared
+    edge) and keep only the largest one, by face count or by surface area."""
+
+    @classmethod
+    def define_schema(cls):
+        return io.Schema(
+            node_id="CADExtractLargestComponent",
+            display_name="Extract Largest Component",
+            category="CADabra/Utility",
+            inputs=[
+                io.Custom("CAD_MODEL").Input("cad_model", tooltip="CAD model to extract the largest connected component from"),
+                io.Combo.Input("criterion", options=["face_count", "area"], default="face_count",
+                               tooltip="How to rank components: number of faces, or total surface area"),
+            ],
+            outputs=[
+                io.Custom("CAD_MODEL").Output(display_name="largest_component"),
+                io.Int.Output(display_name="num_components"),
+                io.Int.Output(display_name="component_face_count"),
+                io.Float.Output(display_name="component_area"),
+                io.String.Output(display_name="info"),
+            ],
+        )
+
+    @classmethod
+    def execute(cls, cad_model, criterion="face_count"):
+        shape = _get_occ_shape(cad_model)
+
+        faces, components_face_indices = _find_connected_face_components(shape)
+
+        if len(faces) == 0:
+            raise RuntimeError("No faces found in CAD model")
+
+        # Score each component by the chosen criterion
+        face_counts = [len(idxs) for idxs in components_face_indices]
+        areas = []
+        for face_indices in components_face_indices:
+            total_area = 0.0
+            for face_idx in face_indices:
+                props = GProp_GProps()
+                brepgprop.SurfaceProperties(faces[face_idx], props)
+                total_area += props.Mass()
+            areas.append(total_area)
+
+        scores = areas if criterion == "area" else face_counts
+        best_idx = max(range(len(components_face_indices)), key=lambda i: scores[i])
+        best_face_indices = components_face_indices[best_idx]
+
+        compound = TopoDS_Compound()
+        builder = BRep_Builder()
+        builder.MakeCompound(compound)
+        for face_idx in best_face_indices:
+            builder.Add(compound, faces[face_idx])
+
+        result = _make_cad_model(compound, cad_model, "largest_component")
+
+        log.info(f"ExtractLargestComponent: {len(components_face_indices)} components found, "
+                 f"picked component {best_idx} by {criterion} "
+                 f"({face_counts[best_idx]} faces, {areas[best_idx]:,.3f} area)")
+
+        report_lines = [
+            "Extract Largest Component",
+            "=" * 50,
+            f"Criterion: {criterion}",
+            f"Components found: {len(components_face_indices)}",
+            f"Selected: component {best_idx} -- {face_counts[best_idx]} faces, area {areas[best_idx]:,.3f}",
+            "",
+            "All components:",
+        ]
+        for i in range(len(components_face_indices)):
+            marker = " <-- selected" if i == best_idx else ""
+            report_lines.append(f"  Component {i}: {face_counts[i]} faces, area {areas[i]:,.3f}{marker}")
+
+        return io.NodeOutput(result, len(components_face_indices), face_counts[best_idx], areas[best_idx],
+                             "\n".join(report_lines))
 
 
 class CADHealShape(io.ComfyNode):
@@ -1502,7 +1595,7 @@ class CADHealShape(io.ComfyNode):
                         ]),
                     ],
                 ),
-                # ── Healing operations: each is a toggle; its parameters appear only when enabled ──
+                # --- Healing operations: each is a toggle; its parameters appear only when enabled ---
                 io.DynamicCombo.Input("fix_small_faces",
                     tooltip="Remove degenerate 'spot' (collapsed-to-a-point) and 'strip' (thin sliver) faces left by CAD translation, which break meshing and booleans. (OCC ShapeFix_FixSmallFace.)",
                     options=[
@@ -2179,172 +2272,6 @@ class CADHealShape(io.ComfyNode):
 
         report = "\n".join(report_lines)
         return io.NodeOutput(healed_models, report)
-
-
-class CADMergeVertices(io.ComfyNode):
-    """Merge duplicate vertices in mesh using PyVista/VTK clean."""
-
-    @classmethod
-    def define_schema(cls):
-        return io.Schema(
-            node_id="CADMergeVertices",
-            display_name="Merge Vertices",
-            category="CADabra/Utility",
-            is_input_list=True,
-            inputs=[
-                io.Custom("TRIMESH").Input("trimesh"),
-                io.Float.Input("tolerance", default=1e-6, min=1e-9, max=10.0, step=0.000001,
-                               tooltip="Distance tolerance for merging vertices. Default 1e-6 is safe for OCC meshes."),
-                io.Float.Input("min_component_ratio", default=0.0, min=0.0, max=0.1, step=0.001,
-                               tooltip="Remove mesh components smaller than this ratio of total faces (0=keep all)"),
-            ],
-            outputs=[
-                io.Custom("TRIMESH").Output(display_name="trimesh", is_output_list=True),
-            ],
-        )
-
-    @classmethod
-    def execute(cls, trimesh, tolerance, min_component_ratio):
-        """Merge duplicate vertices using PyVista's clean() which wraps VTK's vtkCleanPolyData."""
-        import pyvista as pv
-        import numpy as np
-        import trimesh as tm
-
-        meshes = trimesh if isinstance(trimesh, list) else [trimesh]
-        tol = tolerance[0] if isinstance(tolerance, list) else tolerance
-        min_comp_ratio = min_component_ratio[0] if isinstance(min_component_ratio, list) else min_component_ratio
-
-        log.info(f"MergeVertices: Merging vertices with tolerance={tol}, min_component_ratio={min_comp_ratio}")
-
-        results = []
-        for i, mesh in enumerate(meshes):
-            # Get mesh name for logging
-            mesh_name = mesh.metadata.get('file_path', f'mesh_{i}')
-            if isinstance(mesh_name, str):
-                mesh_name = os.path.basename(mesh_name)
-
-            # Convert to PyVista
-            verts = np.array(mesh.vertices)
-            faces = np.array(mesh.faces)
-            pv_faces = np.column_stack([np.full(len(faces), 3), faces]).flatten()
-            pv_mesh = pv.PolyData(verts, pv_faces)
-
-            # Preserve face attributes as cell data
-            if 'cad_face_id' in mesh.face_attributes:
-                pv_mesh.cell_data['cad_face_id'] = mesh.face_attributes['cad_face_id']
-
-            # Clean/merge vertices
-            verts_before = pv_mesh.n_points
-            cleaned = pv_mesh.clean(tolerance=tol, absolute=True)
-
-            # Extract faces using regular_faces (PyVista >= 0.43)
-            if hasattr(cleaned, 'regular_faces'):
-                new_faces = cleaned.regular_faces
-            else:
-                # Fallback for older PyVista
-                pv_faces_clean = cleaned.faces
-                n_cells = cleaned.n_cells
-                new_faces = []
-                idx = 0
-                for _ in range(n_cells):
-                    n = pv_faces_clean[idx]
-                    if n == 3:
-                        new_faces.append([
-                            pv_faces_clean[idx + 1],
-                            pv_faces_clean[idx + 2],
-                            pv_faces_clean[idx + 3]
-                        ])
-                    idx += n + 1
-                new_faces = np.array(new_faces)
-
-            # Create new trimesh WITHOUT automatic processing (to keep faces in sync with attributes)
-            new_mesh = tm.Trimesh(vertices=cleaned.points, faces=new_faces, process=False)
-
-            # Get cad_face_ids before any filtering
-            # Note: PyVista cell_data includes ALL cells (verts, lines, faces, strips)
-            # but regular_faces only returns face cells, so we need to slice correctly
-            # Cell ordering: verts -> lines -> faces -> strips
-            cad_face_ids = None
-            if 'cad_face_id' in cleaned.cell_data:
-                all_cad_ids = np.array(cleaned.cell_data['cad_face_id'])
-                # Only get the face portion (skip verts and lines)
-                face_start = cleaned.n_verts + cleaned.n_lines
-                face_end = face_start + len(new_faces)
-                cad_face_ids = all_cad_ids[face_start:face_end]
-
-            # Remove degenerate faces manually (keeping cad_face_ids in sync)
-            degenerate_mask = new_mesh.nondegenerate_faces()
-            num_degenerate = (~degenerate_mask).sum()
-            if num_degenerate > 0:
-                new_mesh.update_faces(degenerate_mask)
-                if cad_face_ids is not None:
-                    cad_face_ids = cad_face_ids[degenerate_mask]
-                log.info(f"MergeVertices: {mesh_name}: removed {num_degenerate} degenerate faces")
-
-            # Remove duplicate faces created by vertex merging
-            unique_mask = new_mesh.unique_faces()
-            num_duplicates = (~unique_mask).sum()
-            if num_duplicates > 0:
-                new_mesh.update_faces(unique_mask)
-                if cad_face_ids is not None:
-                    cad_face_ids = cad_face_ids[unique_mask]
-                log.info(f"MergeVertices: {mesh_name}: removed {num_duplicates} duplicate faces")
-
-            # Filter small disconnected components (if enabled)
-            if min_comp_ratio > 0 and len(new_mesh.faces) > 0:
-                import trimesh as trimesh_module
-                # Get connected components using face adjacency
-                components = trimesh_module.graph.connected_components(
-                    new_mesh.face_adjacency,
-                    nodes=np.arange(len(new_mesh.faces))
-                )
-
-                if len(components) > 1:
-                    num_faces = len(new_mesh.faces)
-                    min_faces = int(num_faces * min_comp_ratio)
-                    if min_faces < 1:
-                        min_faces = 1
-
-                    # Find largest component and components to keep
-                    comp_sizes = {i: len(comp) for i, comp in enumerate(components)}
-                    largest_comp_idx = max(comp_sizes.keys(), key=lambda c: comp_sizes[c])
-
-                    # Build mask for faces to keep
-                    keep_mask = np.zeros(num_faces, dtype=bool)
-                    kept_comps = 0
-                    removed_comps = 0
-                    for comp_idx, face_indices in enumerate(components):
-                        if comp_idx == largest_comp_idx or len(face_indices) >= min_faces:
-                            keep_mask[face_indices] = True
-                            kept_comps += 1
-                        else:
-                            removed_comps += 1
-
-                    if removed_comps > 0:
-                        new_mesh.update_faces(keep_mask)
-                        if cad_face_ids is not None:
-                            cad_face_ids = cad_face_ids[keep_mask]
-                        log.info(f"MergeVertices: {mesh_name}: removed {removed_comps} small components "
-                              f"(kept {kept_comps} components, {keep_mask.sum()} faces)")
-
-            # Store filtered cad_face_ids
-            if cad_face_ids is not None:
-                new_mesh.face_attributes['cad_face_id'] = cad_face_ids
-                new_mesh.metadata['has_cad_face_ids'] = True
-
-            # Copy other metadata
-            if hasattr(mesh, 'metadata'):
-                for key, value in mesh.metadata.items():
-                    if key not in new_mesh.metadata:
-                        new_mesh.metadata[key] = value
-
-            verts_after = cleaned.n_points
-            log.info(f"MergeVertices: {mesh_name}: {verts_before} -> {verts_after} vertices "
-                  f"(merged {verts_before - verts_after})")
-
-            results.append(new_mesh)
-
-        return io.NodeOutput(results)
 
 
 def _replace_degenerate_face(face, iterations, max_degree):
@@ -3044,10 +2971,10 @@ NODE_CLASS_MAPPINGS = {
     "CADGetFilename": CADGetFilename,
     "CADCheckOverlappingFaces": CADCheckOverlappingFaces,
     "CADSplitComponents": CADSplitComponents,
+    "CADExtractLargestComponent": CADExtractLargestComponent,
     "CADSave": CADSave,
     "CADHealShape": CADHealShape,
     "CADHealShapeAdvanced": CADHealShapeAdvanced,
-    "CADMergeVertices": CADMergeVertices,
     "CADFixDegenerateFaces": CADFixDegenerateFaces,
 }
 
@@ -3057,9 +2984,9 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "CADGetFilename": "Get CAD Filename",
     "CADCheckOverlappingFaces": "CAD Check Overlapping Faces",
     "CADSplitComponents": "CAD Split Components",
+    "CADExtractLargestComponent": "CAD Extract Largest Component",
     "CADSave": "CAD Save",
     "CADHealShape": "CAD Heal Shape",
     "CADHealShapeAdvanced": "Heal CAD Shape (Advanced)",
-    "CADMergeVertices": "CAD Merge Vertices",
     "CADFixDegenerateFaces": "CAD Fix Degenerate Faces",
 }

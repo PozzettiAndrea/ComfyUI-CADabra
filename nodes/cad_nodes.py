@@ -1839,7 +1839,16 @@ class CAD_Load_From_Glob(io.ComfyNode):
 
         log.info(f" Successfully loaded {len(loaded_cads)} CAD files")
 
-        return io.NodeOutput(loaded_cads)
+        loaded_names = [os.path.basename(cad["file_path"]) for cad in loaded_cads]
+        info_lines = [
+            f"Pattern: {glob_pattern}",
+            f"Mode: {mode}",
+            f"Matched: {len(cad_files)}  Loaded: {len(loaded_cads)}  Failed: {len(cad_files) - len(loaded_cads)}",
+            "",
+        ] + loaded_names
+        info = "\n".join(info_lines)
+
+        return io.NodeOutput(loaded_cads, ui={"text": [info]})
 
 
 

@@ -6,7 +6,6 @@ _MODULES = [
     ".cad_analysis_nodes",
     ".cad_inspect_nodes",
     ".cad_edge_analysis_nodes",
-    ".point_cloud_loader_node",
     ".cad_utility_nodes",
     ".cad_project_faces",
     ".raytracer_node",

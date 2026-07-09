@@ -16,8 +16,8 @@ from comfy_api.latest import io
 
 log = logging.getLogger("CADabra")
 
-CHECK = "✓"   # ✓
-CROSS = "✗"   # ✗
+CHECK = "OK"
+CROSS = "X"
 
 
 def _inspect(shape):
@@ -75,6 +75,19 @@ def _inspect(shape):
         d["volume"] = None
     g2 = GProp_GProps(); brepgprop.SurfaceProperties(shape, g2); d["area"] = g2.Mass()
 
+    # Per-face area extremes (flags degenerate/sliver faces).
+    min_area = max_area = None
+    fx = TopExp_Explorer(shape, TopAbs_FACE)
+    while fx.More():
+        gf = GProp_GProps()
+        brepgprop.SurfaceProperties(topods.Face(fx.Current()), gf)
+        a = gf.Mass()
+        min_area = a if min_area is None else min(min_area, a)
+        max_area = a if max_area is None else max(max_area, a)
+        fx.Next()
+    d["min_face_area"] = min_area
+    d["max_face_area"] = max_area
+
     bb = Bnd_Box(); brepbndlib.Add(shape, bb)
     xmin, ymin, zmin, xmax, ymax, zmax = bb.Get()
     d["bbox_min"] = (xmin, ymin, zmin); d["bbox_max"] = (xmax, ymax, zmax)
@@ -109,6 +122,8 @@ def _report(d, name=""):
     if d["volume"] is not None and d["solids"] >= 1:
         L.append(f"  Volume:        {d['volume']:,.3f}")
     L.append(f"  Surface area:  {d['area']:,.3f}")
+    if d["min_face_area"] is not None:
+        L.append(f"  Face area:     min {d['min_face_area']:,.6g}   max {d['max_face_area']:,.6g}   ({d['faces']} faces)")
     bmin = ", ".join(f"{v:.3f}" for v in d["bbox_min"])
     bmax = ", ".join(f"{v:.3f}" for v in d["bbox_max"])
     ext = " x ".join(f"{v:.3f}" for v in d["extents"])
@@ -138,6 +153,8 @@ class CADUltimateInspection(io.ComfyNode):
                 io.Boolean.Output(display_name="is_watertight"),
                 io.Boolean.Output(display_name="is_valid"),
                 io.Int.Output(display_name="free_edges"),
+                io.Float.Output(display_name="min_face_area"),
+                io.Float.Output(display_name="max_face_area"),
             ],
         )
 
@@ -164,9 +181,11 @@ class CADUltimateInspection(io.ComfyNode):
         info = "\n\n".join(reports) if reports else "No CAD model to inspect."
         log.info("[UltimateInspection]\n%s", info)
         if first is None:
-            return io.NodeOutput(cad_model, info, False, False, 0, ui={"text": (info,)})
+            return io.NodeOutput(cad_model, info, False, False, 0, 0.0, 0.0, ui={"text": (info,)})
         return io.NodeOutput(cad_model, info, bool(first["watertight"]),
                              bool(first["valid"]), int(first["free_edges"]),
+                             float(first["min_face_area"]) if first["min_face_area"] is not None else 0.0,
+                             float(first["max_face_area"]) if first["max_face_area"] is not None else 0.0,
                              ui={"text": (info,)})
 
 
