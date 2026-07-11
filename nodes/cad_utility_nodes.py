@@ -43,7 +43,7 @@ def _progress_bar(completed, total, elapsed, width=30, prefix=""):
 
 from OCC.Core.BRep import BRep_Builder
 from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_Sewing
-from OCC.Core.BRepAdaptor import BRepAdaptor_Curve
+from OCC.Core.BRepAdaptor import BRepAdaptor_Curve, BRepAdaptor_Surface
 from OCC.Core.TopAbs import TopAbs_FACE, TopAbs_EDGE, TopAbs_SHELL, TopAbs_VERTEX
 from OCC.Core.TopExp import TopExp_Explorer, topexp
 from OCC.Core.TopoDS import TopoDS_Compound, topods
@@ -51,6 +51,21 @@ from OCC.Core.TopTools import TopTools_IndexedMapOfShape
 from OCC.Core.ShapeFix import ShapeFix_Shape, ShapeFix_FixSmallFace, ShapeFix_Wireframe
 from OCC.Core.GProp import GProp_GProps
 from OCC.Core.BRepGProp import brepgprop
+from OCC.Core.Bnd import Bnd_Box
+from OCC.Core.BRepBndLib import brepbndlib
+from OCC.Core.BRepCheck import BRepCheck_Analyzer
+from OCC.Core.GeomAbs import (
+    GeomAbs_Plane, GeomAbs_Cylinder, GeomAbs_Cone, GeomAbs_Sphere,
+    GeomAbs_Torus, GeomAbs_BezierSurface, GeomAbs_BSplineSurface,
+    GeomAbs_SurfaceOfRevolution, GeomAbs_SurfaceOfExtrusion, GeomAbs_OtherSurface,
+)
+
+_SURFACE_TYPE_NAMES = {
+    GeomAbs_Plane: "Plane", GeomAbs_Cylinder: "Cylinder", GeomAbs_Cone: "Cone",
+    GeomAbs_Sphere: "Sphere", GeomAbs_Torus: "Torus", GeomAbs_BezierSurface: "Bezier",
+    GeomAbs_BSplineSurface: "BSpline", GeomAbs_SurfaceOfRevolution: "Revolution",
+    GeomAbs_SurfaceOfExtrusion: "Extrusion", GeomAbs_OtherSurface: "Other",
+}
 
 
 
@@ -2335,6 +2350,110 @@ def _replace_degenerate_face(face, iterations, max_degree):
         return None, "No face in result"
 
 
+class CADDetectDegenerateFaces(io.ComfyNode):
+    """Find faces touching a degenerate edge (UV-parametric pole), without
+    modifying anything. Non-destructive counterpart to Fix Degenerate Faces.
+
+    Note: this criterion also fires on perfectly legitimate cone/sphere poles,
+    not just genuine defects -- the per-face is_valid flag (BRepCheck_Analyzer)
+    is the better signal for telling a real defect apart from a normal pole.
+    """
+
+    @classmethod
+    def define_schema(cls):
+        return io.Schema(
+            node_id="CADDetectDegenerateFaces",
+            display_name="Detect Degenerate Faces",
+            category="CADabra/Utility",
+            is_input_list=True,
+            inputs=[
+                io.Custom("CAD_MODEL").Input("cad_model", tooltip="CAD model(s) to scan for degenerate faces"),
+            ],
+            outputs=[
+                io.Custom("CAD_MODEL").Output(display_name="cad_model", is_output_list=True),
+                io.Int.Output(display_name="degenerate_count"),
+                io.String.Output(display_name="info"),
+            ],
+        )
+
+    @classmethod
+    def execute(cls, cad_model):
+        from OCC.Core.BRep import BRep_Tool
+
+        cad_models = cad_model if isinstance(cad_model, list) else [cad_model]
+
+        report_lines = []
+        total_degenerate = 0
+
+        for cm in cad_models:
+            shape = _get_occ_shape(cm)
+            file_path = cm.get("file_path", "model")
+            file_name = os.path.splitext(os.path.basename(file_path))[0]
+            analyzer = BRepCheck_Analyzer(shape, True)
+
+            total_faces = 0
+            degen_rows = []
+
+            face_explorer = TopExp_Explorer(shape, TopAbs_FACE)
+            face_idx = 0
+            while face_explorer.More():
+                face = topods.Face(face_explorer.Current())
+                total_faces += 1
+
+                has_degen = False
+                edge_exp = TopExp_Explorer(face, TopAbs_EDGE)
+                while edge_exp.More():
+                    if BRep_Tool.Degenerated(topods.Edge(edge_exp.Current())):
+                        has_degen = True
+                        break
+                    edge_exp.Next()
+
+                if has_degen:
+                    try:
+                        surf_name = _SURFACE_TYPE_NAMES.get(BRepAdaptor_Surface(face).GetType(), "Unknown")
+                    except Exception:
+                        surf_name = "Unknown"
+
+                    bbox = Bnd_Box()
+                    brepbndlib.Add(face, bbox)
+                    if not bbox.IsVoid():
+                        xmin, ymin, zmin, xmax, ymax, zmax = bbox.Get()
+                        center = ((xmin + xmax) / 2, (ymin + ymax) / 2, (zmin + zmax) / 2)
+                    else:
+                        center = (0.0, 0.0, 0.0)
+
+                    try:
+                        props = GProp_GProps()
+                        brepgprop.SurfaceProperties(face, props)
+                        area = props.Mass()
+                    except Exception:
+                        area = None
+
+                    is_valid = bool(analyzer.IsValid(face))
+                    degen_rows.append((face_idx, surf_name, center, area, is_valid))
+
+                face_idx += 1
+                face_explorer.Next()
+
+            total_degenerate += len(degen_rows)
+
+            report_lines.append(f"=== {file_name} ===")
+            report_lines.append(f"Faces: {total_faces}   Degenerate: {len(degen_rows)}")
+            for idx, surf_name, center, area, is_valid in degen_rows:
+                area_str = f"{area:.4g}" if area is not None else "?"
+                flag = "" if is_valid else "  [ALSO INVALID -- likely a real defect, not just a pole]"
+                report_lines.append(
+                    f"  face #{idx}: {surf_name}, center=({center[0]:.3f}, {center[1]:.3f}, {center[2]:.3f}), "
+                    f"area={area_str}, is_valid={is_valid}{flag}"
+                )
+            report_lines.append("")
+
+            log.info(f"DetectDegenerateFaces: {file_name}: {len(degen_rows)}/{total_faces} degenerate faces")
+
+        info = "\n".join(report_lines)
+        return io.NodeOutput(cad_models, total_degenerate, info, ui={"text": [info]})
+
+
 class CADFixDegenerateFaces(io.ComfyNode):
     """Replace degenerate CAD faces with valid filled surfaces."""
 
@@ -2975,6 +3094,7 @@ NODE_CLASS_MAPPINGS = {
     "CADSave": CADSave,
     "CADHealShape": CADHealShape,
     "CADHealShapeAdvanced": CADHealShapeAdvanced,
+    "CADDetectDegenerateFaces": CADDetectDegenerateFaces,
     "CADFixDegenerateFaces": CADFixDegenerateFaces,
 }
 
@@ -2988,5 +3108,6 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "CADSave": "CAD Save",
     "CADHealShape": "CAD Heal Shape",
     "CADHealShapeAdvanced": "Heal CAD Shape (Advanced)",
+    "CADDetectDegenerateFaces": "CAD Detect Degenerate Faces",
     "CADFixDegenerateFaces": "CAD Fix Degenerate Faces",
 }

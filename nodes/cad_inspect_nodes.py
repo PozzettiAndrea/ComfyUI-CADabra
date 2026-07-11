@@ -133,6 +133,129 @@ def _report(d, name=""):
     return "\n".join(L)
 
 
+_CURVE_TYPE_NAMES = None  # populated lazily, see _curve_type_names()
+
+
+def _curve_type_names():
+    global _CURVE_TYPE_NAMES
+    if _CURVE_TYPE_NAMES is None:
+        from OCC.Core.GeomAbs import (
+            GeomAbs_Line, GeomAbs_Circle, GeomAbs_Ellipse, GeomAbs_Hyperbola,
+            GeomAbs_Parabola, GeomAbs_BezierCurve, GeomAbs_BSplineCurve, GeomAbs_OtherCurve
+        )
+        _CURVE_TYPE_NAMES = {
+            GeomAbs_Line: "Line", GeomAbs_Circle: "Circle", GeomAbs_Ellipse: "Ellipse",
+            GeomAbs_Hyperbola: "Hyperbola", GeomAbs_Parabola: "Parabola",
+            GeomAbs_BezierCurve: "Bezier", GeomAbs_BSplineCurve: "BSpline",
+            GeomAbs_OtherCurve: "Other",
+        }
+    return _CURVE_TYPE_NAMES
+
+
+class CADFreeEdges(io.ComfyNode):
+    """Find and locate free (open-boundary) edges, without modifying anything.
+
+    Uses the same seam-aware ShapeAnalysis_Shell method as Ultimate CAD
+    Inspection's free-edge count (correct for periodic/seam edges on
+    cylinders, cones, etc.) -- unlike a naive edge-ancestor-count, which
+    would misreport seams on periodic surfaces as free.
+    """
+
+    @classmethod
+    def define_schema(cls):
+        return io.Schema(
+            node_id="CADFreeEdges",
+            display_name="CAD Free Edges",
+            category="CADabra/Analysis",
+            inputs=[
+                io.Custom("CAD_MODEL").Input("cad_model", tooltip="CAD model(s) to scan for free (open) edges"),
+            ],
+            outputs=[
+                io.Custom("CAD_MODEL").Output(display_name="cad_model"),
+                io.Int.Output(display_name="free_edge_count"),
+                io.String.Output(display_name="info"),
+            ],
+        )
+
+    @classmethod
+    def execute(cls, cad_model):
+        from .utils.brep_cache import get_occ_shape
+        from OCC.Core.ShapeAnalysis import ShapeAnalysis_Shell
+        from OCC.Core.TopExp import TopExp_Explorer
+        from OCC.Core.TopAbs import TopAbs_SHELL, TopAbs_EDGE
+        from OCC.Core.TopoDS import topods
+        from OCC.Core.BRepAdaptor import BRepAdaptor_Curve
+        from OCC.Core.GProp import GProp_GProps
+        from OCC.Core.BRepGProp import brepgprop
+
+        models = cad_model if isinstance(cad_model, (list, tuple)) else [cad_model]
+        curve_names = _curve_type_names()
+
+        report_lines = []
+        total_free = 0
+
+        for i, m in enumerate(models):
+            try:
+                shape = get_occ_shape(m)
+            except Exception as e:
+                report_lines.append(f"=== CAD {i} === FAILED: {type(e).__name__}: {e}")
+                continue
+
+            name = (m.get("file_path") or "").split("/")[-1] if isinstance(m, dict) else ""
+
+            sas = ShapeAnalysis_Shell()
+            sx = TopExp_Explorer(shape, TopAbs_SHELL)
+            while sx.More():
+                sas.LoadShells(sx.Current())
+                sx.Next()
+            sas.CheckOrientedShells(shape, True, False)
+
+            edge_rows = []
+            if sas.HasFreeEdges():
+                free_compound = sas.FreeEdges()
+                ex = TopExp_Explorer(free_compound, TopAbs_EDGE)
+                idx = 0
+                while ex.More():
+                    edge = topods.Edge(ex.Current())
+                    try:
+                        adaptor = BRepAdaptor_Curve(edge)
+                        curve_name = curve_names.get(adaptor.GetType(), "Unknown")
+                        mid = adaptor.Value((adaptor.FirstParameter() + adaptor.LastParameter()) / 2)
+                        midpoint = (mid.X(), mid.Y(), mid.Z())
+                    except Exception:
+                        curve_name = "Unknown"
+                        midpoint = (0.0, 0.0, 0.0)
+
+                    try:
+                        props = GProp_GProps()
+                        brepgprop.LinearProperties(edge, props)
+                        length = props.Mass()
+                    except Exception:
+                        length = None
+
+                    edge_rows.append((idx, curve_name, midpoint, length))
+                    idx += 1
+                    ex.Next()
+
+            total_free += len(edge_rows)
+
+            header = f"=== CAD Free Edges: {name} ===" if name else "=== CAD Free Edges ==="
+            report_lines.append(header)
+            report_lines.append(f"Free edges: {len(edge_rows)}")
+            for idx, curve_name, midpoint, length in edge_rows:
+                length_str = f"{length:.4g}" if length is not None else "?"
+                report_lines.append(
+                    f"  edge #{idx}: {curve_name}, midpoint=({midpoint[0]:.3f}, {midpoint[1]:.3f}, {midpoint[2]:.3f}), "
+                    f"length={length_str}"
+                )
+            report_lines.append("")
+
+            log.info(f"[CADFreeEdges] {name or f'CAD {i}'}: {len(edge_rows)} free edges")
+
+        info = "\n".join(report_lines) if report_lines else "No CAD model to inspect."
+        return io.NodeOutput(cad_model, total_free, info, ui={"text": [info]})
+
+
 class CADUltimateInspection(io.ComfyNode):
     """Inspect a CAD B-rep: validity, watertightness, manifoldness, topology, free edges, geometry."""
 
@@ -189,5 +312,11 @@ class CADUltimateInspection(io.ComfyNode):
                              ui={"text": (info,)})
 
 
-NODE_CLASS_MAPPINGS = {"CADUltimateInspection": CADUltimateInspection}
-NODE_DISPLAY_NAME_MAPPINGS = {"CADUltimateInspection": "Ultimate CAD Inspection"}
+NODE_CLASS_MAPPINGS = {
+    "CADUltimateInspection": CADUltimateInspection,
+    "CADFreeEdges": CADFreeEdges,
+}
+NODE_DISPLAY_NAME_MAPPINGS = {
+    "CADUltimateInspection": "Ultimate CAD Inspection",
+    "CADFreeEdges": "CAD Free Edges",
+}

@@ -293,11 +293,26 @@ def _create_circle_edge(circle_info: Dict, edge: TopoDS_Edge) -> Optional[TopoDS
         from math import degrees
         logger.info(f"[CircleEdge] Angles: start={degrees(angle_start):.1f}\u00b0, mid={degrees(angle_mid):.1f}\u00b0, end={degrees(angle_end):.1f}\u00b0, R={radius:.1f}")
 
-        # Check for degenerate arc (all points at same angle, or wrapping around)
+        # start ~= end always holds for a *closed* curve, so it alone doesn't mean
+        # degenerate -- it also describes a full 360-degree circle. Disambiguate
+        # using the midpoint: if it clusters with start/end too, nothing actually
+        # moves (genuinely degenerate); if it sits elsewhere (e.g. ~180 deg away),
+        # the edge traces the whole circle and should be replaced as such.
         angle_tolerance = 0.01  # ~0.5 degrees
         angle_diff = abs(angle_start - angle_end)
-        if angle_diff < angle_tolerance or angle_diff > (2 * pi - angle_tolerance):
-            logger.warning(f"[CircleEdge] Degenerate arc (start~end, diff={degrees(angle_diff):.2f}\u00b0), skipping replacement")
+        start_end_coincide = angle_diff < angle_tolerance or angle_diff > (2 * pi - angle_tolerance)
+        if start_end_coincide:
+            mid_diff = abs(angle_start - angle_mid)
+            mid_coincides_too = mid_diff < angle_tolerance or mid_diff > (2 * pi - angle_tolerance)
+            if mid_coincides_too:
+                logger.warning(f"[CircleEdge] Degenerate arc (start~mid~end, diff={degrees(angle_diff):.2f}\u00b0), skipping replacement")
+                return None
+
+            logger.info("[CircleEdge] Full circle (start~end, midpoint elsewhere) -- building whole circle")
+            builder = BRepBuilderAPI_MakeEdge(circle)
+            if builder.IsDone():
+                return builder.Edge()
+            logger.warning("[CircleEdge] Full-circle edge build failed")
             return None
 
         # Determine correct arc direction by checking if midpoint is on the path
