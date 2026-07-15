@@ -152,7 +152,7 @@ def _curve_type_names():
     return _CURVE_TYPE_NAMES
 
 
-class CADFreeEdges(io.ComfyNode):
+class CADDetectFreeEdges(io.ComfyNode):
     """Find and locate free (open-boundary) edges, without modifying anything.
 
     Uses the same seam-aware ShapeAnalysis_Shell method as Ultimate CAD
@@ -164,8 +164,8 @@ class CADFreeEdges(io.ComfyNode):
     @classmethod
     def define_schema(cls):
         return io.Schema(
-            node_id="CADFreeEdges",
-            display_name="CAD Free Edges",
+            node_id="CADDetectFreeEdges",
+            display_name="CAD Detect Free Edges",
             category="CADabra/Analysis",
             inputs=[
                 io.Custom("CAD_MODEL").Input("cad_model", tooltip="CAD model(s) to scan for free (open) edges"),
@@ -239,7 +239,7 @@ class CADFreeEdges(io.ComfyNode):
 
             total_free += len(edge_rows)
 
-            header = f"=== CAD Free Edges: {name} ===" if name else "=== CAD Free Edges ==="
+            header = f"=== CAD Detect Free Edges: {name} ===" if name else "=== CAD Detect Free Edges ==="
             report_lines.append(header)
             report_lines.append(f"Free edges: {len(edge_rows)}")
             for idx, curve_name, midpoint, length in edge_rows:
@@ -250,7 +250,7 @@ class CADFreeEdges(io.ComfyNode):
                 )
             report_lines.append("")
 
-            log.info(f"[CADFreeEdges] {name or f'CAD {i}'}: {len(edge_rows)} free edges")
+            log.info(f"[CADDetectFreeEdges] {name or f'CAD {i}'}: {len(edge_rows)} free edges")
 
         info = "\n".join(report_lines) if report_lines else "No CAD model to inspect."
         return io.NodeOutput(cad_model, total_free, info, ui={"text": [info]})
@@ -314,9 +314,9 @@ class CADUltimateInspection(io.ComfyNode):
 
 NODE_CLASS_MAPPINGS = {
     "CADUltimateInspection": CADUltimateInspection,
-    "CADFreeEdges": CADFreeEdges,
+    "CADDetectFreeEdges": CADDetectFreeEdges,
 }
 NODE_DISPLAY_NAME_MAPPINGS = {
     "CADUltimateInspection": "Ultimate CAD Inspection",
-    "CADFreeEdges": "CAD Free Edges",
+    "CADDetectFreeEdges": "CAD Detect Free Edges",
 }

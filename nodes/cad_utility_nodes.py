@@ -2350,6 +2350,103 @@ def _replace_degenerate_face(face, iterations, max_degree):
         return None, "No face in result"
 
 
+_BREP_CHECK_STATUS_NAMES = None  # populated lazily, see _brep_check_status_names()
+
+_BREP_CHECK_EXPLANATIONS = {
+    "InvalidPointOnCurve": "a vertex doesn't lie on its edge's curve within tolerance",
+    "InvalidPointOnCurveOnSurface": "a point doesn't lie on the edge's curve-on-surface within tolerance",
+    "InvalidPointOnSurface": "a vertex doesn't lie on the face's surface within tolerance",
+    "No3DCurve": "an edge has no 3D curve",
+    "Multiple3DCurve": "an edge has more than one 3D curve",
+    "Invalid3DCurve": "an edge's 3D curve is invalid",
+    "NoCurveOnSurface": "an edge is missing its 2D curve on this face's surface",
+    "InvalidCurveOnSurface": "an edge's 2D curve on the surface is invalid or strays too far from the 3D curve",
+    "InvalidCurveOnClosedSurface": "an edge's 2D curve is inconsistent across the seam of a periodic surface",
+    "InvalidSameRangeFlag": "an edge's 'SameRange' flag is incorrectly set",
+    "InvalidSameParameterFlag": "an edge's 'SameParameter' flag is incorrectly set",
+    "InvalidDegeneratedFlag": "an edge is marked degenerate but geometrically isn't (or vice versa)",
+    "FreeEdge": "an edge is used by only one face here (open boundary)",
+    "InvalidMultiConnexity": "an edge is shared by more than 2 faces (non-manifold)",
+    "InvalidRange": "an edge's parameter range is invalid",
+    "EmptyWire": "a boundary wire has no edges",
+    "RedundantEdge": "an edge appears more than once in the same wire",
+    "SelfIntersectingWire": "a boundary wire crosses itself",
+    "NoSurface": "the face has no underlying surface",
+    "InvalidWire": "one of the face's boundary wires is invalid",
+    "RedundantWire": "a duplicate wire exists on this face",
+    "IntersectingWires": "two of the face's wires intersect each other",
+    "InvalidImbricationOfWires": "the face's wires nest/overlap incorrectly (e.g. a hole loop outside the outer boundary)",
+    "EmptyShell": "a shell has no faces",
+    "RedundantFace": "a duplicate face exists in the shell",
+    "InvalidImbricationOfShells": "shells nest/overlap incorrectly within the solid",
+    "UnorientableShape": "the boundary wire(s) don't consistently define an inside/outside -- classic sign of a self-intersecting or badly-wound boundary",
+    "NotClosed": "a shell/wire that should be closed has a gap",
+    "NotConnected": "the shape is not topologically connected",
+    "SubshapeNotInShape": "internal inconsistency: a referenced sub-shape wasn't found",
+    "BadOrientation": "an edge/face orientation is inconsistent with its neighbours",
+    "BadOrientationOfSubshape": "a sub-shape's orientation is inconsistent",
+    "InvalidPolygonOnTriangulation": "a mesh polygon doesn't match its 3D curve",
+    "InvalidToleranceValue": "a tolerance value is invalid (too small, too large, or negative)",
+    "EnclosedRegion": "the shape unexpectedly encloses a separate closed region",
+    "CheckFail": "the checker itself failed to complete",
+}
+
+
+def _brep_check_status_names():
+    global _BREP_CHECK_STATUS_NAMES
+    if _BREP_CHECK_STATUS_NAMES is None:
+        from OCC.Core.BRepCheck import BRepCheck_Status
+        _BREP_CHECK_STATUS_NAMES = {}
+        for name in dir(BRepCheck_Status):
+            if name.startswith("BRepCheck_"):
+                _BREP_CHECK_STATUS_NAMES[int(getattr(BRepCheck_Status, name))] = name[len("BRepCheck_"):]
+    return _BREP_CHECK_STATUS_NAMES
+
+
+def _brep_check_reason(analyzer, sub_shape):
+    """Short, plain-English reason BRepCheck_Analyzer flagged sub_shape invalid."""
+    try:
+        status_list = analyzer.Result(sub_shape).Status()
+        if status_list.Size() == 0:
+            return "invalid (no specific reason reported)"
+        status_name = _brep_check_status_names().get(int(status_list.First()), "Unknown")
+        explanation = _BREP_CHECK_EXPLANATIONS.get(status_name)
+        return f"{status_name} -- {explanation}" if explanation else status_name
+    except Exception:
+        return "invalid (reason lookup failed)"
+
+
+def _degenerate_pole_explanation(surf_name, n_degen_edges):
+    """Plain-English explanation of WHY a face was flagged degenerate at all --
+    i.e. what a degenerate edge means for this specific surface type, so a
+    face isn't just labelled 'degenerate' with no context."""
+    plural = "edge" if n_degen_edges == 1 else "edges"
+    if surf_name == "Sphere":
+        where = "at its pole" if n_degen_edges == 1 else "at its poles"
+        return (f"{n_degen_edges} degenerate {plural} {where} -- every sphere's UV parametrization "
+                f"collapses to a single point at top/bottom; this is normal bookkeeping for a full "
+                f"or near-full sphere patch (e.g. a ball feature or spherical fillet cap), not a defect.")
+    if surf_name == "Cone":
+        return (f"{n_degen_edges} degenerate {plural} at its apex -- a cone's cross-section shrinks "
+                f"to a single point at the tip; normal for a conical patch that includes the apex "
+                f"(e.g. a countersink or tapered seat), not a defect.")
+    if surf_name == "Torus":
+        return (f"{n_degen_edges} degenerate {plural} -- can occur where a torus's tube "
+                f"parametrization closes on itself; usually normal.")
+    if surf_name in ("BSpline", "Bezier"):
+        return (f"{n_degen_edges} degenerate {plural} -- the surface's own parametrization pinches "
+                f"to a point somewhere on its boundary (common on filleted/blended patches, or the "
+                f"tip of a swept/lofted profile). Less standardized than the sphere/cone case, so "
+                f"worth a visual check even when is_valid=True.")
+    if surf_name in ("Revolution", "Extrusion"):
+        return (f"{n_degen_edges} degenerate {plural} -- likely the axis/profile point of a "
+                f"revolved or extruded surface; usually normal.")
+    if surf_name == "Plane":
+        return (f"{n_degen_edges} degenerate {plural} on a Plane -- unusual, planes have no natural "
+                f"parametric pole, so this is worth a closer look even if is_valid=True.")
+    return f"{n_degen_edges} degenerate {plural} -- a parametric singularity on this {surf_name} surface."
+
+
 class CADDetectDegenerateFaces(io.ComfyNode):
     """Find faces touching a degenerate edge (UV-parametric pole), without
     modifying anything. Non-destructive counterpart to Fix Degenerate Faces.
@@ -2400,15 +2497,14 @@ class CADDetectDegenerateFaces(io.ComfyNode):
                 face = topods.Face(face_explorer.Current())
                 total_faces += 1
 
-                has_degen = False
+                degen_edge_count = 0
                 edge_exp = TopExp_Explorer(face, TopAbs_EDGE)
                 while edge_exp.More():
                     if BRep_Tool.Degenerated(topods.Edge(edge_exp.Current())):
-                        has_degen = True
-                        break
+                        degen_edge_count += 1
                     edge_exp.Next()
 
-                if has_degen:
+                if degen_edge_count > 0:
                     try:
                         surf_name = _SURFACE_TYPE_NAMES.get(BRepAdaptor_Surface(face).GetType(), "Unknown")
                     except Exception:
@@ -2430,7 +2526,8 @@ class CADDetectDegenerateFaces(io.ComfyNode):
                         area = None
 
                     is_valid = bool(analyzer.IsValid(face))
-                    degen_rows.append((face_idx, surf_name, center, area, is_valid))
+                    reason = None if is_valid else _brep_check_reason(analyzer, face)
+                    degen_rows.append((face_idx, surf_name, center, area, is_valid, reason, degen_edge_count))
 
                 face_idx += 1
                 face_explorer.Next()
@@ -2439,14 +2536,17 @@ class CADDetectDegenerateFaces(io.ComfyNode):
 
             report_lines.append(f"=== {file_name} ===")
             report_lines.append(f"Faces: {total_faces}   Degenerate: {len(degen_rows)}")
-            for idx, surf_name, center, area, is_valid in degen_rows:
+            report_lines.append("")
+            for idx, surf_name, center, area, is_valid, reason, degen_edge_count in degen_rows:
                 area_str = f"{area:.4g}" if area is not None else "?"
-                flag = "" if is_valid else "  [ALSO INVALID -- likely a real defect, not just a pole]"
                 report_lines.append(
                     f"  face #{idx}: {surf_name}, center=({center[0]:.3f}, {center[1]:.3f}, {center[2]:.3f}), "
-                    f"area={area_str}, is_valid={is_valid}{flag}"
+                    f"area={area_str}, is_valid={is_valid}"
                 )
-            report_lines.append("")
+                report_lines.append(f"    -> flagged degenerate: {_degenerate_pole_explanation(surf_name, degen_edge_count)}")
+                if not is_valid:
+                    report_lines.append(f"    -> ALSO INVALID: {reason}")
+                report_lines.append("")
 
             log.info(f"DetectDegenerateFaces: {file_name}: {len(degen_rows)}/{total_faces} degenerate faces")
 
@@ -2823,80 +2923,87 @@ class CADFixDegenerateFaces(io.ComfyNode):
 
 
 class CADHealShapeAdvanced(io.ComfyNode):
-    """Full ShapeFix_Shape control - every OCC sub-fixer mode + tolerance exposed.
+    """Full ShapeFix_Shape control - every OCC sub-fixer mode exposed as a plain
+    on/off toggle, grouped by topology level (shape / shell+solid / face / wire).
 
     Runs OCC's single coordinated ShapeFix_Shape pass (same engine as 'Heal CAD
-    Shape'), but exposes the entire ShapeFix mode system, grouped by topology level.
-    Each fix is tri-state:
-        auto = OCC default (the tool decides; ALL on 'auto' == the basic Heal node)
-        on   = force this fix ON
-        off  = force this fix OFF
-    Expand a section ('custom') to reveal its modes. See OpenCASCADE's Shape Healing
-    guide for the gory details of each.
-    """
-    MODE = ["auto", "on", "off"]
+    Shape'), but exposes the entire ShapeFix mode system directly -- no hidden
+    tri-state 'let OCC decide' option. Every default below was verified against
+    OCCT's actual C++ source (ShapeFix_Wire/Face/Shell/Solid/Shape .cxx, tag
+    V7_8_1, matching the OCCT version this repo runs against) to match what OCC's
+    own unset/"auto" state resolves to in practice, so leaving everything at its
+    default reproduces OCC's built-in behavior -- same result as the basic 'Heal
+    CAD Shape' node -- while every toggle is fully explicit and inspectable.
 
-    # (input_name, tool_key, OCC setter).  tool_key in {shape, solid, shell, face, wire}
+    Two exceptions worth knowing: fix_gaps_3d/fix_gaps_2d are real OCC methods
+    but ShapeFix_Wire's own Perform() never calls them automatically in this OCC
+    version, so toggling them currently has no effect through this node -- kept
+    here (defaulted off) in case a future OCC version wires them up.
+    """
+
+    # (input_name, tool_key, OCC setter, default).  tool_key in {shape, solid, shell, face, wire}
+    # Defaults verified against OCCT source (see docstring) -- match what OCC's
+    # own "unset" mode resolves to, not a guess.
     _SHAPE_MODES = [
-        ("fix_solid", "shape", "SetFixSolidMode"),
-        ("fix_free_shell", "shape", "SetFixFreeShellMode"),
-        ("fix_free_face", "shape", "SetFixFreeFaceMode"),
-        ("fix_free_wire", "shape", "SetFixFreeWireMode"),
-        ("fix_same_parameter", "shape", "SetFixSameParameterMode"),
-        ("fix_vertex_position", "shape", "SetFixVertexPositionMode"),
-        ("fix_vertex_tolerance", "shape", "SetFixVertexTolMode"),
+        ("fix_solid", "shape", "SetFixSolidMode", True),
+        ("fix_free_shell", "shape", "SetFixFreeShellMode", True),
+        ("fix_free_face", "shape", "SetFixFreeFaceMode", True),
+        ("fix_free_wire", "shape", "SetFixFreeWireMode", True),
+        ("fix_same_parameter", "shape", "SetFixSameParameterMode", True),
+        ("fix_vertex_position", "shape", "SetFixVertexPositionMode", False),
+        ("fix_vertex_tolerance", "shape", "SetFixVertexTolMode", True),
     ]
     _SHELL_SOLID_MODES = [
-        ("create_open_solid", "solid", "SetCreateOpenSolidMode"),
-        ("fix_shell", "solid", "SetFixShellMode"),
-        ("fix_shell_orientation_solid", "solid", "SetFixShellOrientationMode"),
-        ("fix_face_in_shell", "shell", "SetFixFaceMode"),
-        ("fix_face_orientation_in_shell", "shell", "SetFixOrientationMode"),
-        ("allow_non_manifold", "shell", "SetNonManifoldFlag"),
+        ("create_open_solid", "solid", "SetCreateOpenSolidMode", False),
+        ("fix_shell", "solid", "SetFixShellMode", True),
+        ("fix_shell_orientation_solid", "solid", "SetFixShellOrientationMode", True),
+        ("fix_face_in_shell", "shell", "SetFixFaceMode", True),
+        ("fix_face_orientation_in_shell", "shell", "SetFixOrientationMode", True),
+        ("allow_non_manifold", "shell", "SetNonManifoldFlag", False),
     ]
     _FACE_MODES = [
-        ("fix_wire_in_face", "face", "SetFixWireMode"),
-        ("fix_orientation", "face", "SetFixOrientationMode"),
-        ("fix_add_natural_bound", "face", "SetFixAddNaturalBoundMode"),
-        ("fix_missing_seam", "face", "SetFixMissingSeamMode"),
-        ("fix_small_area_wire", "face", "SetFixSmallAreaWireMode"),
-        ("remove_small_area_face", "face", "SetRemoveSmallAreaFaceMode"),
-        ("fix_intersecting_wires", "face", "SetFixIntersectingWiresMode"),
-        ("fix_loop_wires", "face", "SetFixLoopWiresMode"),
-        ("fix_split_face", "face", "SetFixSplitFaceMode"),
-        ("fix_periodic_degenerated", "face", "SetFixPeriodicDegeneratedMode"),
-        ("auto_correct_precision", "face", "SetAutoCorrectPrecisionMode"),
+        ("fix_wire_in_face", "face", "SetFixWireMode", True),
+        ("fix_orientation", "face", "SetFixOrientationMode", True),
+        ("fix_add_natural_bound", "face", "SetFixAddNaturalBoundMode", True),
+        ("fix_missing_seam", "face", "SetFixMissingSeamMode", True),
+        ("fix_small_area_wire", "face", "SetFixSmallAreaWireMode", False),
+        ("remove_small_area_face", "face", "SetRemoveSmallAreaFaceMode", False),
+        ("fix_intersecting_wires", "face", "SetFixIntersectingWiresMode", True),
+        ("fix_loop_wires", "face", "SetFixLoopWiresMode", True),
+        ("fix_split_face", "face", "SetFixSplitFaceMode", True),
+        ("fix_periodic_degenerated", "face", "SetFixPeriodicDegeneratedMode", True),
+        ("auto_correct_precision", "face", "SetAutoCorrectPrecisionMode", True),
     ]
     _WIRE_MODES = [
-        ("modify_topology", "wire", "SetModifyTopologyMode"),
-        ("modify_geometry", "wire", "SetModifyGeometryMode"),
-        ("modify_remove_loop", "wire", "SetModifyRemoveLoopMode"),
-        ("closed_wire", "wire", "SetClosedWireMode"),
-        ("preference_pcurve", "wire", "SetPreferencePCurveMode"),
-        ("fix_reorder", "wire", "SetFixReorderMode"),
-        ("fix_small", "wire", "SetFixSmallMode"),
-        ("fix_connected", "wire", "SetFixConnectedMode"),
-        ("fix_edge_curves", "wire", "SetFixEdgeCurvesMode"),
-        ("fix_degenerated", "wire", "SetFixDegeneratedMode"),
-        ("fix_self_intersection", "wire", "SetFixSelfIntersectionMode"),
-        ("fix_self_intersecting_edge", "wire", "SetFixSelfIntersectingEdgeMode"),
-        ("fix_intersecting_edges", "wire", "SetFixIntersectingEdgesMode"),
-        ("fix_non_adjacent_intersecting_edges", "wire", "SetFixNonAdjacentIntersectingEdgesMode"),
-        ("fix_lacking", "wire", "SetFixLackingMode"),
-        ("fix_gaps_3d", "wire", "SetFixGaps3dMode"),
-        ("fix_gaps_2d", "wire", "SetFixGaps2dMode"),
-        ("fix_gaps_by_ranges", "wire", "SetFixGapsByRangesMode"),
-        ("fix_notched_edges", "wire", "SetFixNotchedEdgesMode"),
-        ("fix_tails", "wire", "SetFixTailMode"),
-        ("fix_seam", "wire", "SetFixSeamMode"),
-        ("fix_shifted", "wire", "SetFixShiftedMode"),
-        ("fix_reversed_2d", "wire", "SetFixReversed2dMode"),
-        ("fix_same_parameter_wire", "wire", "SetFixSameParameterMode"),
-        ("fix_vertex_tolerance_wire", "wire", "SetFixVertexToleranceMode"),
-        ("fix_add_curve_3d", "wire", "SetFixAddCurve3dMode"),
-        ("fix_add_pcurve", "wire", "SetFixAddPCurveMode"),
-        ("fix_remove_curve_3d", "wire", "SetFixRemoveCurve3dMode"),
-        ("fix_remove_pcurve", "wire", "SetFixRemovePCurveMode"),
+        ("modify_topology", "wire", "SetModifyTopologyMode", False),
+        ("modify_geometry", "wire", "SetModifyGeometryMode", True),
+        ("modify_remove_loop", "wire", "SetModifyRemoveLoopMode", False),
+        ("closed_wire", "wire", "SetClosedWireMode", True),
+        ("preference_pcurve", "wire", "SetPreferencePCurveMode", True),
+        ("fix_reorder", "wire", "SetFixReorderMode", True),
+        ("fix_small", "wire", "SetFixSmallMode", False),
+        ("fix_connected", "wire", "SetFixConnectedMode", True),
+        ("fix_edge_curves", "wire", "SetFixEdgeCurvesMode", True),
+        ("fix_degenerated", "wire", "SetFixDegeneratedMode", True),
+        ("fix_self_intersection", "wire", "SetFixSelfIntersectionMode", True),
+        ("fix_self_intersecting_edge", "wire", "SetFixSelfIntersectingEdgeMode", True),
+        ("fix_intersecting_edges", "wire", "SetFixIntersectingEdgesMode", True),
+        ("fix_non_adjacent_intersecting_edges", "wire", "SetFixNonAdjacentIntersectingEdgesMode", True),
+        ("fix_lacking", "wire", "SetFixLackingMode", True),
+        ("fix_gaps_3d", "wire", "SetFixGaps3dMode", False),
+        ("fix_gaps_2d", "wire", "SetFixGaps2dMode", False),
+        ("fix_gaps_by_ranges", "wire", "SetFixGapsByRangesMode", False),
+        ("fix_notched_edges", "wire", "SetFixNotchedEdgesMode", True),
+        ("fix_tails", "wire", "SetFixTailMode", False),
+        ("fix_seam", "wire", "SetFixSeamMode", False),
+        ("fix_shifted", "wire", "SetFixShiftedMode", True),
+        ("fix_reversed_2d", "wire", "SetFixReversed2dMode", True),
+        ("fix_same_parameter_wire", "wire", "SetFixSameParameterMode", True),
+        ("fix_vertex_tolerance_wire", "wire", "SetFixVertexToleranceMode", True),
+        ("fix_add_curve_3d", "wire", "SetFixAddCurve3dMode", True),
+        ("fix_add_pcurve", "wire", "SetFixAddPCurveMode", True),
+        ("fix_remove_curve_3d", "wire", "SetFixRemoveCurve3dMode", False),
+        ("fix_remove_pcurve", "wire", "SetFixRemovePCurveMode", False),
     ]
     _TIP = {
         "fix_solid": "Fix solids (build/repair the solid from its shells).",
@@ -2938,8 +3045,8 @@ class CADHealShapeAdvanced(io.ComfyNode):
         "fix_intersecting_edges": "Repair adjacent edges in the wire that intersect.",
         "fix_non_adjacent_intersecting_edges": "Repair non-adjacent edges in the wire that intersect.",
         "fix_lacking": "Insert a 'lacking' edge to close an angular gap at a corner in UV space.",
-        "fix_gaps_3d": "Close 3D gaps between consecutive edge endpoints.",
-        "fix_gaps_2d": "Close 2D (pcurve) gaps between consecutive edges.",
+        "fix_gaps_3d": "Close 3D gaps between consecutive edge endpoints. NOTE: verified against OCCT source -- ShapeFix_Wire's automatic Perform() pass never calls this method in the installed OCC version, so this toggle currently has no effect through this node.",
+        "fix_gaps_2d": "Close 2D (pcurve) gaps between consecutive edges. NOTE: verified against OCCT source -- ShapeFix_Wire's automatic Perform() pass never calls this method in the installed OCC version, so this toggle currently has no effect through this node.",
         "fix_gaps_by_ranges": "Close gaps by adjusting pcurve parameter ranges.",
         "fix_notched_edges": "Remove notches (V-shaped backtracks) in the wire.",
         "fix_tails": "Remove 'tail' spikes in the wire (uses max_tail_angle / max_tail_width).",
@@ -2963,33 +3070,19 @@ class CADHealShapeAdvanced(io.ComfyNode):
             return 0.0
 
     @staticmethod
-    def _section(value, name):
-        """Return (is_custom, {mode_name: choice}) from a section DynamicCombo value."""
-        v = value[0] if isinstance(value, list) else value
-        if not isinstance(v, dict):
-            return False, {}
-        sel = v.get(name)
-        params = {}
-        for k, val in v.items():
-            kk = k.rsplit(".", 1)[-1]
-            if kk == name:
-                sel = sel if sel is not None else val
-            else:
-                params[kk] = val
-        return (str(sel) == "custom"), params
+    def _bool(x):
+        x = x[0] if isinstance(x, list) else x
+        return bool(x)
+
+    @classmethod
+    def _all_modes(cls):
+        return cls._SHAPE_MODES + cls._SHELL_SOLID_MODES + cls._FACE_MODES + cls._WIRE_MODES
 
     @classmethod
     def define_schema(cls):
-        def combos(table):
-            return [io.Combo.Input(n, options=cls.MODE, default="auto",
-                        tooltip=cls._TIP.get(n, f"OCC {s} (auto=default / on=force / off=skip)"))
-                    for (n, _t, s) in table]
-        wire_inputs = combos(cls._WIRE_MODES) + [
-            io.Float.Input("max_tail_angle", default=0.0, min=0.0, max=3.15, step=0.01,
-                tooltip="Tail removal: max angle (radians) of a spike to treat as a tail. 0 = use OCC default. Only used when fix_tails is on."),
-            io.Float.Input("max_tail_width", default=0.0, min=0.0, max=1e6, step=0.1,
-                tooltip="Tail removal: max width (model units) of a tail to remove. 0 = use OCC default. Only used when fix_tails is on."),
-        ]
+        def bool_inputs(table):
+            return [io.Boolean.Input(n, default=default, tooltip=cls._TIP.get(n, f"OCC {s}"))
+                    for (n, _t, s, default) in table]
         return io.Schema(
             node_id="CADHealShapeAdvanced",
             display_name="Heal CAD Shape (Advanced)",
@@ -3002,22 +3095,14 @@ class CADHealShapeAdvanced(io.ComfyNode):
                     tooltip="Floor on the tolerances ShapeFix may assign (model units). 0 = leave OCC's default minimum. The lower companion to max_tolerance."),
                 io.Float.Input("max_tolerance", default=1.0, min=0.01, max=100.0, step=0.1,
                     tooltip="Ceiling on how far healing may move/grow geometry to close a defect (model units). Bigger defects are left alone."),
-                io.DynamicCombo.Input("shape_fixes",
-                    tooltip="Top-level ShapeFix_Shape orchestration: which sub-levels (solid/free shell/face/wire) to fix, plus same-parameter and vertex fixes. 'default' = OCC defaults.",
-                    options=[io.DynamicCombo.Option("default", []),
-                             io.DynamicCombo.Option("custom", combos(cls._SHAPE_MODES))]),
-                io.DynamicCombo.Input("wire_fixes",
-                    tooltip="Per-wire (face boundary loop) fixes - the richest set: reorder, gaps, self-intersection, lacking edges, degenerate, tails, seams, pcurves, etc.",
-                    options=[io.DynamicCombo.Option("default", []),
-                             io.DynamicCombo.Option("custom", wire_inputs)]),
-                io.DynamicCombo.Input("face_fixes",
-                    tooltip="Per-face fixes: orientation (outer vs holes), missing seam, natural bound, intersecting/loop wires, small-area wires/faces, periodic poles.",
-                    options=[io.DynamicCombo.Option("default", []),
-                             io.DynamicCombo.Option("custom", combos(cls._FACE_MODES))]),
-                io.DynamicCombo.Input("shell_solid_fixes",
-                    tooltip="Shell + solid fixes: face/shell orientation (outward normals), open-solid handling, non-manifold flag.",
-                    options=[io.DynamicCombo.Option("default", []),
-                             io.DynamicCombo.Option("custom", combos(cls._SHELL_SOLID_MODES))]),
+                *bool_inputs(cls._SHAPE_MODES),
+                *bool_inputs(cls._SHELL_SOLID_MODES),
+                *bool_inputs(cls._FACE_MODES),
+                *bool_inputs(cls._WIRE_MODES),
+                io.Float.Input("max_tail_angle", default=0.0, min=0.0, max=3.15, step=0.01,
+                    tooltip="Tail removal: max angle (radians) of a spike to treat as a tail. 0 = use OCC default. Only used when fix_tails is on."),
+                io.Float.Input("max_tail_width", default=0.0, min=0.0, max=1e6, step=0.1,
+                    tooltip="Tail removal: max width (model units) of a tail to remove. 0 = use OCC default. Only used when fix_tails is on."),
             ],
             outputs=[
                 io.Custom("CAD_MODEL").Output(display_name="healed_model"),
@@ -3027,7 +3112,7 @@ class CADHealShapeAdvanced(io.ComfyNode):
 
     @classmethod
     def execute(cls, cad_model, precision=0.01, min_tolerance=0.0, max_tolerance=1.0,
-                shape_fixes=None, wire_fixes=None, face_fixes=None, shell_solid_fixes=None):
+                max_tail_angle=0.0, max_tail_width=0.0, **fix_kwargs):
         shape = _get_occ_shape(cad_model)
         sf = ShapeFix_Shape(shape)
         sf.SetPrecision(cls._num(precision))
@@ -3042,35 +3127,23 @@ class CADHealShapeAdvanced(io.ComfyNode):
         tools = {"shape": sf, "solid": solid, "shell": shell, "face": face, "wire": wire}
         applied = []
 
-        def apply(value, name, table):
-            custom, params = cls._section(value, name)
-            if not custom:
-                return
-            for (mode_name, tool_key, setter) in table:
-                choice = str(params.get(mode_name, "auto"))
-                if choice == "auto":
-                    continue
-                fn = getattr(tools[tool_key], setter, None)
-                if fn is None:
-                    continue
-                v = 1 if choice == "on" else 0
-                try:
-                    fn(v)                      # integer Fix...Mode setters
-                except TypeError:
-                    fn(bool(v))                # boolean setters (CreateOpenSolid, NonManifold, shape-level)
-                applied.append(f"{mode_name}={choice}")
-            if name == "wire_fixes":
-                ta = cls._num(params.get("max_tail_angle", 0.0))
-                tw = cls._num(params.get("max_tail_width", 0.0))
-                if ta > 0:
-                    wire.SetMaxTailAngle(ta); applied.append(f"max_tail_angle={ta}")
-                if tw > 0:
-                    wire.SetMaxTailWidth(tw); applied.append(f"max_tail_width={tw}")
+        for (mode_name, tool_key, setter, default) in cls._all_modes():
+            on = cls._bool(fix_kwargs.get(mode_name, default))
+            fn = getattr(tools[tool_key], setter, None)
+            if fn is None:
+                continue
+            try:
+                fn(int(on))                # integer Fix...Mode setters
+            except TypeError:
+                fn(on)                     # boolean setters (CreateOpenSolid, NonManifold, shape-level)
+            applied.append(f"{mode_name}={'on' if on else 'off'}")
 
-        apply(shape_fixes, "shape_fixes", cls._SHAPE_MODES)
-        apply(wire_fixes, "wire_fixes", cls._WIRE_MODES)
-        apply(face_fixes, "face_fixes", cls._FACE_MODES)
-        apply(shell_solid_fixes, "shell_solid_fixes", cls._SHELL_SOLID_MODES)
+        ta = cls._num(max_tail_angle)
+        tw = cls._num(max_tail_width)
+        if ta > 0:
+            wire.SetMaxTailAngle(ta); applied.append(f"max_tail_angle={ta}")
+        if tw > 0:
+            wire.SetMaxTailWidth(tw); applied.append(f"max_tail_width={tw}")
 
         sf.Perform()
         healed = sf.Shape()
@@ -3078,7 +3151,7 @@ class CADHealShapeAdvanced(io.ComfyNode):
 
         info = (f"Heal CAD Shape (Advanced): precision={cls._num(precision):g}, "
                 f"min_tol={cls._num(min_tolerance):g}, max_tol={cls._num(max_tolerance):g}\n"
-                f"  non-default modes: {', '.join(applied) if applied else '(none - all OCC defaults)'}")
+                f"  modes applied: {', '.join(applied)}")
         log.info("[HealAdvanced] %s", info)
         return io.NodeOutput(result, info, ui={"text": [info]})
 
