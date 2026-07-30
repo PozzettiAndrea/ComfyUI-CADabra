@@ -143,12 +143,26 @@ class CADRaytracerBVH(io.ComfyNode):
         rt = Raytracer(shape, deflection=deflection, backend=backend)
         log.info(f" Raytracer loaded: {rt.num_faces} faces")
 
+        # `resolution` is the pixel count of the LONGEST side; the other side is
+        # derived from the bounds' aspect ratio so non-square parts don't get
+        # stretched into a square image.
+        bbox_w = xmax - xmin
+        bbox_h = ymax - ymin
+        if bbox_w <= 0 or bbox_h <= 0:
+            res_w = res_h = resolution
+        elif bbox_w >= bbox_h:
+            res_w = resolution
+            res_h = max(1, round(resolution * bbox_h / bbox_w))
+        else:
+            res_h = resolution
+            res_w = max(1, round(resolution * bbox_w / bbox_h))
+
         # Render orthographic (top-down Z view)
         offset = zmax + 10.0
-        log.info(f" Rendering {resolution}x{resolution} orthographic view (output_mode={output_mode})")
+        log.info(f" Rendering {res_w}x{res_h} orthographic view (output_mode={output_mode})")
 
         results = rt.render_orthographic(
-            resolution=(resolution, resolution),
+            resolution=(res_w, res_h),
             bounds=(xmin, ymin, xmax, ymax),
             axis='z',
             offset=offset,

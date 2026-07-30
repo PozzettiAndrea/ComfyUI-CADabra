@@ -18,7 +18,7 @@ import numpy as np
 from comfy_api.latest import io
 
 from .cad_common import get_occ_shape
-from .cad_nodes import tessellate_occ_shape
+from .cad_nodes import tessellate_occ_shape, _get_surface_type_names, _get_curve_type_names
 
 try:
     import folder_paths
@@ -31,12 +31,40 @@ log = logging.getLogger("cadabra")
 
 
 def _tessellate(cad_model, linear_deflection, angular_deflection):
-    """CAD_MODEL -> (verts float32 [N,3], faces int32 [M,3])."""
+    """CAD_MODEL -> (verts float32 [N,3], faces int32 [M,3], occ_shape)."""
     occ = get_occ_shape(cad_model)
     verts, faces = tessellate_occ_shape(occ, linear_deflection, angular_deflection)
     if verts is None or len(verts) == 0:
         raise RuntimeError("Tessellation produced no vertices (empty/invalid CAD).")
-    return np.asarray(verts, np.float32), np.asarray(faces, np.int32)
+    return np.asarray(verts, np.float32), np.asarray(faces, np.int32), occ
+
+
+def _face_edge_type_counts(occ_shape):
+    """Tally face (surface) and edge (curve) types for an OCC shape -- same
+    categorization PreviewCADOCC uses in cad_nodes.py."""
+    from OCC.Core.TopAbs import TopAbs_FACE, TopAbs_EDGE
+    from OCC.Core.TopExp import TopExp_Explorer
+    from OCC.Core.TopoDS import topods
+    from OCC.Core.BRepAdaptor import BRepAdaptor_Surface, BRepAdaptor_Curve
+
+    surface_names = _get_surface_type_names()
+    curve_names = _get_curve_type_names()
+
+    face_counts = {}
+    explorer = TopExp_Explorer(occ_shape, TopAbs_FACE)
+    while explorer.More():
+        stype = surface_names.get(BRepAdaptor_Surface(topods.Face(explorer.Current())).GetType(), "Other")
+        face_counts[stype] = face_counts.get(stype, 0) + 1
+        explorer.Next()
+
+    edge_counts = {}
+    explorer = TopExp_Explorer(occ_shape, TopAbs_EDGE)
+    while explorer.More():
+        ctype = curve_names.get(BRepAdaptor_Curve(topods.Edge(explorer.Current())).GetType(), "Other")
+        edge_counts[ctype] = edge_counts.get(ctype, 0) + 1
+        explorer.Next()
+
+    return face_counts, edge_counts
 
 
 def _write_stl(verts, faces, path):
@@ -106,10 +134,13 @@ class PreviewCADDual(io.ComfyNode):
     @classmethod
     def execute(cls, cad_1, cad_2, layout="overlay", opacity_1=1.0, opacity_2=0.6,
                 linear_deflection=0.1, angular_deflection=0.5):
-        v1, f1 = _tessellate(cad_1, linear_deflection, angular_deflection)
-        v2, f2 = _tessellate(cad_2, linear_deflection, angular_deflection)
+        v1, f1, occ_1 = _tessellate(cad_1, linear_deflection, angular_deflection)
+        v2, f2, occ_2 = _tessellate(cad_2, linear_deflection, angular_deflection)
         log.info("Preview CAD Dual: cad_1 %d verts/%d tris, cad_2 %d verts/%d tris, layout=%s",
                  len(v1), len(f1), len(v2), len(f2), layout)
+
+        face_types_1, edge_types_1 = _face_edge_type_counts(occ_1)
+        face_types_2, edge_types_2 = _face_edge_type_counts(occ_2)
 
         ext1 = (v1.max(0) - v1.min(0)).tolist()
         ext2 = (v2.max(0) - v2.min(0)).tolist()
@@ -129,6 +160,8 @@ class PreviewCADDual(io.ComfyNode):
                 "is_watertight_1": [False], "is_watertight_2": [False],
                 "opacity_1": [float(opacity_1)], "opacity_2": [float(opacity_2)],
                 "common_fields": [[]],
+                "face_type_counts_1": [face_types_1], "face_type_counts_2": [face_types_2],
+                "edge_type_counts_1": [edge_types_1], "edge_type_counts_2": [edge_types_2],
             }
         else:  # overlay — combine + bake mesh_id so the two shapes are coloured distinctly
             verts = np.vstack([v1, v2]).astype(np.float32)
@@ -143,6 +176,8 @@ class PreviewCADDual(io.ComfyNode):
                 "face_count_1": [len(f1)], "face_count_2": [len(f2)],
                 "opacity_1": [float(opacity_1)], "opacity_2": [float(opacity_2)],
                 "common_fields": [["mesh_id"]],
+                "face_type_counts_1": [face_types_1], "face_type_counts_2": [face_types_2],
+                "edge_type_counts_1": [edge_types_1], "edge_type_counts_2": [edge_types_2],
             }
 
         log.info("Preview CAD Dual ready")

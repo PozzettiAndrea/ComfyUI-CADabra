@@ -144,7 +144,11 @@ def _find_connected_face_components(shape):
 
 
 class CADExtractFaces(io.ComfyNode):
-    """Extract only faces from a CAD model, removing edges, wires, and solids."""
+    """Extract only faces from a CAD model, removing edges, wires, and solids.
+
+    Optionally isolate a specific subset of faces via the `face_numbers` input
+    (0-based, comma-separated), e.g. to inspect just faces 0 and 10 of a model.
+    """
 
     @classmethod
     def define_schema(cls):
@@ -154,6 +158,14 @@ class CADExtractFaces(io.ComfyNode):
             category="CADabra/Utility",
             inputs=[
                 io.Custom("CAD_MODEL").Input("cad_model", tooltip="CAD model to extract faces from"),
+                io.String.Input("face_numbers", default="", optional=True,
+                    tooltip="Optional: comma-separated 0-based face indices to isolate, e.g. "
+                            "\"0,10,333\" extracts ONLY faces #0, #10, and #333 -- everything "
+                            "else is dropped. Numbering matches explorer order (the same "
+                            "numbering used by 'CAD Detect Degenerate Faces', 'CAD Ultimate "
+                            "Inspection', and the FaceID channel in 'Preview CAD (OCC)' / "
+                            "'CAD Raytracer (BVH)' -- the first face in the model is #0). "
+                            "Leave blank to extract ALL faces (default)."),
             ],
             outputs=[
                 io.Custom("CAD_MODEL").Output(display_name="faces_only"),
@@ -161,24 +173,44 @@ class CADExtractFaces(io.ComfyNode):
         )
 
     @classmethod
-    def execute(cls, cad_model):
-        """Extract only faces using OCC."""
+    def execute(cls, cad_model, face_numbers=""):
+        """Extract only faces using OCC, optionally isolating specific face indices."""
         shape = _get_occ_shape(cad_model)
 
-        # Create new compound with only faces
+        selected = None
+        face_numbers = (face_numbers or "").strip()
+        if face_numbers:
+            try:
+                selected = {int(tok.strip()) for tok in face_numbers.split(",") if tok.strip() != ""}
+            except ValueError:
+                raise ValueError(
+                    f"Invalid face_numbers '{face_numbers}' -- expected comma-separated "
+                    f"0-based integers, e.g. '0,10,333'"
+                )
+
+        # Create new compound with only (optionally selected) faces
         face_compound = TopoDS_Compound()
         builder = BRep_Builder()
         builder.MakeCompound(face_compound)
 
         face_count = 0
+        extracted_count = 0
         explorer = TopExp_Explorer(shape, TopAbs_FACE)
         while explorer.More():
-            face = topods.Face(explorer.Current())
-            builder.Add(face_compound, face)
+            if selected is None or face_count in selected:
+                face = topods.Face(explorer.Current())
+                builder.Add(face_compound, face)
+                extracted_count += 1
             face_count += 1
             explorer.Next()
 
-        log.info(f"Extracted {face_count} faces from CAD model")
+        if selected is not None:
+            missing = sorted(selected - set(range(face_count)))
+            if missing:
+                log.warning(f"face_numbers references out-of-range indices (shape has {face_count} faces): {missing}")
+            log.info(f"Extracted {extracted_count}/{face_count} faces (filtered by face_numbers={sorted(selected)})")
+        else:
+            log.info(f"Extracted {face_count} faces from CAD model")
 
         # Return new CAD_MODEL with OCC shape (no STEP round-trip!)
         result = _make_cad_model(face_compound, cad_model)
@@ -974,10 +1006,42 @@ class CADCheckOverlappingFaces(io.ComfyNode):
     """
     Detect overlapping or duplicate faces in CAD models.
 
-    Three detection methods are available:
-    - bbox_centroid: Fast comparison of bounding boxes, centroids, and areas
-    - self_intersect: Medium speed using OCCT's BOPAlgo_CheckerSI
-    - mesh_distance: Slow but thorough using BRepExtrema distance calculation
+    QUOTED OUT (disabled) per user request: bbox_centroid, self_intersect,
+    analytic_match, and mesh_distance are currently inert (their bodies are
+    commented out below, and execute() always dispatches to boolean_common
+    regardless of the `method` input) -- only boolean_common is active. The
+    descriptions below are kept for reference / easy re-enabling.
+
+    Five detection methods are available, roughly fast -> slow:
+    - bbox_centroid: Fastest, heuristic bounding-box/centroid/area comparison
+    - self_intersect: Medium speed, OCCT's BOPAlgo_CheckerSI
+    - analytic_match: Fast and exact, but only covers Plane/Cylinder/Cone/Sphere/Torus
+      faces (closed-form parameter comparison, O(1) per pair). Pairs involving any
+      other surface type are SKIPPED, not silently reported as "no overlap" -- their
+      count is tracked and surfaced in the report. For planes, also checks the two
+      faces' trimmed footprints actually overlap in area (not just lie on the same
+      infinite plane), so merely-adjacent coplanar faces are correctly not flagged.
+      For Cylinder/Cone/Sphere/Torus this checks surface identity only, not trimmed
+      overlap -- use mesh_distance/boolean_common to disambiguate if a flagged
+      curved-surface pair looks suspicious.
+    - mesh_distance: Slow, general-purpose. Measures the actual coincident AREA
+      fraction between two faces (each face sampled from its own triangulation,
+      each sample tested EXACTLY against the partner's real surface/boundary via
+      point-projection + classification), not just the closest-point distance.
+      This is what fixes the classic false positive where two topologically
+      adjacent faces (e.g. two walls of a box sharing an edge) have a minimum
+      distance of 0 -- they touch along a 1D edge, which has zero 2D area, so the
+      area-fraction test correctly does NOT flag them.
+    - boolean_common: Slowest, most rigorous. Computes the EXACT Boolean
+      intersection (BRepAlgoAPI_Common) of each candidate face pair and measures
+      its real area -- provably zero for a boundary-only touch, no sampling or
+      discretization involved at all. This is more rigorous than mesh_distance,
+      but OPT-IN rather than default: Boolean operations are exactly the OCCT
+      machinery most likely to warn, misbehave, or hang on the dirty/
+      self-intersecting geometry this node exists to diagnose. Use it when you
+      trust the input geometry (or specifically want to stress-test it) and want
+      the strongest possible guarantee; use mesh_distance for a more robust
+      default on real-world/potentially-defective files.
 
     Returns the number of overlapping face pairs found and a detailed report.
     """
@@ -990,11 +1054,49 @@ class CADCheckOverlappingFaces(io.ComfyNode):
             category="CADabra/Utility",
             inputs=[
                 io.Custom("CAD_MODEL").Input("cad_model", tooltip="CAD model to check for overlapping faces"),
-                io.Combo.Input("method", options=["bbox_centroid", "self_intersect", "mesh_distance"],
-                               default="bbox_centroid",
-                               tooltip="Detection method: bbox_centroid (fast), self_intersect (medium), mesh_distance (slow)"),
+                # QUOTED OUT (disabled): bbox_centroid, self_intersect, analytic_match, mesh_distance
+                # -- only boolean_common is active per user request. Restore by uncommenting these
+                # option names below (and see execute()'s dispatch, also quoted out to match).
+                io.Combo.Input("method", options=[# "bbox_centroid", "self_intersect", "analytic_match",
+                                                   # "mesh_distance",
+                                                   "boolean_common"],
+                               default="boolean_common",
+                               tooltip="Detection method, fast -> slow: "
+                                       "bbox_centroid (fastest, heuristic bbox/centroid/area match); "
+                                       "self_intersect (medium, OCCT's BOPAlgo_CheckerSI); "
+                                       "analytic_match (fast + exact, but ONLY for Plane/Cylinder/Cone/"
+                                       "Sphere/Torus faces -- skips BSpline/Bezier/other freeform surfaces, "
+                                       "tracked separately in the report; also checks trimmed-footprint "
+                                       "overlap for planes specifically, not just surface identity); "
+                                       "mesh_distance (slow, general-purpose -- measures actual coincident "
+                                       "AREA fraction across all surface types, correctly ignoring faces "
+                                       "that merely touch along a shared edge); "
+                                       "boolean_common (slowest, most rigorous -- exact Boolean-intersection "
+                                       "area, no sampling at all; OPT-IN since Boolean ops can misbehave on "
+                                       "dirty/self-intersecting geometry, only use on trusted input)."),
                 io.Float.Input("tolerance", default=0.01, min=1e-6, max=10.0, step=0.001,
-                               tooltip="Distance tolerance for considering faces as overlapping (in model units)"),
+                               tooltip="bbox_centroid / self_intersect / analytic_match / boolean_common: "
+                                       "absolute distance tolerance in model units. mesh_distance: RELATIVE "
+                                       "tolerance instead -- fraction of each face pair's characteristic size "
+                                       "(e.g. 0.01 = 1%) used as the point-coincidence distance band."),
+                io.Float.Input("area_fraction_threshold", default=0.3, min=0.0, max=1.0, step=0.01, optional=True,
+                               tooltip="mesh_distance / boolean_common only: minimum fraction of a face's area "
+                                       "that must be coincident with another face to flag the pair as "
+                                       "overlapping. 0.3 (30%) = 'worth a look', closer to 1.0 = 'almost "
+                                       "certainly a duplicate'."),
+                io.Boolean.Input("ignore_opposite_normals", default=False, optional=True,
+                               tooltip="mesh_distance / boolean_common only: don't flag coincident faces that "
+                                       "face opposite directions (e.g. legitimate mating faces between "
+                                       "separate parts in an assembly). Leave off for single-body defect "
+                                       "detection, where both same- and opposite-facing duplicates are real "
+                                       "defects."),
+                io.Float.Input("time_budget_seconds", default=60.0, min=1.0, max=3600.0, step=1.0, optional=True,
+                               tooltip="mesh_distance / boolean_common only: safety valve for defective/"
+                                       "degenerate geometry -- some malformed surfaces make the per-pair check "
+                                       "pathologically slow. Once this many seconds have elapsed, remaining "
+                                       "candidate pairs are skipped (and counted in the report) rather than "
+                                       "hanging indefinitely. NOTE for boolean_common: this cannot interrupt a "
+                                       "single BOP call that itself hangs, only bound the total across pairs."),
             ],
             outputs=[
                 io.Custom("CAD_MODEL").Output(display_name="cad_model"),
@@ -1004,33 +1106,49 @@ class CADCheckOverlappingFaces(io.ComfyNode):
         )
 
     @classmethod
-    def execute(cls, cad_model, method, tolerance):
+    def execute(cls, cad_model, method, tolerance, area_fraction_threshold=0.3, ignore_opposite_normals=False,
+                time_budget_seconds=60.0):
         """Check for overlapping faces using the selected method."""
         import time
         from math import sqrt
 
         shape = _get_occ_shape(cad_model)
 
+        # QUOTED OUT (disabled): all methods except boolean_common, per user request --
+        # force `method` to "boolean_common" regardless of what's passed in (e.g. a stale
+        # value from an old saved workflow), so the log/report always reflect what actually ran.
+        method = "boolean_common"
+
         log.info(f" Checking for overlapping faces using method: {method}, tolerance: {tolerance}")
         t0 = time.time()
 
-        if method == "bbox_centroid":
-            overlaps = cls._check_bbox_centroid(shape, tolerance)
-        elif method == "self_intersect":
-            overlaps = cls._check_self_intersect(shape, tolerance)
-        else:  # mesh_distance
-            overlaps = cls._check_mesh_distance(shape, tolerance)
+        skipped_info = None
+        # if method == "bbox_centroid":
+        #     overlaps = cls._check_bbox_centroid(shape, tolerance)
+        # elif method == "self_intersect":
+        #     overlaps = cls._check_self_intersect(shape, tolerance)
+        # elif method == "analytic_match":
+        #     overlaps, skipped_info = cls._check_analytic_match(shape, tolerance)
+        # elif method == "mesh_distance":
+        #     overlaps, skipped_info = cls._check_mesh_distance(
+        #         shape, tolerance, area_fraction_threshold, ignore_opposite_normals, time_budget_seconds)
+        # else:  # boolean_common
+        overlaps, skipped_info = cls._check_boolean_common(
+            shape, tolerance, area_fraction_threshold, ignore_opposite_normals, time_budget_seconds)
 
         elapsed = time.time() - t0
         log.info(f" Overlap detection completed in {elapsed:.3f}s, found {len(overlaps)} overlapping pairs")
 
         # Build detailed report
-        report = cls._build_report(method, tolerance, overlaps, elapsed)
+        report = cls._build_report(method, tolerance, overlaps, elapsed, skipped_info=skipped_info)
 
         return io.NodeOutput(cad_model, len(overlaps), report)
 
     @staticmethod
     def _check_bbox_centroid(shape, tolerance):
+        '''QUOTED OUT (disabled): only boolean_common is active for overlapping-face
+        detection per user request. Original implementation preserved verbatim below,
+        unreachable from execute() -- see _check_boolean_common for the active method.
         """Fast duplicate detection using bounding box, centroid, and area comparison."""
         from OCC.Core.BRepBndLib import brepbndlib
         from OCC.Core.Bnd import Bnd_Box
@@ -1106,9 +1224,14 @@ class CADCheckOverlappingFaces(io.ComfyNode):
                     })
 
         return overlaps
+        '''
+        return []
 
     @staticmethod
     def _check_self_intersect(shape, tolerance):
+        '''QUOTED OUT (disabled): only boolean_common is active for overlapping-face
+        detection per user request. Original implementation preserved verbatim below,
+        unreachable from execute() -- see _check_boolean_common for the active method.
         """Use OCCT's built-in self-intersection checker."""
         from OCC.Core.BOPAlgo import BOPAlgo_CheckerSI
         from OCC.Core.TopTools import TopTools_ListOfShape
@@ -1170,78 +1293,636 @@ class CADCheckOverlappingFaces(io.ComfyNode):
                 })
 
         return overlaps
+        '''
+        return []
 
     @staticmethod
-    def _check_mesh_distance(shape, tolerance):
-        """Check mesh vertex distances between faces using BRepExtrema."""
-        from OCC.Core.BRepMesh import BRepMesh_IncrementalMesh
-        from OCC.Core.BRepExtrema import BRepExtrema_DistShapeShape
-        from OCC.Core.BRepBndLib import brepbndlib
-        from OCC.Core.Bnd import Bnd_Box
+    def _check_analytic_match(shape, tolerance):
+        '''QUOTED OUT (disabled): only boolean_common is active for overlapping-face
+        detection per user request. Original implementation preserved verbatim below,
+        unreachable from execute() -- see _check_boolean_common for the active method.
+        """Fast, exact overlap check for the 5 quadric analytic surface types
+        (Plane/Cylinder/Cone/Sphere/Torus) via closed-form parameter comparison --
+        O(1) per candidate pair, no meshing or sampling at all.
 
-        # First triangulate the shape
-        log.info(f"   Triangulating shape...")
-        mesh = BRepMesh_IncrementalMesh(shape, tolerance * 10)  # coarse mesh for speed
-        mesh.Perform()
+        Pairs involving any other surface type (BSpline/Bezier/Revolution/
+        Extrusion/Offset/Other) are SKIPPED, not reported as "no overlap" --
+        their count is returned separately so a caller can surface "N pairs not
+        checked" rather than silently implying full coverage. Use mesh_distance
+        for full coverage across all surface types.
 
-        # Get all faces
+        For Plane faces specifically, coincident-surface parameters alone are NOT
+        enough -- two faces can lie on the exact same infinite plane while being
+        entirely disjoint (e.g. a rectangle split into two halves along a shared
+        edge), which is exactly the false-positive class this whole rewrite exists
+        to eliminate. So for planes, this also verifies the two faces' trimmed
+        footprints actually overlap in area, via a 2D AABB test in the plane's own
+        local (u, v) axes (correct for any plane orientation, not just axis-aligned
+        ones -- unlike a naive world-XYZ bounding-box check).
+
+        For Cylinder/Cone/Sphere/Torus, this checks surface identity only (axis/
+        radius/center coincidence), NOT whether the two faces' trimmed regions
+        overlap -- e.g. two non-overlapping height-bands of the same cylinder would
+        still match. This is a deliberately accepted, narrower scope than the Plane
+        case: exact axis+radius (+angle, +center) coincidence by chance for two
+        genuinely unrelated curved-surface regions is rare in practice, unlike the
+        very common planar split-face pattern. Use mesh_distance to disambiguate a
+        flagged pair if in doubt.
+
+        Returns (overlaps, meta) where meta = {'skipped_unsupported_count': int}.
+        """
+        from math import sqrt, pi
+        from OCC.Core.gp import gp_Lin, gp_Vec
+        from OCC.Core.TopAbs import TopAbs_VERTEX
+        from OCC.Core.BRep import BRep_Tool
+
+        analytic_types = {
+            GeomAbs_Plane, GeomAbs_Cylinder, GeomAbs_Cone, GeomAbs_Sphere, GeomAbs_Torus,
+        }
+        angular_eps = pi / 180.0  # 1 degree; unsigned (IsParallel treats 0 and pi as parallel)
+
+        def _face_vertices(face):
+            pts = []
+            vexp = TopExp_Explorer(face, TopAbs_VERTEX)
+            while vexp.More():
+                p = BRep_Tool.Pnt(topods.Vertex(vexp.Current()))
+                pts.append(p)
+                vexp.Next()
+            return pts
+
+        def _plane_footprints_overlap(pln, verts1, verts2, tol):
+            """2D AABB-intersection test in the plane's own local u/v axes."""
+            if not verts1 or not verts2:
+                return True  # no vertex data to disprove overlap with -- don't false-negative
+            origin = pln.Location()
+            xdir = gp_Vec(pln.Position().XDirection())
+            ydir = gp_Vec(pln.Position().YDirection())
+
+            def project(p):
+                v = gp_Vec(origin, p)
+                return v.Dot(xdir), v.Dot(ydir)
+
+            uv1 = [project(p) for p in verts1]
+            uv2 = [project(p) for p in verts2]
+            u1min, u1max = min(p[0] for p in uv1), max(p[0] for p in uv1)
+            v1min, v1max = min(p[1] for p in uv1), max(p[1] for p in uv1)
+            u2min, u2max = min(p[0] for p in uv2), max(p[0] for p in uv2)
+            v2min, v2max = min(p[1] for p in uv2), max(p[1] for p in uv2)
+            u_overlap = min(u1max, u2max) - max(u1min, u2min)
+            v_overlap = min(v1max, v2max) - max(v1min, v2min)
+            return u_overlap > tol and v_overlap > tol
+
         faces = []
         explorer = TopExp_Explorer(shape, TopAbs_FACE)
+        idx = 0
         while explorer.More():
             face = topods.Face(explorer.Current())
-            # Get bounding box for quick filtering
             bbox = Bnd_Box()
             brepbndlib.Add(face, bbox)
-            faces.append({
-                'face': face,
-                'bbox': bbox
-            })
+            adaptor = BRepAdaptor_Surface(face)
+            faces.append({'idx': idx, 'face': face, 'bbox': bbox, 'type': adaptor.GetType(), 'adaptor': adaptor})
+            idx += 1
             explorer.Next()
 
-        log.info(f"   Checking distances between {len(faces)} faces...")
+        log.info(f"   Comparing analytic surface parameters across {len(faces)} faces...")
+
+        overlaps = []
+        skipped_unsupported = 0
+
+        for i, f1 in enumerate(faces):
+            for f2 in faces[i + 1:]:
+                if not f1['bbox'].IsVoid() and not f2['bbox'].IsVoid():
+                    if f1['bbox'].Distance(f2['bbox']) > tolerance:
+                        continue
+
+                t1, t2 = f1['type'], f2['type']
+                if t1 not in analytic_types or t2 not in analytic_types or t1 != t2:
+                    skipped_unsupported += 1
+                    continue
+
+                a1, a2 = f1['adaptor'], f2['adaptor']
+                match = False
+                try:
+                    if t1 == GeomAbs_Plane:
+                        pln1, pln2 = a1.Plane(), a2.Plane()
+                        n1, n2 = pln1.Axis().Direction(), pln2.Axis().Direction()
+                        if n1.IsParallel(n2, angular_eps) and pln2.Contains(pln1.Location(), tolerance):
+                            match = _plane_footprints_overlap(
+                                pln1, _face_vertices(f1['face']), _face_vertices(f2['face']), tolerance)
+                    elif t1 == GeomAbs_Cylinder:
+                        c1, c2 = a1.Cylinder(), a2.Cylinder()
+                        ax1, ax2 = c1.Axis(), c2.Axis()
+                        if (ax1.Direction().IsParallel(ax2.Direction(), angular_eps)
+                                and abs(c1.Radius() - c2.Radius()) < tolerance):
+                            lin1 = gp_Lin(ax1.Location(), ax1.Direction())
+                            lin2 = gp_Lin(ax2.Location(), ax2.Direction())
+                            match = lin1.Distance(lin2) < tolerance
+                    elif t1 == GeomAbs_Cone:
+                        cn1, cn2 = a1.Cone(), a2.Cone()
+                        ax1, ax2 = cn1.Axis(), cn2.Axis()
+                        if (ax1.Direction().IsParallel(ax2.Direction(), angular_eps)
+                                and abs(cn1.SemiAngle() - cn2.SemiAngle()) < angular_eps
+                                and abs(cn1.RefRadius() - cn2.RefRadius()) < tolerance):
+                            lin1 = gp_Lin(ax1.Location(), ax1.Direction())
+                            lin2 = gp_Lin(ax2.Location(), ax2.Direction())
+                            match = lin1.Distance(lin2) < tolerance
+                    elif t1 == GeomAbs_Sphere:
+                        s1, s2 = a1.Sphere(), a2.Sphere()
+                        if (s1.Location().Distance(s2.Location()) < tolerance
+                                and abs(s1.Radius() - s2.Radius()) < tolerance):
+                            match = True
+                    elif t1 == GeomAbs_Torus:
+                        tr1, tr2 = a1.Torus(), a2.Torus()
+                        ax1, ax2 = tr1.Axis(), tr2.Axis()
+                        if ax1.Direction().IsParallel(ax2.Direction(), angular_eps):
+                            lin1 = gp_Lin(ax1.Location(), ax1.Direction())
+                            lin2 = gp_Lin(ax2.Location(), ax2.Direction())
+                            match = (lin1.Distance(lin2) < tolerance
+                                     and abs(tr1.MajorRadius() - tr2.MajorRadius()) < tolerance
+                                     and abs(tr1.MinorRadius() - tr2.MinorRadius()) < tolerance)
+                except Exception as e:
+                    log.warning(f"   analytic_match: skipping face pair ({f1['idx']}, {f2['idx']}): {e}")
+                    continue
+
+                if match:
+                    overlaps.append({
+                        'face1_idx': f1['idx'],
+                        'face2_idx': f2['idx'],
+                        'surface_type': _SURFACE_TYPE_NAMES.get(t1, 'Unknown'),
+                        'method': 'analytic_match',
+                    })
+
+        if skipped_unsupported:
+            log.info(f"   analytic_match: {skipped_unsupported} pair(s) involved a non-analytic or "
+                      f"mismatched surface type and were not checked")
+
+        return overlaps, {'skipped_unsupported_count': skipped_unsupported}
+        '''
+        return [], {}
+
+    @staticmethod
+    def _check_mesh_distance(shape, tolerance, area_fraction_threshold=0.3, ignore_opposite_normals=False,
+                              time_budget_seconds=60.0):
+        '''QUOTED OUT (disabled): only boolean_common is active for overlapping-face
+        detection per user request. Original implementation preserved verbatim below,
+        unreachable from execute() -- see _check_boolean_common for the active method.
+        """Detect overlapping faces by the fraction of each face's AREA that lies
+        within a scale-normalized distance of the other face -- not just the
+        single closest point pair (BRepExtrema-style), which is 0 for any pair of
+        topologically adjacent faces (e.g. two box walls sharing an edge) and
+        produces a false positive on essentially every normal model.
+
+        Each face is sampled from its own triangulation, at a resolution scaled to
+        ITS OWN area only -- this is deliberately independent of whichever partner
+        it's later checked against. Each sample point is then tested EXACTLY
+        against the partner: projected onto the partner's real analytic/NURBS
+        surface (`GeomAPI_ProjectPointOnSurf`, no discretization of the partner at
+        all) and classified against the partner's real trimmed boundary
+        (`BRepTopAdaptor_FClass2d`, cached per face and reused across every pair).
+        This is what correctly handles a small face fully overlapping a tiny
+        sub-region of a much larger one: resolving that case does NOT require
+        finely meshing the large face (which would need an enormous, partner-size-
+        dependent sample budget) -- it only requires the SMALL face's own
+        (naturally fine, since it's small) samples to be tested exactly against the
+        large face's real surface, which they already are. `overlap_fraction =
+        max(frac1, frac2)` then picks up the small face's own high coverage
+        fraction even though the large face's own fraction stays tiny.
+
+        The distance threshold is normalized to `tolerance * min(sqrt(area1),
+        sqrt(area2))` -- NOT bounding-box diagonal of either face or the pair --
+        because bbox diagonal is a poor size proxy for slivers/curved faces and
+        would make the threshold trivially loose for a tiny-face/huge-face pair,
+        reintroducing the original adjacency false-positive at pair granularity.
+
+        `time_budget_seconds` is a hard safety valve: on real defective geometry
+        (e.g. self-intersecting wires), `GeomAPI_ProjectPointOnSurf` can converge
+        pathologically slowly on a handful of degenerate pairs -- confirmed on a
+        2156-face real-world part with known self-intersecting faces, where a
+        small number of pairs each took many seconds. Once the budget is exceeded,
+        remaining candidate pairs are skipped and counted (not silently dropped)
+        rather than hanging indefinitely -- exactly the graceful-degradation
+        posture this whole method exists to have on dirty input, since exact
+        Boolean ops were deliberately rejected for the same reason.
+
+        Returns (overlaps, meta) where meta = {'skipped_time_budget_count': int}.
+        """
+        import time as _time
+        import numpy as np
+        from math import sqrt
+        from OCC.Core.BRepMesh import BRepMesh_IncrementalMesh
+        from OCC.Core.BRep import BRep_Tool
+        from OCC.Core.TopLoc import TopLoc_Location
+        from OCC.Core.TopAbs import TopAbs_REVERSED, TopAbs_IN, TopAbs_ON
+        from OCC.Core.GeomAPI import GeomAPI_ProjectPointOnSurf
+        from OCC.Core.BRepTopAdaptor import BRepTopAdaptor_FClass2d
+        from OCC.Core.GeomLProp import GeomLProp_SLProps
+        from OCC.Core.gp import gp_Pnt, gp_Pnt2d
+
+        MIN_ABS_DISTANCE = 1e-6
+        MAX_SAMPLES_PER_FACE = 250
+
+        # Base mesh deflection is derived from the shape's own size, decoupled from
+        # `tolerance` (the old code used `tolerance * 10`, conflating an unrelated
+        # mesh-quality knob with the overlap-distance knob).
+        shape_bbox = Bnd_Box()
+        brepbndlib.Add(shape, shape_bbox)
+        if not shape_bbox.IsVoid():
+            bx0, by0, bz0, bx1, by1, bz1 = shape_bbox.Get()
+            bbox_diag = sqrt((bx1 - bx0) ** 2 + (by1 - by0) ** 2 + (bz1 - bz0) ** 2)
+        else:
+            bbox_diag = 1.0
+        linear_deflection = max(bbox_diag * 0.001, 1e-6)
+
+        log.info(f"   Triangulating shape (linear_deflection={linear_deflection:.6g})...")
+        mesh = BRepMesh_IncrementalMesh(shape, linear_deflection, False, 0.5)
+        mesh.Perform()
+
+        def _face_samples(face, area):
+            """Area-weighted (centroid, weight, normal) samples from a face's own
+            triangulation, resolution scaled to THIS face's own area only."""
+            loc = TopLoc_Location()
+            tri = BRep_Tool.Triangulation(face, loc)
+            if tri is None:
+                return None
+            trsf = loc.Transformation()
+            nb_nodes = tri.NbNodes()
+            verts = np.empty((nb_nodes, 3), dtype=np.float64)
+            for i in range(1, nb_nodes + 1):
+                p = tri.Node(i).Transformed(trsf)
+                verts[i - 1] = (p.X(), p.Y(), p.Z())
+            reversed_face = face.Orientation() == TopAbs_REVERSED
+
+            max_leaf_area = max(area / 250.0, linear_deflection ** 2, 1e-12)
+            points, weights, normals = [], [], []
+
+            def emit(v0, v1, v2):
+                cross = np.cross(v1 - v0, v2 - v0)
+                a = 0.5 * np.linalg.norm(cross)
+                if a <= 0.0:
+                    return
+                normal = cross / (2.0 * a)
+                if reversed_face:
+                    normal = -normal
+                points.append((v0 + v1 + v2) / 3.0)
+                weights.append(a)
+                normals.append(normal)
+
+            def subdivide(v0, v1, v2, depth):
+                if len(points) >= MAX_SAMPLES_PER_FACE:
+                    emit(v0, v1, v2)
+                    return
+                a = 0.5 * np.linalg.norm(np.cross(v1 - v0, v2 - v0))
+                if a <= max_leaf_area or depth <= 0:
+                    emit(v0, v1, v2)
+                    return
+                m01, m12, m20 = (v0 + v1) / 2.0, (v1 + v2) / 2.0, (v2 + v0) / 2.0
+                subdivide(v0, m01, m20, depth - 1)
+                subdivide(m01, v1, m12, depth - 1)
+                subdivide(m20, m12, v2, depth - 1)
+                subdivide(m01, m12, m20, depth - 1)
+
+            for i in range(1, tri.NbTriangles() + 1):
+                n1, n2, n3 = tri.Triangle(i).Get()
+                subdivide(verts[n1 - 1], verts[n2 - 1], verts[n3 - 1], depth=8)
+
+            if not points:
+                return None
+            return np.array(points), np.array(weights), np.array(normals)
+
+        # --- Per-face prep (once per face, not per pair) ---
+        faces = []
+        explorer = TopExp_Explorer(shape, TopAbs_FACE)
+        idx = 0
+        while explorer.More():
+            face = topods.Face(explorer.Current())
+            bbox = Bnd_Box()
+            brepbndlib.Add(face, bbox)
+            props = GProp_GProps()
+            brepgprop.SurfaceProperties(face, props)
+            area = props.Mass()
+            surface = BRep_Tool.Surface(face)
+            classifier = None
+            if surface is not None:
+                try:
+                    classifier = BRepTopAdaptor_FClass2d(face, 1e-6)
+                except Exception as e:
+                    log.warning(f"   Face {idx}: could not build 2D classifier, skipping: {e}")
+            faces.append({
+                'idx': idx, 'bbox': bbox, 'area': area, 'surface': surface,
+                'classifier': classifier, 'samples': _face_samples(face, area),
+            })
+            idx += 1
+            explorer.Next()
+
+        log.info(f"   Checking area-fraction overlap between {len(faces)} faces...")
+
+        def _covered_mask(pts, d_thresh, tgt_surface, tgt_classifier):
+            """For each source sample point, project exactly onto tgt's real
+            surface and classify against tgt's real trimmed boundary -- no
+            discretization of tgt at all, so resolution only depends on the
+            SOURCE face's own (independently sized) sampling."""
+            covered = np.zeros(len(pts), dtype=bool)
+            tgt_normals = np.zeros((len(pts), 3), dtype=np.float64)
+            for k in range(len(pts)):
+                try:
+                    proj = GeomAPI_ProjectPointOnSurf(gp_Pnt(*pts[k]), tgt_surface)
+                    if proj.NbPoints() == 0 or proj.LowerDistance() > d_thresh:
+                        continue
+                    u, v = proj.LowerDistanceParameters()
+                    state = tgt_classifier.Perform(gp_Pnt2d(u, v))
+                    if state == TopAbs_IN or state == TopAbs_ON:
+                        covered[k] = True
+                        props = GeomLProp_SLProps(tgt_surface, u, v, 1, 1e-6)
+                        if props.IsNormalDefined():
+                            n = props.Normal()
+                            tgt_normals[k] = (n.X(), n.Y(), n.Z())
+                except Exception:
+                    continue
+            return covered, tgt_normals
 
         overlaps = []
         comparisons = 0
+        skipped_time_budget = 0
+        start_time = _time.time()
+        budget_exceeded = False
 
-        for i, f1_data in enumerate(faces):
-            f1 = f1_data['face']
-            bbox1 = f1_data['bbox']
+        for i, f1 in enumerate(faces):
+            if budget_exceeded:
+                break
+            for j, f2 in enumerate(faces[i + 1:]):
+                if budget_exceeded:
+                    break
 
-            for j, f2_data in enumerate(faces[i+1:], i+1):
-                f2 = f2_data['face']
-                bbox2 = f2_data['bbox']
+                if f1['samples'] is None or f2['samples'] is None:
+                    continue
+                if f1['surface'] is None or f2['surface'] is None:
+                    continue
+                if f1['classifier'] is None or f2['classifier'] is None:
+                    continue
 
-                # Quick bounding box filter - skip if bboxes are far apart
-                if not bbox1.IsVoid() and not bbox2.IsVoid():
-                    dist_bbox = bbox1.Distance(bbox2)
-                    if dist_bbox > tolerance:
+                if (_time.time() - start_time) > time_budget_seconds:
+                    budget_exceeded = True
+                    rem_this_i = len(faces) - i - 1 - j
+                    rem_i = len(faces) - i - 1
+                    remaining_pairs = rem_this_i + rem_i * (rem_i - 1) // 2
+                    skipped_time_budget += remaining_pairs
+                    log.warning(f"   mesh_distance: time budget ({time_budget_seconds}s) exceeded after "
+                                f"{comparisons} comparisons -- skipping {remaining_pairs} remaining candidate pairs")
+                    break
+
+                l_pair = min(sqrt(max(f1['area'], 0.0)), sqrt(max(f2['area'], 0.0)))
+                d_thresh = max(tolerance * l_pair, MIN_ABS_DISTANCE)
+
+                # Bnd_Box.Distance is a true lower bound on the real minimum
+                # distance between the shapes, so filtering on it against
+                # d_thresh here cannot reject a pair that would otherwise pass.
+                if not f1['bbox'].IsVoid() and not f2['bbox'].IsVoid():
+                    if f1['bbox'].Distance(f2['bbox']) > d_thresh:
+                        continue
+
+                    # Second, cheap (numpy-only) filter: on a real mechanical part,
+                    # the vast majority of bbox-distance-0 pairs are merely
+                    # topologically adjacent (sharing an edge/vertex), not
+                    # area-overlapping -- without this, models with thousands of
+                    # faces spend the expensive per-point projection check below on
+                    # every single adjacency, which doesn't finish in practical time
+                    # (confirmed: 2156-face real part exceeded a 280s budget without
+                    # this filter). A world-axis-aligned bbox intersection that's
+                    # degenerate (near-zero width) in 2+ of 3 dimensions is
+                    # consistent with pure edge/vertex contact and inconsistent with
+                    # any 2D area overlap. KNOWN LIMITATION: for a heavily rotated
+                    # planar/cylindrical overlap whose world-XYZ bbox intersection
+                    # happens to be misleadingly thin in 2 axes despite genuine
+                    # in-surface overlap, this filter could reject a real match --
+                    # analytic_match doesn't share this blind spot (it tests in each
+                    # surface's own local frame, not world axes), so it's a good
+                    # complementary check for Plane/Cylinder/Cone/Sphere/Torus faces.
+                    b1 = f1['bbox'].Get()
+                    b2 = f2['bbox'].Get()
+                    positive_dims = 0
+                    for k in range(3):
+                        lo = max(b1[k], b2[k])
+                        hi = min(b1[k + 3], b2[k + 3])
+                        if (hi - lo) > d_thresh:
+                            positive_dims += 1
+                    if positive_dims < 2:
                         continue
 
                 comparisons += 1
-
-                # Use BRepExtrema for precise distance
                 try:
-                    dist_calc = BRepExtrema_DistShapeShape(f1, f2)
-                    if dist_calc.IsDone() and dist_calc.Value() < tolerance:
-                        overlaps.append({
-                            'face1_idx': i,
-                            'face2_idx': j,
-                            'distance': dist_calc.Value(),
-                            'method': 'mesh_distance'
-                        })
+                    pts1, w1, n1 = f1['samples']
+                    pts2, w2, n2 = f2['samples']
+
+                    mask1, matched_n2 = _covered_mask(pts1, d_thresh, f2['surface'], f2['classifier'])
+                    frac1 = float(w1[mask1].sum() / f1['area']) if f1['area'] > 0 else 0.0
+
+                    mask2, matched_n1 = _covered_mask(pts2, d_thresh, f1['surface'], f1['classifier'])
+                    frac2 = float(w2[mask2].sum() / f2['area']) if f2['area'] > 0 else 0.0
+
+                    overlap_fraction = max(frac1, frac2)
+                    if overlap_fraction < area_fraction_threshold:
+                        continue
+
+                    # Orientation diagnostic from whichever side drives the flagged
+                    # fraction (more samples -> more reliable weighted average).
+                    if frac1 >= frac2 and mask1.any():
+                        orientation_dot = float(np.average(
+                            np.einsum('ij,ij->i', n1[mask1], matched_n2[mask1]), weights=w1[mask1]))
+                    elif mask2.any():
+                        orientation_dot = float(np.average(
+                            np.einsum('ij,ij->i', n2[mask2], matched_n1[mask2]), weights=w2[mask2]))
+                    else:
+                        orientation_dot = 0.0
+
+                    if ignore_opposite_normals and orientation_dot <= 0:
+                        continue
+
+                    overlaps.append({
+                        'face1_idx': f1['idx'],
+                        'face2_idx': f2['idx'],
+                        'frac1': frac1,
+                        'frac2': frac2,
+                        'overlap_fraction': overlap_fraction,
+                        'orientation_dot': orientation_dot,
+                        'area1': f1['area'],
+                        'area2': f2['area'],
+                        'method': 'mesh_distance',
+                    })
                 except Exception as e:
-                    # Skip problematic face pairs
-                    pass
+                    log.warning(f"   mesh_distance: skipping face pair ({f1['idx']}, {f2['idx']}): {e}")
 
-            # Progress indicator for large models
-            if (i + 1) % 100 == 0:
-                log.info(f"   Processed {i + 1}/{len(faces)} faces ({comparisons} precise comparisons)...")
+            _progress_bar(i + 1, len(faces), _time.time() - start_time, prefix="Overlap check: ")
 
-        log.info(f"   Performed {comparisons} precise distance calculations")
-        return overlaps
+        log.info(f"   Performed {comparisons} area-fraction comparisons")
+        return overlaps, {'skipped_time_budget_count': skipped_time_budget}
+        '''
+        return [], {}
 
     @staticmethod
-    def _build_report(method, tolerance, overlaps, elapsed):
+    def _check_boolean_common(shape, tolerance, area_fraction_threshold=0.3, ignore_opposite_normals=False,
+                               time_budget_seconds=60.0):
+        """Exact overlap check via BRepAlgoAPI_Common (Boolean intersection) between
+        each candidate face pair -- the authoritative, discretization-free answer:
+        `GProp_GProps`/`BRepGProp.SurfaceProperties` only integrates over Face
+        subshapes, so a boundary-only touch (shared edge, zero 2D measure)
+        produces exactly zero area in the result, at any tolerance, with no
+        sampling/resolution risk at all.
+
+        This is deliberately NOT the default method. Boolean operations are
+        exactly the OCCT machinery most likely to warn, misbehave, or hang on
+        the dirty/self-intersecting geometry this whole node exists to diagnose
+        (this repo's own badcads/Case Pump.stp has a genuinely self-intersecting
+        wire). Offered as an opt-in backend for trusted/clean input, or for
+        deliberately stress-testing suspect geometry. `time_budget_seconds`
+        bounds total wall-clock across pairs the same way as mesh_distance, but
+        --  unlike a subprocess-isolated timeout -- it CANNOT interrupt a single
+        BOP call that itself hangs; only Python-level exceptions and the
+        between-pair budget check are covered.
+
+        Since this method doesn't sample points, `ignore_opposite_normals` is
+        evaluated by projecting the common region's own centroid back onto each
+        source face and comparing surface normals there.
+
+        Returns (overlaps, meta) where meta = {'skipped_time_budget_count': int,
+        'skipped_error_count': int}.
+        """
+        import time as _time
+        from math import sqrt
+        from OCC.Core.BRepAlgoAPI import BRepAlgoAPI_Common
+        from OCC.Core.TopAbs import TopAbs_FACE as _TopAbs_FACE
+        from OCC.Core.GeomAPI import GeomAPI_ProjectPointOnSurf
+        from OCC.Core.GeomLProp import GeomLProp_SLProps
+        from OCC.Core.BRep import BRep_Tool as _BRep_Tool
+
+        MIN_ABS_DISTANCE = 1e-6
+
+        faces = []
+        explorer = TopExp_Explorer(shape, TopAbs_FACE)
+        idx = 0
+        while explorer.More():
+            face = topods.Face(explorer.Current())
+            bbox = Bnd_Box()
+            brepbndlib.Add(face, bbox)
+            props = GProp_GProps()
+            brepgprop.SurfaceProperties(face, props)
+            faces.append({
+                'idx': idx, 'face': face, 'bbox': bbox, 'area': props.Mass(),
+                'surface': _BRep_Tool.Surface(face),
+            })
+            idx += 1
+            explorer.Next()
+
+        log.info(f"   Computing exact Boolean intersections across {len(faces)} faces...")
+
+        def _normal_at(face, surface, point):
+            try:
+                proj = GeomAPI_ProjectPointOnSurf(point, surface)
+                if proj.NbPoints() == 0:
+                    return None
+                u, v = proj.LowerDistanceParameters()
+                props = GeomLProp_SLProps(surface, u, v, 1, 1e-6)
+                if not props.IsNormalDefined():
+                    return None
+                n = props.Normal()
+                return (n.X(), n.Y(), n.Z())
+            except Exception:
+                return None
+
+        overlaps = []
+        comparisons = 0
+        skipped_time_budget = 0
+        skipped_errors = 0
+        start_time = _time.time()
+        budget_exceeded = False
+
+        for i, f1 in enumerate(faces):
+            if budget_exceeded:
+                break
+            for j, f2 in enumerate(faces[i + 1:]):
+                if budget_exceeded:
+                    break
+
+                l_pair = min(sqrt(max(f1['area'], 0.0)), sqrt(max(f2['area'], 0.0)))
+                d_thresh = max(tolerance * l_pair, MIN_ABS_DISTANCE)
+
+                # Only the safe (lower-bound, no-false-reject) bbox-distance
+                # filter -- deliberately NOT mesh_distance's extra 2-of-3
+                # positive-dims filter, which has a known blind spot for
+                # heavily rotated features. This method exists to be the
+                # no-compromises "exact" tier, so it doesn't trade away
+                # correctness for speed the way the cheaper tiers do.
+                if not f1['bbox'].IsVoid() and not f2['bbox'].IsVoid():
+                    if f1['bbox'].Distance(f2['bbox']) > d_thresh:
+                        continue
+
+                if (_time.time() - start_time) > time_budget_seconds:
+                    budget_exceeded = True
+                    rem_this_i = len(faces) - i - 1 - j
+                    rem_i = len(faces) - i - 1
+                    skipped_time_budget += rem_this_i + rem_i * (rem_i - 1) // 2
+                    log.warning(f"   boolean_common: time budget ({time_budget_seconds}s) exceeded after "
+                                f"{comparisons} comparisons -- skipping remaining candidate pairs")
+                    break
+
+                comparisons += 1
+                try:
+                    common = BRepAlgoAPI_Common(f1['face'], f2['face'])
+                    common.SetFuzzyValue(tolerance)
+                    common.Build()
+                    if not common.IsDone():
+                        continue
+
+                    result = common.Shape()
+                    props = GProp_GProps()
+                    brepgprop.SurfaceProperties(result, props)
+                    common_area = props.Mass()
+
+                    frac1 = float(common_area / f1['area']) if f1['area'] > 0 else 0.0
+                    frac2 = float(common_area / f2['area']) if f2['area'] > 0 else 0.0
+                    overlap_fraction = max(frac1, frac2)
+                    if overlap_fraction < area_fraction_threshold:
+                        continue
+
+                    orientation_dot = 1.0
+                    result_face_explorer = TopExp_Explorer(result, _TopAbs_FACE)
+                    if result_face_explorer.More() and f1['surface'] is not None and f2['surface'] is not None:
+                        rface = topods.Face(result_face_explorer.Current())
+                        rprops = GProp_GProps()
+                        brepgprop.SurfaceProperties(rface, rprops)
+                        centroid = rprops.CentreOfMass()
+                        n1 = _normal_at(f1['face'], f1['surface'], centroid)
+                        n2 = _normal_at(f2['face'], f2['surface'], centroid)
+                        if n1 is not None and n2 is not None:
+                            orientation_dot = float(n1[0] * n2[0] + n1[1] * n2[1] + n1[2] * n2[2])
+
+                    if ignore_opposite_normals and orientation_dot <= 0:
+                        continue
+
+                    overlaps.append({
+                        'face1_idx': f1['idx'],
+                        'face2_idx': f2['idx'],
+                        'frac1': frac1,
+                        'frac2': frac2,
+                        'overlap_fraction': overlap_fraction,
+                        'orientation_dot': orientation_dot,
+                        'area1': f1['area'],
+                        'area2': f2['area'],
+                        'method': 'boolean_common',
+                    })
+                except Exception as e:
+                    skipped_errors += 1
+                    log.warning(f"   boolean_common: skipping face pair ({f1['idx']}, {f2['idx']}): {e}")
+
+            _progress_bar(i + 1, len(faces), _time.time() - start_time, prefix="Boolean check: ")
+
+        log.info(f"   Performed {comparisons} exact Boolean intersection checks ({skipped_errors} failed/skipped)")
+        return overlaps, {
+            'skipped_time_budget_count': skipped_time_budget,
+            'skipped_error_count': skipped_errors,
+        }
+
+    @staticmethod
+    def _build_report(method, tolerance, overlaps, elapsed, skipped_info=None):
         """Build a detailed text report of findings."""
         report_lines = [
             "Overlapping Faces Report",
@@ -1251,8 +1932,31 @@ class CADCheckOverlappingFaces(io.ComfyNode):
             f"Analysis time: {elapsed:.3f}s",
             f"",
             f"Found {len(overlaps)} overlapping face pair(s)",
-            ""
         ]
+
+        skipped = (skipped_info or {}).get('skipped_unsupported_count', 0)
+        if skipped:
+            report_lines.append(
+                f"NOTE: {skipped} face pair(s) involved a non-analytic surface type "
+                f"(BSpline/Bezier/Revolution/Extrusion/Offset/Other) and were NOT "
+                f"checked -- re-run with method=mesh_distance for full coverage."
+            )
+        skipped_time = (skipped_info or {}).get('skipped_time_budget_count', 0)
+        if skipped_time:
+            report_lines.append(
+                f"NOTE: {skipped_time} candidate face pair(s) were NOT checked because the "
+                f"time budget was exceeded (likely some faces have pathological/degenerate "
+                f"geometry) -- increase time_budget_seconds to check them, or note that this "
+                f"defect (a slow-to-converge surface) is itself worth investigating."
+            )
+        skipped_errors = (skipped_info or {}).get('skipped_error_count', 0)
+        if skipped_errors:
+            report_lines.append(
+                f"NOTE: {skipped_errors} candidate face pair(s) raised an error during checking "
+                f"(likely degenerate/self-intersecting geometry) and were skipped -- see logs for "
+                f"details."
+            )
+        report_lines.append("")
 
         if overlaps:
             report_lines.append("Overlapping pairs:")
@@ -1268,6 +1972,13 @@ class CADCheckOverlappingFaces(io.ComfyNode):
                     detail += f" (centroid dist: {overlap['centroid_dist']:.6f})"
                 if 'distance' in overlap:
                     detail += f" (distance: {overlap['distance']:.6f})"
+                if 'overlap_fraction' in overlap:
+                    detail += (f" (overlap: {overlap['overlap_fraction']*100:.1f}% area -- "
+                               f"face1={overlap.get('frac1', 0)*100:.1f}%, "
+                               f"face2={overlap.get('frac2', 0)*100:.1f}%, "
+                               f"orientation_dot={overlap.get('orientation_dot', 0):.3f})")
+                if 'surface_type' in overlap:
+                    detail += f" (surface: {overlap['surface_type']})"
                 if 'area1' in overlap:
                     detail += f"\n      Areas: {overlap['area1']:.4f}, {overlap['area2']:.4f}"
                 if 'note' in overlap:

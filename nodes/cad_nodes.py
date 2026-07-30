@@ -14,6 +14,49 @@ from .utils.occ_logging import log_operation
 log = logging.getLogger("CADabra")  # use the configured logger (occ_logging) so these surface
 
 
+def _get_surface_type_names():
+    """Get surface type names dict - called at runtime when OCC is available."""
+    from OCC.Core.GeomAbs import (
+        GeomAbs_Plane, GeomAbs_Cylinder, GeomAbs_Cone, GeomAbs_Sphere,
+        GeomAbs_Torus, GeomAbs_BezierSurface, GeomAbs_BSplineSurface,
+        GeomAbs_SurfaceOfRevolution, GeomAbs_SurfaceOfExtrusion,
+        GeomAbs_OffsetSurface, GeomAbs_OtherSurface,
+    )
+    return {
+        GeomAbs_Plane: "Plane",
+        GeomAbs_Cylinder: "Cylinder",
+        GeomAbs_Cone: "Cone",
+        GeomAbs_Sphere: "Sphere",
+        GeomAbs_Torus: "Torus",
+        GeomAbs_BezierSurface: "Bezier",
+        GeomAbs_BSplineSurface: "BSpline",
+        GeomAbs_SurfaceOfRevolution: "Revolution",
+        GeomAbs_SurfaceOfExtrusion: "Extrusion",
+        GeomAbs_OffsetSurface: "Offset",
+        GeomAbs_OtherSurface: "Other",
+    }
+
+
+def _get_curve_type_names():
+    """Get curve (edge) type names dict - called at runtime when OCC is available."""
+    from OCC.Core.GeomAbs import (
+        GeomAbs_Line, GeomAbs_Circle, GeomAbs_Ellipse, GeomAbs_Hyperbola,
+        GeomAbs_Parabola, GeomAbs_BezierCurve, GeomAbs_BSplineCurve,
+        GeomAbs_OffsetCurve, GeomAbs_OtherCurve,
+    )
+    return {
+        GeomAbs_Line: "Line",
+        GeomAbs_Circle: "Circle",
+        GeomAbs_Ellipse: "Ellipse",
+        GeomAbs_Hyperbola: "Hyperbola",
+        GeomAbs_Parabola: "Parabola",
+        GeomAbs_BezierCurve: "Bezier",
+        GeomAbs_BSplineCurve: "BSpline",
+        GeomAbs_OffsetCurve: "Offset",
+        GeomAbs_OtherCurve: "Other",
+    }
+
+
 def _progress_bar(completed, total, elapsed, width=30, prefix=""):
     """Print a tqdm-style progress bar."""
     if total == 0:
@@ -322,23 +365,21 @@ def _get_cad_files():
 
 
 def _resolve_cad_path(file_path):
-    """Resolve a CAD file path the way GeometryPack's Load Mesh does: try
-    input/cad/<p>, then input/<p>, then as an absolute path. Returns the resolved
-    absolute path, or raises FileNotFoundError listing every location searched."""
+    """Resolve a CAD file path against the ComfyUI directory layout (as-given,
+    ComfyUI base, input/cad, bare input, output), tolerating a leading slash
+    and an already-prefixed "input/cad/..." shape. See nodes/utils/path_utils.py
+    (ported from GeometryPack's Load Mesh) for the resolution algorithm.
+    Returns the resolved absolute path, or raises FileNotFoundError listing
+    every location searched."""
     if not file_path or not str(file_path).strip():
         raise ValueError("CAD file path cannot be empty")
-    base = folder_paths.get_input_directory()
-    searched = []
-    for candidate in (
-        os.path.join(base, 'cad', file_path),
-        os.path.join(base, file_path),
-        file_path,
-    ):
-        searched.append(candidate)
-        if os.path.isfile(candidate):
-            return candidate
+    file_path = str(file_path).strip()
+    from .utils.path_utils import resolve_read_path, searched_locations
+    resolved = resolve_read_path(file_path, subfolder="cad")
+    if resolved:
+        return resolved
     msg = f"CAD file not found: '{file_path}'\nSearched in:"
-    for p in searched:
+    for p in searched_locations(file_path, subfolder="cad"):
         msg += f"\n  - {p}"
     raise FileNotFoundError(msg)
 
@@ -2195,6 +2236,7 @@ class PreviewCADOCC(io.ComfyNode):
         from OCC.Core.BRep import BRep_Tool
         from OCC.Core.TopLoc import TopLoc_Location
         from OCC.Core.TopoDS import topods
+        from OCC.Core.BRepAdaptor import BRepAdaptor_Surface
 
         num_volumes = sum(1 for _ in _iter_occ_explorer(occ_shape, TopAbs_SOLID))
         num_faces = sum(1 for _ in _iter_occ_explorer(occ_shape, TopAbs_FACE))
@@ -2221,12 +2263,18 @@ class PreviewCADOCC(io.ComfyNode):
         vertex_offset = 0
         triangle_start = 0
 
+        surface_type_names = _get_surface_type_names()
+        face_type_counts = {}
+
         explorer = TopExp_Explorer(occ_shape, TopAbs_FACE)
         face_idx = 0
         while explorer.More():
             face = topods.Face(explorer.Current())
             location = TopLoc_Location()
             triangulation = BRep_Tool.Triangulation(face, location)
+
+            stype = surface_type_names.get(BRepAdaptor_Surface(face).GetType(), "Other")
+            face_type_counts[stype] = face_type_counts.get(stype, 0) + 1
 
             if triangulation is not None:
                 trsf = location.Transformation()
@@ -2257,6 +2305,17 @@ class PreviewCADOCC(io.ComfyNode):
         total_triangles = len(all_indices) // 3
         log.info(f" Mesh: {total_vertices} vertices, {total_triangles} triangles")
 
+        # Tally edge (curve) types
+        from OCC.Core.BRepAdaptor import BRepAdaptor_Curve
+        curve_type_names = _get_curve_type_names()
+        edge_type_counts = {}
+        edge_explorer = TopExp_Explorer(occ_shape, TopAbs_EDGE)
+        while edge_explorer.More():
+            edge = topods.Edge(edge_explorer.Current())
+            ctype = curve_type_names.get(BRepAdaptor_Curve(edge).GetType(), "Other")
+            edge_type_counts[ctype] = edge_type_counts.get(ctype, 0) + 1
+            edge_explorer.Next()
+
         # Export VTP
         output_dir = folder_paths.get_output_directory()
         base_name = f"preview_{uuid.uuid4().hex[:8]}"
@@ -2268,6 +2327,8 @@ class PreviewCADOCC(io.ComfyNode):
             raise RuntimeError("VTK not available. Please install vtk: pip install vtk")
 
         log.info(f" Entities: {num_volumes} volumes, {num_faces} faces, {num_edges} edges")
+        log.info(f" Face types: {face_type_counts}")
+        log.info(f" Edge types: {edge_type_counts}")
 
         return io.NodeOutput(ui={
             "mesh_file": [vtp_filename],
@@ -2280,6 +2341,8 @@ class PreviewCADOCC(io.ComfyNode):
             "bounds_max": [[xmax, ymax, zmax]],
             "extents": [[xmax - xmin, ymax - ymin, zmax - zmin]],
             "linear_deflection": [linear_deflection],
+            "face_type_counts": [face_type_counts],
+            "edge_type_counts": [edge_type_counts],
         })
 
     @staticmethod
