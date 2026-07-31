@@ -1,28 +1,12 @@
 [project]
 name = "comfyui-cadabra"
 description = "Warning, uses experimental package `comfy-env` to attempt a one click isolated install. Will download and use pixi package manager. CAD file processing nodes for ComfyUI with interactive 3D OCC CAD viewer. Load STEP, IGES, BREP files and generate meshes using OCC, GMSH."
-version = "1.0.27"
+version = "1.1.0"
 license = {file = "LICENSE"}
-requires-python = ">=3.10"
-classifiers = [
-    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
-]
-
-# Core dependencies for ComfyUI-CADabra
-dynamic = ["dependencies"]
 
 [project.urls]
 Repository = "https://github.com/PozzettiAndrea/ComfyUI-CADabra"
 Documentation = "https://github.com/PozzettiAndrea/ComfyUI-CADabra#readme"
-"Bug Tracker" = "https://github.com/PozzettiAndrea/ComfyUI-CADabra/issues"
-
-# Comfy Registry configuration
-[build-system]
-requires = ["setuptools>=45", "wheel"]
-build-backend = "setuptools.build_meta"
-
-[tool.setuptools.dynamic]
-dependencies = {file = ["requirements.txt"]}
 
 [tool.comfy]
 PublisherId = "pznodes"
