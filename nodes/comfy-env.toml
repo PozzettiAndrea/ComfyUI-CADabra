@@ -16,6 +16,7 @@ libglu = "*"
 mesalib = "*"
 
 [pypi-dependencies]
+comfy-kitchen = "*"
 gmsh = ">=4.11.0"
 trimesh = ">=3.20.0"
 pygltflib = ">=1.15.0"
