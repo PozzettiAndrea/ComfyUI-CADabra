@@ -701,8 +701,8 @@ class CAD_Mesh(io.ComfyNode):
                                          tooltip="After triangulation, merge adjacent triangle pairs into quadrilaterals (gmsh Mesh.RecombineAll) -> a quad-dominant (or all-quad) mesh. Pair with a quad-oriented 2D algorithm ('Frontal-Delaunay for Quads' / 'Quasi-structured Quad') for the cleanest quads."),
                         io.Combo.Input("subdivision", options=["None", "All Triangles", "All Quadrangles", "Barycentric"],
                                        tooltip="Uniform refinement applied AFTER meshing (gmsh Mesh.SubdivisionAlgorithm). None = leave as generated. All Triangles = split each triangle 1->4. All Quadrangles = convert to an all-quad mesh. Barycentric = split via face centroids. Each multiplies the element count."),
-                        io.Int.Input("num_threads", default=0, min=0, max=256, step=1, advanced=True,
-                                     tooltip="CPU threads for meshing. gmsh is OpenMP-parallel but defaults to SINGLE-threaded, so this is usually free speed. 0 = use all cores. Biggest gains: 2D meshing of many-surface CAD (each surface on a thread — these parts have hundreds of faces) and the HXT 3D algorithm. Sequential Frontal meshing benefits little; results may differ slightly run-to-run when threaded."),
+                        io.Int.Input("num_threads", default=1, min=0, max=256, step=1, advanced=True,
+                                     tooltip="CPU threads for meshing. gmsh is OpenMP-parallel; 1 = sequential (default, safe on macOS — multi-thread gmsh races on comfy-env's unlocked IPC socket and closes the worker channel mid-mesh). 0 = use all cores (fast on Linux, unsafe on macOS). Raise cautiously and only if you're on Linux. Biggest speedup is 2D meshing of many-surface CAD (each surface on a thread) and the HXT 3D algorithm."),
                         io.String.Input("gmsh_options", multiline=True, default="{}",
                                         tooltip="Escape hatch: raw gmsh options as a JSON object, applied verbatim AFTER the settings above (numbers via setNumber, strings via setString), overriding them. e.g. {\"Mesh.MeshSizeFromCurvature\": 1, \"Mesh.AngleToleranceFacetOverlap\": 0.1}. See the gmsh reference manual for option names."),
                     ]),
@@ -883,7 +883,7 @@ class CAD_Mesh(io.ComfyNode):
                    max_edge_length=0.0, min_edge_length=0.0,
                    smoothing_steps=0, optimize=False, optimization_passes=1,
                    recombine_to_quads=False, subdivision="None",
-                   element_order="1", extract_face_ids=True, num_threads=0, gmsh_options="{}", **_kwargs):
+                   element_order="1", extract_face_ids=True, num_threads=1, gmsh_options="{}", **_kwargs):
         try:
             import gmsh
             import json
