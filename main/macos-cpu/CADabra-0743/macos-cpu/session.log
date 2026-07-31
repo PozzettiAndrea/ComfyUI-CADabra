@@ -1,0 +1,52 @@
+[00:00] Crash dump logging enabled: /Users/runner/work/comfy-gpu-ci/comfy-gpu-ci/comfy-test-logs/CADabra-0743/macos-cpu/crash_dump.log
+[00:00] 
+[00:00] [1/3] REGISTRATION
+[00:00] ----------------------------------------
+[00:00] 
+[DEBUG] server=None, server_url=http://127.0.0.1:8188, api=None
+[00:00] 
+Connecting to existing server at http://127.0.0.1:8188...
+[00:00] Connecting to existing server at http://127.0.0.1:8188...
+[00:00] Connected to server! (attempt 1, 0.0s)
+[00:00] Checking for import errors in server logs...
+[00:00] No import errors detected
+[00:00] Found 878 registered nodes
+[00:00] [REGISTRATION] PASSED
+[00:00] 
+[00:00] [2/3] INSTANTIATION
+[00:00] ----------------------------------------
+[00:00] 
+[DEBUG] server=<comfy_test.comfyui.server.ExternalComfyUIServer object at 0x1049be090>, server_url=http://127.0.0.1:8188, api=<comfy_test.comfyui.api.ComfyUIAPI object at 0x106ad9750>
+[00:00] Testing node constructors...
+[00:01] All 39 node(s) instantiated successfully!
+[00:01] [INSTANTIATION] PASSED
+[00:01] 
+[00:01] [3/3] EXECUTION_LIGHT
+[00:01] ----------------------------------------
+[00:01] 
+[DEBUG] server=<comfy_test.comfyui.server.ExternalComfyUIServer object at 0x1049be090>, server_url=http://127.0.0.1:8188, api=<comfy_test.comfyui.api.ComfyUIAPI object at 0x106ad9750>
+[00:01] CPU runner - will execute 8 workflow(s)
+[00:01] Running 8 workflow(s) (light mode: 1 screenshot per workflow)...
+[00:01] Starting headless browser...
+[00:01]   macOS — using Apple Metal GPU via ANGLE
+[00:22] Capturing: analyse_CAD.json
+[00:31]   Saved: /Users/runner/work/comfy-gpu-ci/comfy-gpu-ci/comfy-test-logs/CADabra-0743/macos-cpu/screenshots/analyse_CAD_executed.png
+[00:33] Capturing: cad_manipulation.json
+[00:39]   Saved: /Users/runner/work/comfy-gpu-ci/comfy-gpu-ci/comfy-test-logs/CADabra-0743/macos-cpu/screenshots/cad_manipulation_executed.png
+[00:45] Capturing: cad_quality_metrics.json
+[00:51]   Saved: /Users/runner/work/comfy-gpu-ci/comfy-gpu-ci/comfy-test-logs/CADabra-0743/macos-cpu/screenshots/cad_quality_metrics_executed.png
+[00:51] Capturing: edge_analysis.json
+[00:57]   Saved: /Users/runner/work/comfy-gpu-ci/comfy-gpu-ci/comfy-test-logs/CADabra-0743/macos-cpu/screenshots/edge_analysis_executed.png
+[00:57] Capturing: mesh_CAD.json
+[01:04]   Saved: /Users/runner/work/comfy-gpu-ci/comfy-gpu-ci/comfy-test-logs/CADabra-0743/macos-cpu/screenshots/mesh_CAD_executed.png
+[01:16] Capturing: raytracing.json
+[01:22]   Saved: /Users/runner/work/comfy-gpu-ci/comfy-gpu-ci/comfy-test-logs/CADabra-0743/macos-cpu/screenshots/raytracing_executed.png
+[01:23] Capturing: raytracing_roi.json
+[01:28]   Saved: /Users/runner/work/comfy-gpu-ci/comfy-gpu-ci/comfy-test-logs/CADabra-0743/macos-cpu/screenshots/raytracing_roi_executed.png
+[01:33] Capturing: view_cads.json
+[01:39]   Saved: /Users/runner/work/comfy-gpu-ci/comfy-gpu-ci/comfy-test-logs/CADabra-0743/macos-cpu/screenshots/view_cads_executed.png
+[01:39] Results saved to /Users/runner/work/comfy-gpu-ci/comfy-gpu-ci/comfy-test-logs/CADabra-0743/macos-cpu/results.json
+[01:39] Saved: /Users/runner/work/comfy-gpu-ci/comfy-gpu-ci/comfy-test-logs/CADabra-0743/macos-cpu/index.html
+[01:39] [EXECUTION_LIGHT] PASSED
+[01:39] 
+macos: PASSED

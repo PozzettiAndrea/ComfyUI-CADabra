@@ -1,0 +1,177 @@
+Capturing execution frames: raytracing_roi.json
+  [ComfyUI] [32m[INFO][0m Using RAM pressure cache.
+  [ComfyUI] [32m[INFO][0m Using RAM pressure cache.
+  Frame 1 saved (frame_000.jpg, t=0.0s)
+  Validating workflow...
+  Queuing workflow for execution...
+  [ComfyUI] [32m[INFO][0m === /validate endpoint called ===
+  [ComfyUI] [32m[INFO][0m Received JSON with keys: ['prompt']
+  [ComfyUI] [32m[INFO][0m Prompt has 10 nodes
+  [ComfyUI] [32m[INFO][0m   Node 1: CAD_Load
+  [ComfyUI] [32m[INFO][0m     Inputs: {"filename": "cad/spiral_wind_turbine.stp", "upload_progress": "", "\u2b06 upload / drop CAD": null}
+  [ComfyUI] [32m[INFO][0m   Node 5: PreviewImage
+  [ComfyUI] [32m[INFO][0m     Inputs: {"images": ["23", 0]}
+  [ComfyUI] [32m[INFO][0m   Node 12: CADTransform
+  [ComfyUI] [32m[INFO][0m     Inputs: {"translate_x": 0.12109375, "translate_y": 0, "translate_z": ["14", 0], "rotate_x": 0, "rotate_y": 0, "rotate_z": 0, "scale": 1, "cad_model": ["1", 0]}
+  [ComfyUI] [32m[INFO][0m   Node 13: CADBoundingBox
+  [ComfyUI] [32m[INFO][0m     Inputs: {"cad_model": ["1", 0]}
+  [ComfyUI] [32m[INFO][0m   Node 14: FloatMath
+  [ComfyUI] [32m[INFO][0m     Inputs: {"operation": "negate", "operand": 1, "value": ["13", 4]}
+  [ComfyUI] [32m[INFO][0m   Node 17: PreviewCADOCC
+  [ComfyUI] [32m[INFO][0m     Inputs: {"linear_deflection": 0.1, "angular_deflection": 0.5, "preview_occ": "", "cad_model": ["1", 0]}
+  [ComfyUI] [32m[INFO][0m   Node 18: CADROISelector
+  [ComfyUI] [32m[INFO][0m     Inputs: {"linear_deflection": 0.1, "angular_deflection": 0.5, "roi_value": "-223.3452,-35.7267,-154.3834,71.2399", "roi_viewer": "", "cad_model": ["1", 0]}
+  [ComfyUI] [32m[INFO][0m   Node 22: CADRaytracerBVH
+  [ComfyUI] [32m[INFO][0m     Inputs: {"resolution": 500, "deflection": 0.02, "backend": "embree", "output_mode": "full", "roi": ["18", 0], "npz_name": "", "cad_model": ["12", 0]}
+  [ComfyUI] [32m[INFO][0m   Node 23: MultibandToImage
+  [ComfyUI] [32m[INFO][0m     Inputs: {"channels": "0,1,2", "multiband": ["24", 0]}
+  [ComfyUI] [32m[INFO][0m   Node 24: MultibandLoadFromPath
+  [ComfyUI] [32m[INFO][0m     Inputs: {"file_path": ["22", 0], "normalize": false}
+  [ComfyUI] [32m[INFO][0m Generated prompt_id: 30bee44d-690f-4309-ae8b-6d7995d2af3d
+  [ComfyUI] [32m[INFO][0m Calling execution.validate_prompt()...
+  [ComfyUI] [32m[INFO][0m Validation result: valid=True
+  [ComfyUI] [32m[INFO][0m === Validation PASSED ===
+  [ComfyUI] [32m[INFO][0m got prompt
+  [ComfyUI] [1m[33m[WARNING][0m WARNING: _path_exists: path should be string, bytes, os.PathLike or integer, not NoneType
+  [ComfyUI] [comfy-env] Running CAD_Load: filename: 'cad/spiral_wind_turbine.stp'
+  [ComfyUI] [SubprocessWorker] call_method: nodes.cad_nodes.CAD_Load.EXECUTE_NORMALIZED
+  [ComfyUI] [SubprocessWorker] acquired lock, ensuring started...
+  [ComfyUI] [ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+  [ComfyUI] [ComfyUI-CADabra] Health check: failed
+  [ComfyUI] [ComfyUI-CADabra] Socket unhealthy, restarting worker...
+  [ComfyUI] [comfy-env] default: Library/bin has 624 DLLs
+  [ComfyUI] [ComfyUI-CADabra] python: C:\Users\stduser\AppData\Local\Programs\comfy-env\envs\cadabra-nodes\.pixi\envs\default\python.exe
+  [ComfyUI] [ComfyUI-CADabra] sys_path sent to worker: ['D:\\a\\comfy-ci\\comfy-ci\\test_workspaces\\CADabra-1414\\portable-comfyui\\ComfyUI_windows_portable\\ComfyUI', 'D:\\a\\comfy-ci\\comfy-ci\\test_workspaces\\CADabra-1414\\portable-comfyui\\ComfyUI_windows_portable\\ComfyUI\\custom_nodes\\ComfyUI-CADabra', 'C:\\Users\\stduser\\AppData\\Local\\Programs\\comfy-env\\envs\\cadabra-nodes\\.pixi\\envs\\default\\Lib\\site-packages', 'D:\\a\\comfy-ci\\comfy-ci\\test_workspaces\\CADabra-1414\\portable-comfyui\\ComfyUI_windows_portable\\ComfyUI\\custom_nodes\\ComfyUI-CADabra']
+  [ComfyUI] [SubprocessWorker] is_pixi=True, python=C:\Users\stduser\AppData\Local\Programs\comfy-env\envs\cadabra-nodes\.pixi\envs\default\python.exe
+  [ComfyUI] [SubprocessWorker] launching cmd=['C:\\Users\\stduser\\.pixi\\bin\\pixi.exe', 'run', '--as-is', '--manifest-path', 'C:\\Users\\stduser\\AppData\\Local\\Programs\\comfy-env\\envs\\cadabra-nodes\\pixi.toml', '-e', 'default', 'python', 'C:\\Users\\stduser\\AppData\\Local\\Temp\\comfyui_pvenv_z_ui9fhc\\persistent_worker.py', 'tcp://127.0.0.1:56021']...
+  Frame 2 saved (frame_001.jpg, t=2.3s)
+  [capture-periodic] freeze=9ms shot=121ms unfreeze=6ms saved=True
+  [ComfyUI] C:\Users\stduser\AppData\Local\Programs\comfy-env\envs\cadabra-nodes\.pixi\envs\default\Lib\site-packages\torch\cuda\__init__.py:188: UserWarning: cudaGetDeviceCount() returned cudaErrorNotSupported, likely using older driver or on CPU machine (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\c10\cuda\CUDAFunctions.cpp:88.)
+  [ComfyUI]   return torch._C._cuda_getDeviceCount() > 0
+  [ComfyUI] [SubprocessWorker] worker started/confirmed
+  [ComfyUI] [SubprocessWorker] serializing kwargs to shm...
+  [ComfyUI] [SubprocessWorker] created 0 shm blocks
+  [ComfyUI] [SubprocessWorker] sending request via socket...
+  [ComfyUI] [SubprocessWorker] call_id=73 sending call_method
+  Frame 3 saved (frame_002.jpg, t=4.5s)
+  [capture-periodic] freeze=6ms shot=133ms unfreeze=6ms saved=True
+  [capture-loop] iter=50 t=6.2s state={'complete': False, 'error': None, 'executedCount': 0, 'wsState': 1} eval_ms=7 ram=5.6/16.0GB (35%) swap=1.0/2.9GB (36%) cpu=68% browser_rss=0.73GB
+  [ComfyUI] [14:35:14] [CADabra]  Using cache: spiral_wind_turbine.stp
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO:  Using cache: spiral_wind_turbine.stp
+  [ComfyUI] [14:35:14] [CADabra]  Ready: spiral_wind_turbine.stp
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO:  Ready: spiral_wind_turbine.stp
+  [ComfyUI] [SubprocessWorker] got response: ok
+  [ComfyUI] [comfy-env] CAD_Load done (7.07s): result: NodeOutput
+  [ComfyUI] [comfy-env] Running PreviewCADOCC: linear_deflection: 0.1, angular_deflection: 0.5, cad_model: dict
+  [ComfyUI] [SubprocessWorker] call_method: nodes.cad_nodes.PreviewCADOCC.EXECUTE_NORMALIZED
+  [ComfyUI] [SubprocessWorker] acquired lock, ensuring started...
+  [ComfyUI] [ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+  [ComfyUI] [ComfyUI-CADabra] Health check: ok
+  [ComfyUI] [SubprocessWorker] worker started/confirmed
+  [ComfyUI] [SubprocessWorker] serializing kwargs to shm...
+  [ComfyUI] [SubprocessWorker] created 0 shm blocks
+  [ComfyUI] [SubprocessWorker] sending request via socket...
+  [ComfyUI] [SubprocessWorker] call_id=74 sending call_method
+  [ComfyUI] [14:35:14] [CADabra]  Tessellating (linear: 0.1, angular: 0.5)
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO:  Tessellating (linear: 0.1, angular: 0.5)
+  [ComfyUI] [14:35:14] [CADabra] Starting: BRepMesh(linear_deflection=0.1, angular_deflection=0.5)
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO: Starting: BRepMesh(linear_deflection=0.1, angular_deflection=0.5)
+  [ComfyUI] [14:35:14] [CADabra] Completed: BRepMesh(linear_deflection=0.1, angular_deflection=0.5) in 0.08s
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO: Completed: BRepMesh(linear_deflection=0.1, angular_deflection=0.5) in 0.08s
+  [ComfyUI] [14:35:14] [CADabra]  Mesh: 3386 vertices, 5508 triangles
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO:  Mesh: 3386 vertices, 5508 triangles
+  [ComfyUI] [14:35:14] [CADabra]  Exported VTP: preview_7b90b1b4.vtp (283,224 bytes)
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO:  Exported VTP: preview_7b90b1b4.vtp (283,224 bytes)
+  [ComfyUI] [14:35:14] [CADabra]  Entities: 1 volumes, 29 faces, 158 edges
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO:  Entities: 1 volumes, 29 faces, 158 edges
+  [ComfyUI] [14:35:14] [CADabra]  Face types: {'BSpline': 15, 'Cylinder': 8, 'Plane': 3, 'Cone': 3}
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO:  Face types: {'BSpline': 15, 'Cylinder': 8, 'Plane': 3, 'Cone': 3}
+  [ComfyUI] [14:35:14] [CADabra]  Edge types: {'BSpline': 124, 'Circle': 34}
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO:  Edge types: {'BSpline': 124, 'Circle': 34}
+  [ComfyUI] [SubprocessWorker] got response: ok
+  [ComfyUI] [comfy-env] PreviewCADOCC done (0.37s): result: NodeOutput
+  [ComfyUI] [comfy-env] Running CADROISelector: linear_deflection: 0.1, angular_deflection: 0.5, roi_value: '-223.3452,-35.7267,-154.3834,71.2399', cad_model: dict
+  [ComfyUI] [SubprocessWorker] call_method: nodes.cad_roi_selector_node.CADROISelector.EXECUTE_NORMALIZED
+  [ComfyUI] [SubprocessWorker] acquired lock, ensuring started...
+  [ComfyUI] [ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+  [ComfyUI] [ComfyUI-CADabra] Health check: ok
+  [ComfyUI] [SubprocessWorker] worker started/confirmed
+  [ComfyUI] [SubprocessWorker] serializing kwargs to shm...
+  [ComfyUI] [SubprocessWorker] created 0 shm blocks
+  [ComfyUI] [SubprocessWorker] sending request via socket...
+  [ComfyUI] [SubprocessWorker] call_id=75 sending call_method
+  [ComfyUI] [14:35:14] [CADabra] Starting: BRepMesh ROI Selector(linear_deflection=0.1, angular_deflection=0.5)
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO: Starting: BRepMesh ROI Selector(linear_deflection=0.1, angular_deflection=0.5)
+  Node executed (1 total), capturing...
+  [ComfyUI] [14:35:14] [CADabra] Completed: BRepMesh ROI Selector(linear_deflection=0.1, angular_deflection=0.5) in 0.20s
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO: Completed: BRepMesh ROI Selector(linear_deflection=0.1, angular_deflection=0.5) in 0.20s
+  Frame 4 saved (frame_003.jpg, t=8.0s)
+  [capture-node] freeze=121ms shot=150ms unfreeze=8ms saved=True
+  [ComfyUI] [SubprocessWorker] got response: ok
+  [ComfyUI] [comfy-env] CADROISelector done (1.64s): result: NodeOutput
+  [ComfyUI] [comfy-env] Running CADBoundingBox: cad_model: dict
+  [ComfyUI] [SubprocessWorker] call_method: nodes.cad_transform_nodes.CADBoundingBox.EXECUTE_NORMALIZED
+  [ComfyUI] [SubprocessWorker] acquired lock, ensuring started...
+  [ComfyUI] [ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+  [ComfyUI] [ComfyUI-CADabra] Health check: ok
+  [ComfyUI] [SubprocessWorker] worker started/confirmed
+  [ComfyUI] [SubprocessWorker] serializing kwargs to shm...
+  [ComfyUI] [SubprocessWorker] created 0 shm blocks
+  [ComfyUI] [SubprocessWorker] sending request via socket...
+  [ComfyUI] [SubprocessWorker] call_id=76 sending call_method
+  Node executed (2 total), capturing...
+  [ComfyUI] [SubprocessWorker] got response: ok
+  [ComfyUI] [comfy-env] CADBoundingBox done (0.19s): result: NodeOutput
+  [ComfyUI] [comfy-env] Running FloatMath: operation: 'negate', operand: 1.0, value: -7.627119192354975
+  [ComfyUI] [SubprocessWorker] call_method: nodes.cad_transform_nodes.FloatMath.EXECUTE_NORMALIZED
+  [ComfyUI] [SubprocessWorker] acquired lock, ensuring started...
+  [ComfyUI] [ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+  [ComfyUI] [ComfyUI-CADabra] Health check: ok
+  [ComfyUI] [SubprocessWorker] worker started/confirmed
+  [ComfyUI] [SubprocessWorker] serializing kwargs to shm...
+  [ComfyUI] [SubprocessWorker] created 0 shm blocks
+  [ComfyUI] [SubprocessWorker] sending request via socket...
+  [ComfyUI] [SubprocessWorker] call_id=77 sending call_method
+  [ComfyUI] [SubprocessWorker] got response: ok
+  [ComfyUI] [comfy-env] FloatMath done (0.25s): result: NodeOutput
+  [ComfyUI] [comfy-env] Running CADTransform: translate_x: 0.12109375, translate_y: 0.0, translate_z: 7.627119192354975, rotate_x: 0.0, rotate_y: 0.0, rotate_z: 0.0, scale: 1.0, cad_model: dict
+  [ComfyUI] [SubprocessWorker] call_method: nodes.cad_transform_nodes.CADTransform.EXECUTE_NORMALIZED
+  [ComfyUI] [SubprocessWorker] acquired lock, ensuring started...
+  [ComfyUI] [ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+  [ComfyUI] [ComfyUI-CADabra] Health check: ok
+  [ComfyUI] [SubprocessWorker] worker started/confirmed
+  [ComfyUI] [SubprocessWorker] serializing kwargs to shm...
+  [ComfyUI] [SubprocessWorker] created 0 shm blocks
+  [ComfyUI] [SubprocessWorker] sending request via socket...
+  [ComfyUI] [SubprocessWorker] call_id=78 sending call_method
+  Frame 5 saved (frame_004.jpg, t=9.6s)
+  [capture-node] freeze=29ms shot=196ms unfreeze=7ms saved=True
+  [ComfyUI] [SubprocessWorker] got response: ok
+  [ComfyUI] [comfy-env] CADTransform done (0.33s): result: NodeOutput
+  [ComfyUI] [comfy-env] Running CADRaytracerBVH: resolution: 500, deflection: 0.02, backend: 'embree', output_mode: 'full', roi: '-223.3452,-35.7267,-154.3834,71.2399', npz_name: '', cad_model: dict
+  [ComfyUI] [SubprocessWorker] call_method: nodes.raytracer_node.CADRaytracerBVH.EXECUTE_NORMALIZED
+  [ComfyUI] [SubprocessWorker] acquired lock, ensuring started...
+  [ComfyUI] [ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+  [ComfyUI] [ComfyUI-CADabra] Health check: ok
+  [ComfyUI] [SubprocessWorker] worker started/confirmed
+  [ComfyUI] [SubprocessWorker] serializing kwargs to shm...
+  [ComfyUI] [SubprocessWorker] created 0 shm blocks
+  [ComfyUI] [SubprocessWorker] sending request via socket...
+  [ComfyUI] [SubprocessWorker] call_id=79 sending call_method
+  Frame 6 saved (frame_005.jpg, t=12.1s)
+  [capture-periodic] freeze=44ms shot=203ms unfreeze=6ms saved=True
+  [ComfyUI] [SubprocessWorker] got response: ok
+  [ComfyUI] [comfy-env] CADRaytracerBVH done (4.59s): result: NodeOutput
+  [ComfyUI] [32m[INFO][0m [32mPrompt executed in 14.70 seconds[0m
+  Node executed (3 total), capturing...
+  Frame 7 saved (frame_006.jpg, t=15.3s)
+  [capture-node] freeze=46ms shot=209ms unfreeze=0ms saved=True
+  Execution complete (t=15.3s)
+  Captured 7 unique frames over 15.58s
+  [debug] iframes: 2
+  [debug]   iframe[0]: src=http://127.0.0.1:41887/extensions/ComfyUI-CADabra/viewer_cad_analysis.html?v=178, canvas=244x498, rafFrozen=True
+  [debug]   iframe[1]: src=http://127.0.0.1:41887/extensions/ComfyUI-CADabra/viewer_cad_roi.html?v=17855085, canvas=294x498, rafFrozen=True
+  [timing] trigger_3d_previews: 0.0s
+  Saved high-quality screenshot: raytracing_roi_executed.png
+  [timing] final_screenshot: 0.2s
+    Captured 8 video frames

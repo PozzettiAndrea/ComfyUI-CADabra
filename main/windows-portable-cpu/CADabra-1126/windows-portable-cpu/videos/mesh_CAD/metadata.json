@@ -1,0 +1,45 @@
+{
+  "frames": [
+    {
+      "file": "frame_000.jpg",
+      "time": 0.0,
+      "log": "Capturing execution frames: mesh_CAD.json"
+    },
+    {
+      "file": "frame_001.jpg",
+      "time": 2.45,
+      "log": "Capturing execution frames: mesh_CAD.json\n  Frame 1 saved (frame_000.jpg, t=0.0s)\n  Validating workflow...\n  Queuing workflow for execution..."
+    },
+    {
+      "file": "frame_002.jpg",
+      "time": 4.71,
+      "log": "Capturing execution frames: mesh_CAD.json\n  Frame 1 saved (frame_000.jpg, t=0.0s)\n  Validating workflow...\n  Queuing workflow for execution...\n  Frame 2 saved (frame_001.jpg, t=2.5s)\n  [capture-periodic] freeze=8ms shot=164ms unfreeze=8ms saved=True"
+    },
+    {
+      "file": "frame_003.jpg",
+      "time": 15.79,
+      "log": "Capturing execution frames: mesh_CAD.json\n  Frame 1 saved (frame_000.jpg, t=0.0s)\n  Validating workflow...\n  Queuing workflow for execution...\n  Frame 2 saved (frame_001.jpg, t=2.5s)\n  [capture-periodic] freeze=8ms shot=164ms unfreeze=8ms saved=True\n  Frame 3 saved (frame_002.jpg, t=4.7s)\n  [capture-periodic] freeze=5ms shot=143ms unfreeze=13ms saved=True\n  [capture-loop] iter=50 t=6.5s state={'complete': False, 'error': None, 'executedCount': 0, 'wsState': 1} eval_ms=6 ram=6.3/16.0GB (40%) swap=0.4/2.9GB (15%) cpu=49% browser_rss=0.90GB\n  [capture-loop] iter=100 t=12.7s state={'complete': False, 'error': None, 'executedCount': 0, 'wsState': 1} eval_ms=8 ram=6.6/16.0GB (41%) swap=0.4/2.9GB (15%) cpu=68% browser_rss=0.81GB"
+    },
+    {
+      "file": "frame_004.jpg",
+      "time": 22.87,
+      "log": "Capturing execution frames: mesh_CAD.json\n  Frame 1 saved (frame_000.jpg, t=0.0s)\n  Validating workflow...\n  Queuing workflow for execution...\n  Frame 2 saved (frame_001.jpg, t=2.5s)\n  [capture-periodic] freeze=8ms shot=164ms unfreeze=8ms saved=True\n  Frame 3 saved (frame_002.jpg, t=4.7s)\n  [capture-periodic] freeze=5ms shot=143ms unfreeze=13ms saved=True\n  [capture-loop] iter=50 t=6.5s state={'complete': False, 'error': None, 'executedCount': 0, 'wsState': 1} eval_ms=6 ram=6.3/16.0GB (40%) swap=0.4/2.9GB (15%) cpu=49% browser_rss=0.90GB\n  [capture-loop] iter=100 t=12.7s state={'complete': False, 'error': None, 'executedCount': 0, 'wsState': 1} eval_ms=8 ram=6.6/16.0GB (41%) swap=0.4/2.9GB (15%) cpu=68% browser_rss=0.81GB\n  Frame 4 saved (frame_003.jpg, t=15.8s)\n  [capture-periodic] freeze=4ms shot=153ms unfreeze=6ms saved=True\n  [capture-loop] iter=150 t=18.8s state={'complete': False, 'error': None, 'executedCount': 0, 'wsState': 1} eval_ms=4 ram=6.4/16.0GB (40%) swap=0.6/2.9GB (20%) cpu=47% browser_rss=0.80GB"
+    },
+    {
+      "file": "frame_005.jpg",
+      "time": 28.61,
+      "log": "Capturing execution frames: mesh_CAD.json\n  Frame 1 saved (frame_000.jpg, t=0.0s)\n  Validating workflow...\n  Queuing workflow for execution...\n  Frame 2 saved (frame_001.jpg, t=2.5s)\n  [capture-periodic] freeze=8ms shot=164ms unfreeze=8ms saved=True\n  Frame 3 saved (frame_002.jpg, t=4.7s)\n  [capture-periodic] freeze=5ms shot=143ms unfreeze=13ms saved=True\n  [capture-loop] iter=50 t=6.5s state={'complete': False, 'error': None, 'executedCount': 0, 'wsState': 1} eval_ms=6 ram=6.3/16.0GB (40%) swap=0.4/2.9GB (15%) cpu=49% browser_rss=0.90GB\n  [capture-loop] iter=100 t=12.7s state={'complete': False, 'error': None, 'executedCount': 0, 'wsState': 1} eval_ms=8 ram=6.6/16.0GB (41%) swap=0.4/2.9GB (15%) cpu=68% browser_rss=0.81GB\n  Frame 4 saved (frame_003.jpg, t=15.8s)\n  [capture-periodic] freeze=4ms shot=153ms unfreeze=6ms saved=True\n  [capture-loop] iter=150 t=18.8s state={'complete': False, 'error': None, 'executedCount': 0, 'wsState': 1} eval_ms=4 ram=6.4/16.0GB (40%) swap=0.6/2.9GB (20%) cpu=47% browser_rss=0.80GB\n  Node executed (1 total), capturing...\n  Frame 5 saved (frame_004.jpg, t=22.9s)\n  [capture-node] freeze=23ms shot=168ms unfreeze=6ms saved=True\n  [capture-loop] iter=200 t=27.7s state={'complete': False, 'error': None, 'executedCount': 1, 'wsState': 1} eval_ms=20 ram=6.3/16.0GB (40%) swap=0.6/2.9GB (20%) cpu=68% browser_rss=0.81GB"
+    },
+    {
+      "file": "frame_006.jpg",
+      "time": 70.81,
+      "log": "Capturing execution frames: mesh_CAD.json\n  Frame 1 saved (frame_000.jpg, t=0.0s)\n  Validating workflow...\n  Queuing workflow for execution...\n  Frame 2 saved (frame_001.jpg, t=2.5s)\n  [capture-periodic] freeze=8ms shot=164ms unfreeze=8ms saved=True\n  Frame 3 saved (frame_002.jpg, t=4.7s)\n  [capture-periodic] freeze=5ms shot=143ms unfreeze=13ms saved=True\n  [capture-loop] iter=50 t=6.5s state={'complete': False, 'error': None, 'executedCount': 0, 'wsState': 1} eval_ms=6 ram=6.3/16.0GB (40%) swap=0.4/2.9GB (15%) cpu=49% browser_rss=0.90GB\n  [capture-loop] iter=100 t=12.7s state={'complete': False, 'error': None, 'executedCount': 0, 'wsState': 1} eval_ms=8 ram=6.6/16.0GB (41%) swap=0.4/2.9GB (15%) cpu=68% browser_rss=0.81GB\n  Frame 4 saved (frame_003.jpg, t=15.8s)\n  [capture-periodic] freeze=4ms shot=153ms unfreeze=6ms saved=True\n  [capture-loop] iter=150 t=18.8s state={'complete': False, 'error': None, 'executedCount': 0, 'wsState': 1} eval_ms=4 ram=6.4/16.0GB (40%) swap=0.6/2.9GB (20%) cpu=47% browser_rss=0.80GB\n  Node executed (1 total), capturing...\n  Frame 5 saved (frame_004.jpg, t=22.9s)\n  [capture-node] freeze=23ms shot=168ms unfreeze=6ms saved=True\n  [capture-loop] iter=200 t=27.7s state={'complete': False, 'error': None, 'executedCount': 1, 'wsState': 1} eval_ms=20 ram=6.3/16.0GB (40%) swap=0.6/2.9GB (20%) cpu=68% browser_rss=0.81GB\n  Node executed (2 total), capturing...\n  Frame 6 saved (frame_005.jpg, t=28.6s)\n  [capture-node] freeze=77ms shot=133ms unfreeze=7ms saved=True\n  [capture-loop] iter=250 t=38.6s state={'complete': False, 'error': None, 'executedCount': 2, 'wsState': 1} eval_ms=22 ram=6.7/16.0GB (42%) swap=0.6/2.9GB (20%) cpu=96% browser_rss=0.79GB\n  [capture-loop] iter=300 t=49.0s state={'complete': False, 'error': None, 'executedCount': 2, 'wsState': 1} eval_ms=22 ram=6.5/16.0GB (41%) swap=0.6/2.9GB (22%) cpu=96% browser_rss=0.71GB\n  [capture-loop] iter=350 t=59.1s state={'complete': False, 'error': None, 'executedCount': 2, 'wsState': 1} eval_ms=58 ram=6.5/16.0GB (41%) swap=0.7/2.9GB (25%) cpu=96% browser_rss=0.70GB"
+    },
+    {
+      "file": "frame_007.jpg",
+      "time": 76.12187433242798,
+      "log": "Final screenshot"
+    }
+  ],
+  "total_time": 73.05
+}

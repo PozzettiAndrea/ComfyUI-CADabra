@@ -1,0 +1,45 @@
+{
+  "frames": [
+    {
+      "file": "frame_000.jpg",
+      "time": 0.0,
+      "log": "Capturing execution frames: raytracing.json"
+    },
+    {
+      "file": "frame_001.jpg",
+      "time": 2.33,
+      "log": "Capturing execution frames: raytracing.json\n  Frame 1 saved (frame_000.jpg, t=0.0s)\n  Validating workflow...\n  Queuing workflow for execution..."
+    },
+    {
+      "file": "frame_002.jpg",
+      "time": 4.52,
+      "log": "Capturing execution frames: raytracing.json\n  Frame 1 saved (frame_000.jpg, t=0.0s)\n  Validating workflow...\n  Queuing workflow for execution...\n  Frame 2 saved (frame_001.jpg, t=2.3s)\n  [capture-periodic] freeze=4ms shot=127ms unfreeze=6ms saved=True"
+    },
+    {
+      "file": "frame_003.jpg",
+      "time": 11.24,
+      "log": "Capturing execution frames: raytracing.json\n  Frame 1 saved (frame_000.jpg, t=0.0s)\n  Validating workflow...\n  Queuing workflow for execution...\n  Frame 2 saved (frame_001.jpg, t=2.3s)\n  [capture-periodic] freeze=4ms shot=127ms unfreeze=6ms saved=True\n  Frame 3 saved (frame_002.jpg, t=4.5s)\n  [capture-periodic] freeze=5ms shot=123ms unfreeze=6ms saved=True\n  [capture-loop] iter=50 t=6.1s state={'complete': False, 'error': None, 'executedCount': 0, 'wsState': 1} eval_ms=7 ram=6.4/16.0GB (40%) swap=0.7/2.9GB (24%) cpu=74% browser_rss=0.77GB"
+    },
+    {
+      "file": "frame_004.jpg",
+      "time": 13.46,
+      "log": "Capturing execution frames: raytracing.json\n  Frame 1 saved (frame_000.jpg, t=0.0s)\n  Validating workflow...\n  Queuing workflow for execution...\n  Frame 2 saved (frame_001.jpg, t=2.3s)\n  [capture-periodic] freeze=4ms shot=127ms unfreeze=6ms saved=True\n  Frame 3 saved (frame_002.jpg, t=4.5s)\n  [capture-periodic] freeze=5ms shot=123ms unfreeze=6ms saved=True\n  [capture-loop] iter=50 t=6.1s state={'complete': False, 'error': None, 'executedCount': 0, 'wsState': 1} eval_ms=7 ram=6.4/16.0GB (40%) swap=0.7/2.9GB (24%) cpu=74% browser_rss=0.77GB\n  Frame 4 saved (frame_003.jpg, t=11.2s)\n  [capture-periodic] freeze=7ms shot=145ms unfreeze=6ms saved=True\n  [capture-loop] iter=100 t=12.5s state={'complete': False, 'error': None, 'executedCount': 0, 'wsState': 1} eval_ms=6 ram=6.6/16.0GB (42%) swap=0.7/2.9GB (24%) cpu=82% browser_rss=0.77GB"
+    },
+    {
+      "file": "frame_005.jpg",
+      "time": 83.65,
+      "log": "Capturing execution frames: raytracing.json\n  Frame 1 saved (frame_000.jpg, t=0.0s)\n  Validating workflow...\n  Queuing workflow for execution...\n  Frame 2 saved (frame_001.jpg, t=2.3s)\n  [capture-periodic] freeze=4ms shot=127ms unfreeze=6ms saved=True\n  Frame 3 saved (frame_002.jpg, t=4.5s)\n  [capture-periodic] freeze=5ms shot=123ms unfreeze=6ms saved=True\n  [capture-loop] iter=50 t=6.1s state={'complete': False, 'error': None, 'executedCount': 0, 'wsState': 1} eval_ms=7 ram=6.4/16.0GB (40%) swap=0.7/2.9GB (24%) cpu=74% browser_rss=0.77GB\n  Frame 4 saved (frame_003.jpg, t=11.2s)\n  [capture-periodic] freeze=7ms shot=145ms unfreeze=6ms saved=True\n  [capture-loop] iter=100 t=12.5s state={'complete': False, 'error': None, 'executedCount': 0, 'wsState': 1} eval_ms=6 ram=6.6/16.0GB (42%) swap=0.7/2.9GB (24%) cpu=82% browser_rss=0.77GB\n  Node executed (1 total), capturing...\n  Frame 5 saved (frame_004.jpg, t=13.5s)\n  [capture-node] freeze=146ms shot=145ms unfreeze=6ms saved=True\n  [capture-loop] iter=150 t=31.0s state={'complete': False, 'error': None, 'executedCount': 1, 'wsState': 1} eval_ms=168 ram=6.6/16.0GB (41%) swap=0.7/2.9GB (24%) cpu=97% browser_rss=0.67GB\n  [capture-loop] iter=200 t=45.7s state={'complete': False, 'error': None, 'executedCount': 1, 'wsState': 1} eval_ms=69 ram=6.4/16.0GB (40%) swap=0.9/2.9GB (30%) cpu=97% browser_rss=0.66GB\n  [capture-loop] iter=250 t=60.9s state={'complete': False, 'error': None, 'executedCount': 1, 'wsState': 1} eval_ms=100 ram=6.3/16.0GB (40%) swap=0.8/2.9GB (30%) cpu=98% browser_rss=0.65GB\n  [capture-loop] iter=300 t=77.1s state={'complete': False, 'error': None, 'executedCount': 1, 'wsState': 1} eval_ms=102 ram=6.4/16.0GB (40%) swap=0.8/2.9GB (30%) cpu=97% browser_rss=0.64GB"
+    },
+    {
+      "file": "frame_006.jpg",
+      "time": 85.41,
+      "log": "Capturing execution frames: raytracing.json\n  Frame 1 saved (frame_000.jpg, t=0.0s)\n  Validating workflow...\n  Queuing workflow for execution...\n  Frame 2 saved (frame_001.jpg, t=2.3s)\n  [capture-periodic] freeze=4ms shot=127ms unfreeze=6ms saved=True\n  Frame 3 saved (frame_002.jpg, t=4.5s)\n  [capture-periodic] freeze=5ms shot=123ms unfreeze=6ms saved=True\n  [capture-loop] iter=50 t=6.1s state={'complete': False, 'error': None, 'executedCount': 0, 'wsState': 1} eval_ms=7 ram=6.4/16.0GB (40%) swap=0.7/2.9GB (24%) cpu=74% browser_rss=0.77GB\n  Frame 4 saved (frame_003.jpg, t=11.2s)\n  [capture-periodic] freeze=7ms shot=145ms unfreeze=6ms saved=True\n  [capture-loop] iter=100 t=12.5s state={'complete': False, 'error': None, 'executedCount': 0, 'wsState': 1} eval_ms=6 ram=6.6/16.0GB (42%) swap=0.7/2.9GB (24%) cpu=82% browser_rss=0.77GB\n  Node executed (1 total), capturing...\n  Frame 5 saved (frame_004.jpg, t=13.5s)\n  [capture-node] freeze=146ms shot=145ms unfreeze=6ms saved=True\n  [capture-loop] iter=150 t=31.0s state={'complete': False, 'error': None, 'executedCount': 1, 'wsState': 1} eval_ms=168 ram=6.6/16.0GB (41%) swap=0.7/2.9GB (24%) cpu=97% browser_rss=0.67GB\n  [capture-loop] iter=200 t=45.7s state={'complete': False, 'error': None, 'executedCount': 1, 'wsState': 1} eval_ms=69 ram=6.4/16.0GB (40%) swap=0.9/2.9GB (30%) cpu=97% browser_rss=0.66GB\n  [capture-loop] iter=250 t=60.9s state={'complete': False, 'error': None, 'executedCount': 1, 'wsState': 1} eval_ms=100 ram=6.3/16.0GB (40%) swap=0.8/2.9GB (30%) cpu=98% browser_rss=0.65GB\n  [capture-loop] iter=300 t=77.1s state={'complete': False, 'error': None, 'executedCount': 1, 'wsState': 1} eval_ms=102 ram=6.4/16.0GB (40%) swap=0.8/2.9GB (30%) cpu=97% browser_rss=0.64GB\n  Frame 6 saved (frame_005.jpg, t=83.7s)\n  [capture-periodic] freeze=67ms shot=204ms unfreeze=8ms saved=True"
+    },
+    {
+      "file": "frame_007.jpg",
+      "time": 87.90480089187622,
+      "log": "Final screenshot"
+    }
+  ],
+  "total_time": 85.68
+}

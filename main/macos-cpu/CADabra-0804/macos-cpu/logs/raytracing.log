@@ -1,0 +1,21 @@
+Loading workflow from /Users/runner/work/comfy-gpu-ci/comfy-gpu-ci/ComfyUI/custom_nodes/ComfyUI-CADabra/workflows/raytracing.json...
+Converting litegraph workflow to prompt format...
+Queuing workflow: /Users/runner/work/comfy-gpu-ci/comfy-gpu-ci/ComfyUI/custom_nodes/ComfyUI-CADabra/workflows/raytracing.json...
+[DEBUG] Connecting WebSocket to ws://127.0.0.1:8188/ws?clientId=16bf5c9d-8b16-4585-ba15-7e4eb28e56c0
+[DEBUG] WebSocket connected successfully
+Queued with ID: 367eddad-30e3-45fa-9e52-3112ca6e2281
+[DEBUG] WS msg: type=status prompt_id=None (waiting for 367eddad-30e3-45fa-9e52-3112ca6e2281)
+[DEBUG] WS msg: type=status prompt_id=None (waiting for 367eddad-30e3-45fa-9e52-3112ca6e2281)
+[DEBUG] WS msg: type=status prompt_id=None (waiting for 367eddad-30e3-45fa-9e52-3112ca6e2281)
+[DEBUG] WS msg: type=progress_state prompt_id=367eddad-30e3-45fa-9e52-3112ca6e2281 (waiting for 367eddad-30e3-45fa-9e52-3112ca6e2281)
+[DEBUG] Unhandled msg_type: progress_state
+[DEBUG] WS msg: type=progress_state prompt_id=367eddad-30e3-45fa-9e52-3112ca6e2281 (waiting for 367eddad-30e3-45fa-9e52-3112ca6e2281)
+[DEBUG] Unhandled msg_type: progress_state
+[DEBUG] WS msg: type=progress_state prompt_id=367eddad-30e3-45fa-9e52-3112ca6e2281 (waiting for 367eddad-30e3-45fa-9e52-3112ca6e2281)
+[DEBUG] Unhandled msg_type: progress_state
+[DEBUG] WS msg: type=progress_state prompt_id=367eddad-30e3-45fa-9e52-3112ca6e2281 (waiting for 367eddad-30e3-45fa-9e52-3112ca6e2281)
+[DEBUG] Unhandled msg_type: progress_state
+[DEBUG] WS msg: type=status prompt_id=None (waiting for 367eddad-30e3-45fa-9e52-3112ca6e2281)
+Execution complete (queue empty)
+Workflow completed successfully!
+    Saved screenshot: raytracing_executed.png

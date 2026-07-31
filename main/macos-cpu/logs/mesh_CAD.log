@@ -1,0 +1,223 @@
+  [ComfyUI] [32m[INFO][0m Using RAM pressure cache.
+Capturing execution frames: mesh_CAD.json
+  [ComfyUI] [32m[INFO][0m Using RAM pressure cache.
+  Frame 1 saved (frame_000.jpg, t=0.0s)
+  Validating workflow...
+  [ComfyUI] [32m[INFO][0m === /validate endpoint called ===
+  [ComfyUI] [32m[INFO][0m Received JSON with keys: ['prompt']
+  [ComfyUI] [32m[INFO][0m Prompt has 5 nodes
+  [ComfyUI] [32m[INFO][0m   Node 1: CAD_Load
+  [ComfyUI] [32m[INFO][0m     Inputs: {"filename": "cad/spiral_wind_turbine.stp", "upload_progress": "", "\u2b06 upload / drop CAD": null}
+  [ComfyUI] [32m[INFO][0m   Node 13: PreviewCADOCC
+  [ComfyUI] [32m[INFO][0m     Inputs: {"linear_deflection": 0.1, "angular_deflection": 0.5, "preview_occ": "", "cad_model": ["1", 0]}
+  [ComfyUI] [32m[INFO][0m   Node 18: GeomPackPreviewMeshDual
+  [ComfyUI] [32m[INFO][0m     Inputs: {"layout": "side_by_side", "mode": "fields", "opacity_1": 1, "opacity_2": 1, "preview_dual": "{\"show_edges\":true,\"camera_state\":\"{\\\"position\\\":[-471.89641369846686,190.09798306808523,92.60360
+  [ComfyUI] [32m[INFO][0m   Node 19: CAD_Mesh
+  [ComfyUI] [32m[INFO][0m     Inputs: {"backend": "BRepIncremental", "backend.linear_deflection": 0.1, "backend.angular_deflection": 0.5, "backend.merge_vertices": true, "backend.relative": false, "backend.parallel": false, "backend.min_s
+  [ComfyUI] [32m[INFO][0m   Node 20: CAD_Mesh
+  [ComfyUI] [32m[INFO][0m     Inputs: {"backend": "GMSH", "backend.output_dim": "2D Surface", "backend.algorithm_2d": "Delaunay", "backend.size_mode": "Absolute", "backend.size_mode.target_size": 1, "backend.size_mode.size_factor": 1, "ba
+  [ComfyUI] [32m[INFO][0m Generated prompt_id: 99098985-062e-447f-8b84-edd37c12cf05
+  [ComfyUI] [32m[INFO][0m Calling execution.validate_prompt()...
+  [ComfyUI] [32m[INFO][0m Validation result: valid=True
+  [ComfyUI] [32m[INFO][0m === Validation PASSED ===
+  Queuing workflow for execution...
+  [ComfyUI] [32m[INFO][0m got prompt
+  [ComfyUI] [comfy-env] Running CAD_Load: filename: 'cad/spiral_wind_turbine.stp'
+  [ComfyUI] [SubprocessWorker] call_method: nodes.cad_nodes.CAD_Load.EXECUTE_NORMALIZED
+  [ComfyUI] [SubprocessWorker] acquired lock, ensuring started...
+  [ComfyUI] [ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+  [ComfyUI] [ComfyUI-CADabra] Health check: failed
+  [ComfyUI] [ComfyUI-CADabra] Socket unhealthy, restarting worker...
+  [ComfyUI] [ComfyUI-CADabra] python: /Users/runner/.ce/envs/cadabra-nodes/.pixi/envs/default/bin/python
+  [ComfyUI] [ComfyUI-CADabra] sys_path sent to worker: ['/Users/runner/work/comfy-ci/comfy-ci/test_workspaces/CADabra-1413/ComfyUI', '/Users/runner/work/comfy-ci/comfy-ci/test_workspaces/CADabra-1413/ComfyUI/custom_nodes/ComfyUI-CADabra', '/Users/runner/.ce/envs/cadabra-nodes/.pixi/envs/default/lib/python3.1/site-packages', '/Users/runner/work/comfy-ci/comfy-ci/test_workspaces/CADabra-1413/ComfyUI/custom_nodes/ComfyUI-CADabra']
+  [ComfyUI] [SubprocessWorker] is_pixi=True, python=/Users/runner/.ce/envs/cadabra-nodes/.pixi/envs/default/bin/python
+  [ComfyUI] [SubprocessWorker] launching cmd=['/Users/runner/.pixi/bin/pixi', 'run', '--as-is', '--manifest-path', '/Users/runner/.ce/envs/cadabra-nodes/pixi.toml', '-e', 'default', 'python', '/var/folders/df/djsxfhc17x95674wsm_g8s980000gn/T/comfyui_pvenv_2ok3irew/persistent_worker.py', 'unix:///var/folders/df/djsxfhc17x95674wsm_g8s980000gn/T/comfy_worker_3678fbe874fd.sock']...
+  [ComfyUI] [SubprocessWorker] socket_addr=unix:///var/folders/df/djsxfhc17x95674wsm_g8s980000gn/T/comfy_worker_3678fbe874fd.sock exists=True
+  Frame 2 saved (frame_001.jpg, t=2.4s)
+  [capture-periodic] freeze=7ms shot=173ms unfreeze=5ms saved=True
+  [ComfyUI] [SubprocessWorker] worker started/confirmed
+  [ComfyUI] [SubprocessWorker] serializing kwargs to shm...
+  [ComfyUI] [SubprocessWorker] created 0 shm blocks
+  [ComfyUI] [SubprocessWorker] sending request via socket...
+  [ComfyUI] [SubprocessWorker] call_id=56 sending call_method
+  Frame 3 saved (frame_002.jpg, t=4.6s)
+  [capture-periodic] freeze=4ms shot=138ms unfreeze=5ms saved=True
+  [capture-loop] iter=50 t=6.5s state={'complete': False, 'error': None, 'executedCount': 0, 'wsState': 1} eval_ms=3 ram=3.4/7.0GB (60%) swap=0.0/0.0GB (0%) cpu=76% browser_rss=0.83GB
+  [capture-loop] iter=100 t=12.6s state={'complete': False, 'error': None, 'executedCount': 0, 'wsState': 1} eval_ms=5 ram=3.6/7.0GB (61%) swap=0.0/0.0GB (0%) cpu=59% browser_rss=0.76GB
+  [ComfyUI] [14:22:57] [CADabra]  Using cache: spiral_wind_turbine.stp
+  [ComfyUI] [14:22:57] [CADabra]  Ready: spiral_wind_turbine.stp
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO:  Using cache: spiral_wind_turbine.stp
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO:  Ready: spiral_wind_turbine.stp
+  [ComfyUI] [SubprocessWorker] got response: ok
+  [ComfyUI] [comfy-env] CAD_Load done (17.07s): result: NodeOutput
+  [ComfyUI] [comfy-env] Running PreviewCADOCC: linear_deflection: 0.1, angular_deflection: 0.5, cad_model: dict
+  [ComfyUI] [SubprocessWorker] call_method: nodes.cad_nodes.PreviewCADOCC.EXECUTE_NORMALIZED
+  [ComfyUI] [SubprocessWorker] acquired lock, ensuring started...
+  [ComfyUI] [ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+  [ComfyUI] [ComfyUI-CADabra] Health check: ok
+  [ComfyUI] [SubprocessWorker] worker started/confirmed
+  [ComfyUI] [SubprocessWorker] serializing kwargs to shm...
+  [ComfyUI] [SubprocessWorker] created 0 shm blocks
+  [ComfyUI] [SubprocessWorker] sending request via socket...
+  [ComfyUI] [SubprocessWorker] call_id=57 sending call_method
+  [ComfyUI] [14:22:57] [CADabra]  Tessellating (linear: 0.1, angular: 0.5)
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO:  Tessellating (linear: 0.1, angular: 0.5)
+  [ComfyUI] [14:22:57] [CADabra] Starting: BRepMesh(linear_deflection=0.1, angular_deflection=0.5)
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO: Starting: BRepMesh(linear_deflection=0.1, angular_deflection=0.5)
+  [ComfyUI] [14:22:57] [CADabra] Completed: BRepMesh(linear_deflection=0.1, angular_deflection=0.5) in 0.09s
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO: Completed: BRepMesh(linear_deflection=0.1, angular_deflection=0.5) in 0.09s
+  [ComfyUI] [14:22:57] [CADabra]  Mesh: 3369 vertices, 5474 triangles
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO:  Mesh: 3369 vertices, 5474 triangles
+  [ComfyUI] [14:22:57] [CADabra]  Exported VTP: preview_eb83b79f.vtp (281,575 bytes)
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO:  Exported VTP: preview_eb83b79f.vtp (281,575 bytes)
+  [ComfyUI] [14:22:57] [CADabra]  Entities: 1 volumes, 29 faces, 158 edges
+  [ComfyUI] [14:22:57] [CADabra]  Face types: {'BSpline': 15, 'Cylinder': 8, 'Plane': 3, 'Cone': 3}
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO:  Entities: 1 volumes, 29 faces, 158 edges
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO:  Face types: {'BSpline': 15, 'Cylinder': 8, 'Plane': 3, 'Cone': 3}
+  [ComfyUI] [14:22:57] [CADabra]  Edge types: {'BSpline': 124, 'Circle': 34}
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO:  Edge types: {'BSpline': 124, 'Circle': 34}
+  [ComfyUI] [SubprocessWorker] got response: ok
+  [ComfyUI] [comfy-env] PreviewCADOCC done (0.25s): result: NodeOutput
+  [ComfyUI] [comfy-env] Running CAD_Mesh: extract_face_ids: True, cad_model: dict, backend: dict
+  [ComfyUI] [SubprocessWorker] call_method: nodes.cad_nodes.CAD_Mesh.EXECUTE_NORMALIZED
+  [ComfyUI] [SubprocessWorker] acquired lock, ensuring started...
+  [ComfyUI] [ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+  [ComfyUI] [ComfyUI-CADabra] Health check: ok
+  [ComfyUI] [SubprocessWorker] worker started/confirmed
+  [ComfyUI] [SubprocessWorker] serializing kwargs to shm...
+  [ComfyUI] [SubprocessWorker] created 0 shm blocks
+  [ComfyUI] [SubprocessWorker] sending request via socket...
+  [ComfyUI] [SubprocessWorker] call_id=58 sending call_method
+  Node executed (1 total), capturing...
+  [ComfyUI] [14:22:57] [CADabra] [GMSH] launching meshing — mode=Absolute | 2D algo=Delaunay | 3D algo=n/a (2D surface) | target_size=1.0 | order=1 | optimize=no (passes=1) | smoothing=0 | recombine=no | subdivision=None | threads=all | face_ids=yes
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO: [GMSH] launching meshing — mode=Absolute | 2D algo=Delaunay | 3D algo=n/a (2D surface) | target_size=1.0 | order=1 | optimize=no (passes=1) | smoothing=0 | recombine=no | subdivision=None | threads=all | face_ids=yes
+  [ComfyUI] [14:22:57] [CADabra] [GMSH] >>> _mesh_gmsh called
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO: [GMSH] >>> _mesh_gmsh called
+  [ComfyUI] [14:22:57] [CADabra] [GMSH] size: size_mode='Absolute' target_size=1.0 size_factor=1.0 min_size_factor=1.0 max_size_factor=10.0
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO: [GMSH] size: size_mode='Absolute' target_size=1.0 size_factor=1.0 min_size_factor=1.0 max_size_factor=10.0
+  [ComfyUI] [14:22:57] [CADabra] [GMSH] curv: elements_per_2pi=20 extend_from_boundary=True max_edge_length=0.0 min_edge_length=0.0
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO: [GMSH] curv: elements_per_2pi=20 extend_from_boundary=True max_edge_length=0.0 min_edge_length=0.0
+  [ComfyUI] [14:22:57] [CADabra] [GMSH] algo: output_dim='2D Surface' algorithm_2d='Delaunay' algorithm_3d='Delaunay' element_order='1'
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO: [GMSH] algo: output_dim='2D Surface' algorithm_2d='Delaunay' algorithm_3d='Delaunay' element_order='1'
+  [ComfyUI] [14:22:57] [CADabra] [GMSH] post: smoothing_steps=0 optimize=False optimization_passes=1 recombine=False subdivision='None' extract_face_ids=True
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO: [GMSH] post: smoothing_steps=0 optimize=False optimization_passes=1 recombine=False subdivision='None' extract_face_ids=True
+  Frame 4 saved (frame_003.jpg, t=17.9s)
+  [capture-node] freeze=4ms shot=166ms unfreeze=12ms saved=True
+  [capture-loop] iter=150 t=19.0s state={'complete': False, 'error': None, 'executedCount': 1, 'wsState': 1} eval_ms=5 ram=3.7/7.0GB (62%) swap=0.0/0.0GB (0%) cpu=69% browser_rss=0.77GB
+  [ComfyUI] [14:22:59] [CADabra]  Model diagonal: 213.47
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO:  Model diagonal: 213.47
+  [ComfyUI] [14:22:59] [CADabra]  Absolute sizing: target=1.0
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO:  Absolute sizing: target=1.0
+  [ComfyUI] [14:22:59] [CADabra] [GMSH] sizing branch='Absolute' diagonal=213.467529 -> actual_target=1.000000 actual_min=1.000000 actual_max=10.000000
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO: [GMSH] sizing branch='Absolute' diagonal=213.467529 -> actual_target=1.000000 actual_min=1.000000 actual_max=10.000000
+  [ComfyUI] [14:22:59] [CADabra] [GMSH]   effective Mesh.MeshSizeFactor = 1.0
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO: [GMSH]   effective Mesh.MeshSizeFactor = 1.0
+  [ComfyUI] [14:22:59] [CADabra] [GMSH]   effective Mesh.MeshSizeMin = 1.0
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO: [GMSH]   effective Mesh.MeshSizeMin = 1.0
+  [ComfyUI] [14:22:59] [CADabra] [GMSH]   effective Mesh.MeshSizeMax = 10.0
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO: [GMSH]   effective Mesh.MeshSizeMax = 10.0
+  [ComfyUI] [14:22:59] [CADabra] [GMSH]   effective Mesh.CharacteristicLengthMin = 1.0
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO: [GMSH]   effective Mesh.CharacteristicLengthMin = 1.0
+  [ComfyUI] [14:22:59] [CADabra] [GMSH]   effective Mesh.CharacteristicLengthMax = 10.0
+  [ComfyUI] [14:22:59] [CADabra] [GMSH]   effective Mesh.MeshSizeFromCurvature = 0.0
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO: [GMSH]   effective Mesh.CharacteristicLengthMax = 10.0
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO: [GMSH]   effective Mesh.MeshSizeFromCurvature = 0.0
+  [ComfyUI] [14:22:59] [CADabra] [GMSH]   effective Mesh.MeshSizeFromPoints = 1.0
+  [ComfyUI] [14:22:59] [CADabra] [GMSH]   effective Mesh.MeshSizeExtendFromBoundary = 1.0
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO: [GMSH]   effective Mesh.MeshSizeFromPoints = 1.0
+  [ComfyUI] [14:22:59] [CADabra] [GMSH]   effective Mesh.MinimumCirclePoints = 7.0
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO: [GMSH]   effective Mesh.MeshSizeExtendFromBoundary = 1.0
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO: [GMSH]   effective Mesh.MinimumCirclePoints = 7.0
+  [ComfyUI] [14:22:59] [CADabra] [GMSH] threads = 3 (num_threads input=0, cores=3)
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO: [GMSH] threads = 3 (num_threads input=0, cores=3)
+  [ComfyUI] [14:22:59] [CADabra]  Starting mesh generation (log: /Users/runner/work/comfy-ci/comfy-ci/test_workspaces/CADabra-1413/ComfyUI/output/gmsh_mesh_spiral_wind_turbine.log)...
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO:  Starting mesh generation (log: /Users/runner/work/comfy-ci/comfy-ci/test_workspaces/CADabra-1413/ComfyUI/output/gmsh_mesh_spiral_wind_turbine.log)...
+  [ComfyUI] [14:22:59] [CADabra] Starting: GMSH mesh.generate(dim=2, algorithm_2d=Delaunay)
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO: Starting: GMSH mesh.generate(dim=2, algorithm_2d=Delaunay)
+  [ComfyUI] [1m[31m[ERROR][0m !!! Exception during processing !!! ComfyUI-CADabra: Socket closed but worker process still running.
+  [ComfyUI]   exit code: None
+  [ComfyUI]   worker log (/var/folders/df/djsxfhc17x95674wsm_g8s980000gn/T/comfy_worker_debug.log, last 20 lines):
+  [ComfyUI]     14:22:57 [log] INFO: [GMSH] >>> _mesh_gmsh called
+  [ComfyUI]     14:22:57 [log] INFO: [GMSH] size: size_mode='Absolute' target_size=1.0 size_factor=1.0 min_size_factor=1.0 max_size_factor=10.0
+  [ComfyUI]     14:22:57 [log] INFO: [GMSH] curv: elements_per_2pi=20 extend_from_boundary=True max_edge_length=0.0 min_edge_length=0.0
+  [ComfyUI]     14:22:57 [log] INFO: [GMSH] algo: output_dim='2D Surface' algorithm_2d='Delaunay' algorithm_3d='Delaunay' element_order='1'
+  [ComfyUI]     14:22:57 [log] INFO: [GMSH] post: smoothing_steps=0 optimize=False optimization_passes=1 recombine=False subdivision='None' extract_face_ids=True
+  [ComfyUI]     14:22:59 [log] INFO:  Model diagonal: 213.47
+  [ComfyUI]     14:22:59 [log] INFO:  Absolute sizing: target=1.0
+  [ComfyUI]     14:22:59 [log] INFO: [GMSH] sizing branch='Absolute' diagonal=213.467529 -> actual_target=1.000000 actual_min=1.000000 actual_max=10.000000
+  [ComfyUI]     14:22:59 [log] INFO: [GMSH]   effective Mesh.MeshSizeFactor = 1.0
+  [ComfyUI]     14:22:59 [log] INFO: [GMSH]   effective Mesh.MeshSizeMin = 1.0
+  [ComfyUI]     14:22:59 [log] INFO: [GMSH]   effective Mesh.MeshSizeMax = 10.0
+  [ComfyUI]     14:22:59 [log] INFO: [GMSH]   effective Mesh.CharacteristicLengthMin = 1.0
+  [ComfyUI]     14:22:59 [log] INFO: [GMSH]   effective Mesh.CharacteristicLengthMax = 10.0
+  [ComfyUI]     14:22:59 [log] INFO: [GMSH]   effective Mesh.MeshSizeFromCurvature = 0.0
+  [ComfyUI]     14:22:59 [log] INFO: [GMSH]   effective Mesh.MeshSizeFromPoints = 1.0
+  [ComfyUI]     14:22:59 [log] INFO: [GMSH]   effective Mesh.MeshSizeExtendFromBoundary = 1.0
+  [ComfyUI]     14:22:59 [log] INFO: [GMSH]   effective Mesh.MinimumCirclePoints = 7.0
+  [ComfyUI]     14:22:59 [log] INFO: [GMSH] threads = 3 (num_threads input=0, cores=3)
+  [ComfyUI]     14:22:59 [log] INFO:  Starting mesh generation (log: /Users/runner/work/comfy-ci/comfy-ci/test_workspaces/CADabra-1413/ComfyUI/output/gmsh_mesh_spiral_wind_turbine.log)...
+  [ComfyUI]     14:22:59 [log] INFO: Starting: GMSH mesh.generate(dim=2, algorithm_2d=Delaunay)
+  [ComfyUI] [1m[31m[ERROR][0m Traceback (most recent call last):
+  [ComfyUI]   File "/Users/runner/work/comfy-ci/comfy-ci/test_workspaces/CADabra-1413/venv/lib/python3.11/site-packages/comfy_env/isolation/workers/subprocess.py", line 558, in _send_request
+  [ComfyUI]     response = self._transport.recv(timeout=timeout)
+  [ComfyUI]                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  [ComfyUI]   File "/Users/runner/work/comfy-ci/comfy-ci/test_workspaces/CADabra-1413/venv/lib/python3.11/site-packages/comfy_env/isolation/workers/_ipc_parent.py", line 166, in recv
+  [ComfyUI]     raise ConnectionError("Socket closed")
+  [ComfyUI] ConnectionError: Socket closed
+  [ComfyUI] 
+  [ComfyUI] The above exception was the direct cause of the following exception:
+  [ComfyUI] 
+  [ComfyUI] Traceback (most recent call last):
+  [ComfyUI]   File "/Users/runner/work/comfy-ci/comfy-ci/test_workspaces/CADabra-1413/ComfyUI/execution.py", line 545, in execute
+  [ComfyUI]     output_data, output_ui, has_subgraph, has_pending_tasks = await get_output_data(prompt_id, unique_id, obj, input_data_all, execution_block_cb=execution_block_cb, pre_execute_cb=pre_execute_cb, v3_data=v3_data)
+  [ComfyUI]                                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  [ComfyUI]   File "/Users/runner/work/comfy-ci/comfy-ci/test_workspaces/CADabra-1413/ComfyUI/execution.py", line 344, in get_output_data
+  [ComfyUI]     return_values = await _async_map_node_over_list(prompt_id, unique_id, obj, input_data_all, obj.FUNCTION, allow_interrupt=True, execution_block_cb=execution_block_cb, pre_execute_cb=pre_execute_cb, v3_data=v3_data)
+  [ComfyUI]                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  [ComfyUI]   File "/Users/runner/work/comfy-ci/comfy-ci/test_workspaces/CADabra-1413/ComfyUI/execution.py", line 318, in _async_map_node_over_list
+  [ComfyUI]     await process_inputs(input_dict, i)
+  [ComfyUI]   File "/Users/runner/work/comfy-ci/comfy-ci/test_workspaces/CADabra-1413/ComfyUI/execution.py", line 306, in process_inputs
+  [ComfyUI]     result = f(**inputs)
+  [ComfyUI]              ^^^^^^^^^^^
+  [ComfyUI]   File "/Users/runner/work/comfy-ci/comfy-ci/test_workspaces/CADabra-1413/ComfyUI/comfy_api/internal/__init__.py", line 149, in wrapped_func
+  [ComfyUI]     return method(locked_class, **inputs)
+  [ComfyUI]            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  [ComfyUI]   File "/Users/runner/work/comfy-ci/comfy-ci/test_workspaces/CADabra-1413/venv/lib/python3.11/site-packages/comfy_env/isolation/metadata.py", line 710, in proxy
+  [ComfyUI]     result = worker.call_method(
+  [ComfyUI]              ^^^^^^^^^^^^^^^^^^^
+  [ComfyUI]   File "/Users/runner/work/comfy-ci/comfy-ci/test_workspaces/CADabra-1413/venv/lib/python3.11/site-packages/comfy_env/isolation/workers/subprocess.py", line 669, in call_method
+  [ComfyUI]     response = self._send_request(request, timeout)
+  [ComfyUI]                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  [ComfyUI]   File "/Users/runner/work/comfy-ci/comfy-ci/test_workspaces/CADabra-1413/venv/lib/python3.11/site-packages/comfy_env/isolation/workers/subprocess.py", line 589, in _send_request
+  [ComfyUI]     raise RuntimeError(
+  [ComfyUI] RuntimeError: ComfyUI-CADabra: Socket closed but worker process still running.
+  [ComfyUI]   exit code: None
+  [ComfyUI]   worker log (/var/folders/df/djsxfhc17x95674wsm_g8s980000gn/T/comfy_worker_debug.log, last 20 lines):
+  [ComfyUI]     14:22:57 [log] INFO: [GMSH] >>> _mesh_gmsh called
+  [ComfyUI]     14:22:57 [log] INFO: [GMSH] size: size_mode='Absolute' target_size=1.0 size_factor=1.0 min_size_factor=1.0 max_size_factor=10.0
+  [ComfyUI]     14:22:57 [log] INFO: [GMSH] curv: elements_per_2pi=20 extend_from_boundary=True max_edge_length=0.0 min_edge_length=0.0
+  [ComfyUI]     14:22:57 [log] INFO: [GMSH] algo: output_dim='2D Surface' algorithm_2d='Delaunay' algorithm_3d='Delaunay' element_order='1'
+  [ComfyUI]     14:22:57 [log] INFO: [GMSH] post: smoothing_steps=0 optimize=False optimization_passes=1 recombine=False subdivision='None' extract_face_ids=True
+  [ComfyUI]     14:22:59 [log] INFO:  Model diagonal: 213.47
+  [ComfyUI]     14:22:59 [log] INFO:  Absolute sizing: target=1.0
+  [ComfyUI]     14:22:59 [log] INFO: [GMSH] sizing branch='Absolute' diagonal=213.467529 -> actual_target=1.000000 actual_min=1.000000 actual_max=10.000000
+  [ComfyUI]     14:22:59 [log] INFO: [GMSH]   effective Mesh.MeshSizeFactor = 1.0
+  [ComfyUI]     14:22:59 [log] INFO: [GMSH]   effective Mesh.MeshSizeMin = 1.0
+  [ComfyUI]     14:22:59 [log] INFO: [GMSH]   effective Mesh.MeshSizeMax = 10.0
+  [ComfyUI]     14:22:59 [log] INFO: [GMSH]   effective Mesh.CharacteristicLengthMin = 1.0
+  [ComfyUI]     14:22:59 [log] INFO: [GMSH]   effective Mesh.CharacteristicLengthMax = 10.0
+  [ComfyUI]     14:22:59 [log] INFO: [GMSH]   effective Mesh.MeshSizeFromCurvature = 0.0
+  [ComfyUI]     14:22:59 [log] INFO: [GMSH]   effective Mesh.MeshSizeFromPoints = 1.0
+  [ComfyUI]     14:22:59 [log] INFO: [GMSH]   effective Mesh.MeshSizeExtendFromBoundary = 1.0
+  [ComfyUI]     14:22:59 [log] INFO: [GMSH]   effective Mesh.MinimumCirclePoints = 7.0
+  [ComfyUI]     14:22:59 [log] INFO: [GMSH] threads = 3 (num_threads input=0, cores=3)
+  [ComfyUI]     14:22:59 [log] INFO:  Starting mesh generation (log: /Users/runner/work/comfy-ci/comfy-ci/test_workspaces/CADabra-1413/ComfyUI/output/gmsh_mesh_spiral_wind_turbine.log)...
+  [ComfyUI]     14:22:59 [log] INFO: Starting: GMSH mesh.generate(dim=2, algorithm_2d=Delaunay)
+  [ComfyUI] 
+  [ComfyUI] [32m[INFO][0m [32mPrompt executed in 19.30 seconds[0m
+  Execution complete (t=19.7s)
+  Execution error: {'prompt_id': '8c572fda-8a13-477e-a3d1-06a4d083c354', 'node_id': '20', 'node_type': 'CAD_Mesh', 'executed': ['13', '1'], 'exception_message': "ComfyUI-CADabra: Socket closed but worker process still running.\n  exit code: None\n  worker log (/var/folders/df/djsxfhc17x95674wsm_g8s980000gn/T/comfy_worker_debug.log, last 20 lines):\n    14:22:57 [log] INFO: [GMSH] >>> _mesh_gmsh called\n    14:22:57 [log] INFO: [GMSH] size: size_mode='Absolute' target_size=1.0 size_factor=1.0 min_size_factor=1.0 max_size_factor=10.0\n    14:22:57 [log] INFO: [GMSH] curv: elements_per_2pi=20 extend_from_boundary=True max_edge_length=0.0 min_edge_length=0.0\n    14:22:57 [log] INFO: [GMSH] algo: output_dim='2D Surface' algorithm_2d='Delaunay' algorithm_3d='Delaunay' element_order='1'\n    14:22:57 [log] INFO: [GMSH] post: smoothing_steps=0 optimize=False optimization_passes=1 recombine=False subdivision='None' extract_face_ids=True\n    14:22:59 [log] INFO:  Model diagonal: 213.47\n    14:22:59 [log] INFO:  Absolute sizing: target=1.0\n    14:22:59 [log] INFO: [GMSH] sizing branch='Absolute' diagonal=213.467529 -> actual_target=1.000000 actual_min=1.000000 actual_max=10.000000\n    14:22:59 [log] INFO: [GMSH]   effective Mesh.MeshSizeFactor = 1.0\n    14:22:59 [log] INFO: [GMSH]   effective Mesh.MeshSizeMin = 1.0\n    14:22:59 [log] INFO: [GMSH]   effective Mesh.MeshSizeMax = 10.0\n    14:22:59 [log] INFO: [GMSH]   effective Mesh.CharacteristicLengthMin = 1.0\n    14:22:59 [log] INFO: [GMSH]   effective Mesh.CharacteristicLengthMax = 10.0\n    14:22:59 [log] INFO: [GMSH]   effective Mesh.MeshSizeFromCurvature = 0.0\n    14:22:59 [log] INFO: [GMSH]   effective Mesh.MeshSizeFromPoints = 1.0\n    14:22:59 [log] INFO: [GMSH]   effective Mesh.MeshSizeExtendFromBoundary = 1.0\n    14:22:59 [log] INFO: [GMSH]   effective Mesh.MinimumCirclePoints = 7.0\n    14:22:59 [log] INFO: [GMSH] threads = 3 (num_threads input=0, cores=3)\n    14:22:59 [log] INFO:  Starting mesh generation (log: /Users/runner/work/comfy-ci/comfy-ci/test_workspaces/CADabra-1413/ComfyUI/output/gmsh_mesh_spiral_wind_turbine.log)...\n    14:22:59 [log] INFO: Starting: GMSH mesh.generate(dim=2, algorithm_2d=Delaunay)\n", 'exception_type': 'RuntimeError', 'traceback': ['  File "/Users/runner/work/comfy-ci/comfy-ci/test_workspaces/CADabra-1413/ComfyUI/execution.py", line 545, in execute\n    output_data, output_ui, has_subgraph, has_pending_tasks = await get_output_data(prompt_id, unique_id, obj, input_data_all, execution_block_cb=execution_block_cb, pre_execute_cb=pre_execute_cb, v3_data=v3_data)\n                                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n', '  File "/Users/runner/work/comfy-ci/comfy-ci/test_workspaces/CADabra-1413/ComfyUI/execution.py", line 344, in get_output_data\n    return_values = await _async_map_node_over_list(prompt_id, unique_id, obj, input_data_all, obj.FUNCTION, allow_interrupt=True, execution_block_cb=execution_block_cb, pre_execute_cb=pre_execute_cb, v3_data=v3_data)\n                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n', '  File "/Users/runner/work/comfy-ci/comfy-ci/test_workspaces/CADabra-1413/ComfyUI/execution.py", line 318, in _async_map_node_over_list\n    await process_inputs(input_dict, i)\n', '  File "/Users/runner/work/comfy-ci/comfy-ci/test_workspaces/CADabra-1413/ComfyUI/execution.py", line 306, in process_inputs\n    result = f(**inputs)\n             ^^^^^^^^^^^\n', '  File "/Users/runner/work/comfy-ci/comfy-ci/test_workspaces/CADabra-1413/ComfyUI/comfy_api/internal/__init__.py", line 149, in wrapped_func\n    return method(locked_class, **inputs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n', '  File "/Users/runner/work/comfy-ci/comfy-ci/test_workspaces/CADabra-1413/venv/lib/python3.11/site-packages/comfy_env/isolation/metadata.py", line 710, in proxy\n    result = worker.call_method(\n             ^^^^^^^^^^^^^^^^^^^\n', '  File "/Users/runner/work/comfy-ci/comfy-ci/test_workspaces/CADabra-1413/venv/lib/python3.11/site-packages/comfy_env/isolation/workers/subprocess.py", line 669, in call_method\n    response = self._send_request(request, timeout)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n', '  File "/Users/runner/work/comfy-ci/comfy-ci/test_workspaces/CADabra-1413/venv/lib/python3.11/site-packages/comfy_env/isolation/workers/subprocess.py", line 589, in _send_request\n    raise RuntimeError(\n'], 'current_inputs': {'backend': ['GMSH'], 'backend.output_dim': ['2D Surface'], 'backend.algorithm_2d': ['Delaunay'], 'backend.size_mode': ['Absolute'], 'backend.size_mode.target_size': [1], 'backend.size_mode.size_factor': [1], 'backend.size_mode.min_size_factor': [1], 'backend.size_mode.max_size_factor': [10], 'backend.element_order': ['1'], 'backend.smoothing_steps': [0], 'backend.optimize': [False], 'backend.optimization_passes': [1], 'backend.recombine_to_quads': [False], 'backend.subdivision': ['None'], 'backend.num_threads': [0], 'backend.gmsh_options': ['{}'], 'extract_face_ids': [True], 'cad_model': ["{'brep_path': '/Users/runner/work/comfy-ci/comfy-ci/test_workspaces/CADabra-1413/ComfyUI/input/cad/.brep_cache/7451bdaddcf4e16e40f1b9252eb9f841.brep', 'file_path': '/Users/runner/work/comfy-ci/comfy-ci/test_workspaces/CADabra-1413/ComfyUI/input/cad/spiral_wind_turbine.stp', 'format': '.stp'}"]}, 'current_outputs': ['19', '20', '13', '1', '18'], 'timestamp': 1785507779384}
+    Status: FAILED
+    Error: Workflow execution failed: {'prompt_id': '8c572fda-8a13-477e-a3d1-06a4d083c354', 'node_id': '20', 'node_type': 'CAD_Mesh', 'executed': ['13', '1'], 'exception_message': "ComfyUI-CADabra: Socket closed but worker process still running.\n  exit code: None\n  worker log (/var/folders/df/djsxfhc17x95674wsm_g8s980000gn/T/comfy_worker_debug.log, last 20 lines):\n    14:22:57 [log] INFO: [GMSH] >>> _mesh_gmsh called\n    14:22:57 [log] INFO: [GMSH] size: size_mode='Absolute' target_size=1.0 size_factor=1.0 min_size_factor=1.0 max_size_factor=10.0\n    14:22:57 [log] INFO: [GMSH] curv: elements_per_2pi=20 extend_from_boundary=True max_edge_length=0.0 min_edge_length=0.0\n    14:22:57 [log] INFO: [GMSH] algo: output_dim='2D Surface' algorithm_2d='Delaunay' algorithm_3d='Delaunay' element_order='1'\n    14:22:57 [log] INFO: [GMSH] post: smoothing_steps=0 optimize=False optimization_passes=1 recombine=False subdivision='None' extract_face_ids=True\n    14:22:59 [log] INFO:  Model diagonal: 213.47\n    14:22:59 [log] INFO:  Absolute sizing: target=1.0\n    14:22:59 [log] INFO: [GMSH] sizing branch='Absolute' diagonal=213.467529 -> actual_target=1.000000 actual_min=1.000000 actual_max=10.000000\n    14:22:59 [log] INFO: [GMSH]   effective Mesh.MeshSizeFactor = 1.0\n    14:22:59 [log] INFO: [GMSH]   effective Mesh.MeshSizeMin = 1.0\n    14:22:59 [log] INFO: [GMSH]   effective Mesh.MeshSizeMax = 10.0\n    14:22:59 [log] INFO: [GMSH]   effective Mesh.CharacteristicLengthMin = 1.0\n    14:22:59 [log] INFO: [GMSH]   effective Mesh.CharacteristicLengthMax = 10.0\n    14:22:59 [log] INFO: [GMSH]   effective Mesh.MeshSizeFromCurvature = 0.0\n    14:22:59 [log] INFO: [GMSH]   effective Mesh.MeshSizeFromPoints = 1.0\n    14:22:59 [log] INFO: [GMSH]   effective Mesh.MeshSizeExtendFromBoundary = 1.0\n    14:22:59 [log] INFO: [GMSH]   effective Mesh.MinimumCirclePoints = 7.0\n    14:22:59 [log] INFO: [GMSH] threads = 3 (num_threads input=0, cores=3)\n    14:22:59 [log] INFO:  Starting mesh generation (log: /Users/runner/work/comfy-ci/comfy-ci/test_workspaces/CADabra-1413/ComfyUI/output/gmsh_mesh_spiral_wind_turbine.log)...\n    14:22:59 [log] INFO: Starting: GMSH mesh.generate(dim=2, algorithm_2d=Delaunay)\n", 'exception_type': 'RuntimeError', 'traceback': ['  File "/Users/runner/work/comfy-ci/comfy-ci/test_workspaces/CADabra-1413/ComfyUI/execution.py", line 545, in execute\n    output_data, output_ui, has_subgraph, has_pending_tasks = await get_output_data(prompt_id, unique_id, obj, input_data_all, execution_block_cb=execution_block_cb, pre_execute_cb=pre_execute_cb, v3_data=v3_data)\n                                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n', '  File "/Users/runner/work/comfy-ci/comfy-ci/test_workspaces/CADabra-1413/ComfyUI/execution.py", line 344, in get_output_data\n    return_values = await _async_map_node_over_list(prompt_id, unique_id, obj, input_data_all, obj.FUNCTION, allow_interrupt=True, execution_block_cb=execution_block_cb, pre_execute_cb=pre_execute_cb, v3_data=v3_data)\n                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n', '  File "/Users/runner/work/comfy-ci/comfy-ci/test_workspaces/CADabra-1413/ComfyUI/execution.py", line 318, in _async_map_node_over_list\n    await process_inputs(input_dict, i)\n', '  File "/Users/runner/work/comfy-ci/comfy-ci/test_workspaces/CADabra-1413/ComfyUI/execution.py", line 306, in process_inputs\n    result = f(**inputs)\n             ^^^^^^^^^^^\n', '  File "/Users/runner/work/comfy-ci/comfy-ci/test_workspaces/CADabra-1413/ComfyUI/comfy_api/internal/__init__.py", line 149, in wrapped_func\n    return method(locked_class, **inputs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n', '  File "/Users/runner/work/comfy-ci/comfy-ci/test_workspaces/CADabra-1413/venv/lib/python3.11/site-packages/comfy_env/isolation/metadata.py", line 710, in proxy\n    result = worker.call_method(\n             ^^^^^^^^^^^^^^^^^^^\n', '  File "/Users/runner/work/comfy-ci/comfy-ci/test_workspaces/CADabra-1413/venv/lib/python3.11/site-packages/comfy_env/isolation/workers/subprocess.py", line 669, in call_method\n    response = self._send_request(request, timeout)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n', '  File "/Users/runner/work/comfy-ci/comfy-ci/test_workspaces/CADabra-1413/venv/lib/python3.11/site-packages/comfy_env/isolation/workers/subprocess.py", line 589, in _send_request\n    raise RuntimeError(\n'], 'current_inputs': {'backend': ['GMSH'], 'backend.output_dim': ['2D Surface'], 'backend.algorithm_2d': ['Delaunay'], 'backend.size_mode': ['Absolute'], 'backend.size_mode.target_size': [1], 'backend.size_mode.size_factor': [1], 'backend.size_mode.min_size_factor': [1], 'backend.size_mode.max_size_factor': [10], 'backend.element_order': ['1'], 'backend.smoothing_steps': [0], 'backend.optimize': [False], 'backend.optimization_passes': [1], 'backend.recombine_to_quads': [False], 'backend.subdivision': ['None'], 'backend.num_threads': [0], 'backend.gmsh_options': ['{}'], 'extract_face_ids': [True], 'cad_model': ["{'brep_path': '/Users/runner/work/comfy-ci/comfy-ci/test_workspaces/CADabra-1413/ComfyUI/input/cad/.brep_cache/7451bdaddcf4e16e40f1b9252eb9f841.brep', 'file_path': '/Users/runner/work/comfy-ci/comfy-ci/test_workspaces/CADabra-1413/ComfyUI/input/cad/spiral_wind_turbine.stp', 'format': '.stp'}"]}, 'current_outputs': ['19', '20', '13', '1', '18'], 'timestamp': 1785507779384}
+    Details: Workflow: /private/var/folders/df/djsxfhc17x95674wsm_g8s980000gn/T/comfy-test-run-wnlva0kr/ComfyUI-CADabra/workflows/mesh_CAD.json
+Node error: CAD_Mesh

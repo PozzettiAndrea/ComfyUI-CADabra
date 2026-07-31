@@ -1,0 +1,87 @@
+[Console-error] Failed to load resource: the server responded with a status of 404 (Not Found)
+[Console-error] Failed to load resource: the server responded with a status of 404 (Not Found)
+[Console-warning] [ComfyUI] The legacy queue/history menu is deprecated. Core functionality in this menu may break at any time. Issues and feature requests related to the legacy menu will not be addressed. To switch to the new menu: Settings → search "Use new menu" → change from "Disabled" to "Top".
+[Console-warning] [ComfyUI] The legacy queue/history menu is deprecated. Core functionality in this menu may break at any time. Issues and feature requests related to the legacy menu will not be addressed. To switch to the new menu: Settings → search "Use new menu" → change from "Disabled" to "Top".
+[Console-error] Failed to load resource: the server responded with a status of 404 (Not Found)
+[Console-error] ComfyApp graph accessed before initialization
+[Console-error] Failed to load resource: the server responded with a status of 404 (Not Found)
+[Console-error] Failed to load resource: the server responded with a status of 404 (Not Found)
+[Console-error] Failed to load resource: the server responded with a status of 404 (Not Found)
+[Console-error] [vite:preloadError] {url: null, fileType: unknown, chunkName: null, message: THREE is not defined}
+[Console-warning] WARNING: Multiple instances of Three.js being imported.
+[Console-log] [VTK Bundle] GLTFImporter included in bundle
+[Console-warning] WARNING: Multiple instances of Three.js being imported.
+[Console-warning] WARNING: Multiple instances of Three.js being imported.
+[Console-log] [FBX Preview] Auto-registering for all known FBX preview node types...
+[Console-log] [UniRig] Loading FBX mesh preview extension...
+[Console-log] [UniRig] Detected extension folder: ComfyUI-GeometryPack
+[Console-log] [UniRig] FBX mesh preview extension registered
+[Console-log] [SAM3DBody] Loading FBX mesh preview extension...
+[Console-log] [SAM3DBody] Detected extension folder: ComfyUI-GeometryPack
+[Console-log] [SAM3DBody] FBX mesh preview extension registered
+[Console-log] [MotionCapture] Loading FBX mesh preview extension...
+[Console-log] [MotionCapture] Detected extension folder: ComfyUI-GeometryPack
+[Console-log] [MotionCapture] FBX mesh preview extension registered
+[Console-log] [MotionCapture] Loading FBX mesh preview extension...
+[Console-log] [MotionCapture] Detected extension folder: ComfyUI-GeometryPack
+[Console-log] [MotionCapture] FBX mesh preview extension registered
+[Console-log] [UniRig Debug] Loading FBX mesh preview extension...
+[Console-log] [UniRig Debug] Detected extension folder: ComfyUI-GeometryPack
+[Console-log] [UniRig Debug] FBX mesh preview extension registered
+[Console-log] [GeomPack] Loading mesh preview extension...
+[Console-log] [GeomPack] Mesh preview extension registered
+[Console-log] [CompareSMPLBVH] Loading Compare SMPL BVH extension
+[Console-log] [CompareSMPLBVH] Loading Compare SMPL BVH extension...
+[Console-log] [CompareSMPLBVH] Extension registered: comfy3d.comparesmplbvh
+[Console-log] [GeomPack Multi JS] Loading mesh_preview_multi.js extension
+[Console-log] [BVHViewer] Loading BVH Viewer extension
+[Console-log] [BVHViewer] Loading BVH viewer extension...
+[Console-log] [BVHViewer] Extension registered: comfy3d.bvhviewer
+[Console-log] [LoadCADUpload] script loaded
+[Console-log] [UniRig Compare] Loading compare skeleton widget...
+[Console-log] [UniRig Compare] Detected extension folder: ComfyUI-GeometryPack
+[Console-log] [UniRig Compare] Compare skeleton widget registered
+[Console-log] [GeomPack Gaussian] Loading extension...
+[Console-log] [FBXAnimationViewer] Loading FBX Animation Viewer extension
+[Console-log] [FBXAnimationViewer] Loading FBX Animation Viewer extension...
+[Console-log] [FBXAnimationViewer] Extension registered: comfy3d.fbxanimationviewer
+[Console-log] [GeomPack] Loading VTK.js textured mesh preview extension...
+[Console-log] [GeomPack] VTK.js textured mesh preview extension registered
+[Console-log] [GeomPack] Loading UV mesh preview extension...
+[Console-log] [GeomPack] UV mesh preview extension registered
+[Console-log] [VTK Bundle] GLTFImporter included in bundle
+[Console-warning] [MaskEditor] ComfyApp.open_maskeditor is deprecated. Plugins should migrate to using the command system or direct node context menu integration.
+[Console-log] [LoadCADUpload] registering for CAD_Load
+[Console-log] [CADabra ROI] Registering extension for CADROISelector
+[Console-log] [GeomPack] Registering Preview Mesh node
+[Console-log] [GeomPack] Registering Preview Mesh UV node
+[Console-log] [GeomPack Gaussian] Registering Preview Gaussian node
+[Console-log] [VTK Bundle] GLTFImporter included in bundle
+[Console-log] [GeomPack VTK Dual Viewer] Initializing...
+[Console-log] [GeomPack VTK Dual Viewer] Ready
+[Console-log] [VTK Bundle] GLTFImporter included in bundle
+[Console-log] [CADabra Spline] Loaded successfully
+[Console-log] [CADabra Analysis] VTK.js loaded for VTP parsing
+[Console-log] [CADabra Analysis] Viewer initialized and ready
+[Console-log] [comfy-test] graphToPrompt: 4 nodes, missing class_type: [], sample: {"inputs":{"filename":"cad/spiral_wind_turbine.stp","upload_progress":"","⬆ upload / drop CAD":null},"class_type":"CAD_Load","_meta":{"title":"Load CAD"}}
+[Console-log] [CADabra Analysis] Received message: {type: LOAD_CAD_ANALYSIS, meshUrl: /view?filename=cad_analysis_1785513049717.vtp&type=output&subfolder=, analysisUrl: /view?filename=cad_analysis_1785513049717_analysis.json&type=output&subfolder=, meshFile: cad_analysis_1785513049717.vtp, analysisFile: cad_analysis_1785513049717_analysis.json}
+[Console-log] [CADabra Analysis] Visualization mode: normal
+[Console-log] [CADabra Analysis] Loading mesh with analysis data
+[Console-log] [CADabra Analysis] Fetching analysis data: /view?filename=cad_analysis_1785513049717_analysis.json&type=output&subfolder=
+[Console-log] [CADabra Analysis] Analysis data loaded: 29 faces
+[Console-log] [CADabra Analysis] Adjacency stats: {total_shared_edges: 76, avg_neighbors: 5.24, isolated_faces: 0}
+[Console-log] [CADabra Analysis] Fetching mesh file: /view?filename=cad_analysis_1785513049717.vtp&type=output&subfolder=
+[Console-log] [CADabra Analysis] Mesh filename: cad_analysis_1785513049717.vtp
+[Console-log] [CADabra Analysis] VTP parsed: 3386 vertices, 5508 triangles, 5508 face IDs, 5508 edge counts
+[Console-log] [CADabra Analysis] Mesh loaded: 3386 vertices, 5508 triangles
+[Console-log] [CADabra Analysis] Face mapping: 5508 triangles mapped
+[Console-log] [CADabra Analysis] Face selection cleared
+[Console-log] [CADabra Analysis] Created 2 free edge segments (red)
+[Console-log] [CADabra Analysis] Created 444 shared edge segments (black)
+[Console-log] [CADabra Analysis] Camera state restored
+[Console-log] [CADabra Analysis] Selected face: 1
+[Console-log] [CADabra Analysis] Highlight created for face: 1
+[Console-log] [CADabra Analysis] Face data: {face_id: 1, surface_type: BSpline, bbox_min: Array(3), bbox_max: Array(3), centroid: Array(3)}
+[Console-log] [CADabra Analysis] Face selection restored: 1
+[Console-log] [CADabra Analysis] Mesh Loaded successfully with analysis data
+[Console-log] [CADabra] Same file already loaded, skipping reload

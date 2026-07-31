@@ -1,0 +1,32 @@
+Capturing execution frames: raytracing.json
+  Frame 1 saved (frame_000.jpg, t=0.0s)
+  Validating workflow...
+  Queuing workflow for execution...
+  Frame 2 saved (frame_001.jpg, t=2.3s)
+  [capture-periodic] freeze=6ms shot=163ms unfreeze=5ms saved=True
+  Frame 3 saved (frame_002.jpg, t=4.6s)
+  [capture-periodic] freeze=9ms shot=126ms unfreeze=11ms saved=True
+  [capture-loop] iter=50 t=6.2s state={'complete': False, 'error': None, 'executedCount': 0, 'wsState': 1} eval_ms=6 ram=5.3/16.0GB (33%) swap=0.3/2.9GB (9%) cpu=53% browser_rss=0.77GB
+  Frame 4 saved (frame_003.jpg, t=11.2s)
+  [capture-periodic] freeze=6ms shot=112ms unfreeze=9ms saved=True
+  Node executed (1 total), capturing...
+  Frame 5 saved (frame_004.jpg, t=11.7s)
+  [capture-node] freeze=367ms shot=222ms unfreeze=5ms saved=True
+  [capture-loop] iter=100 t=14.4s state={'complete': False, 'error': None, 'executedCount': 1, 'wsState': 1} eval_ms=75 ram=5.5/16.0GB (35%) swap=0.3/2.9GB (9%) cpu=75% browser_rss=0.75GB
+  [capture-loop] iter=150 t=28.2s state={'complete': False, 'error': None, 'executedCount': 1, 'wsState': 1} eval_ms=115 ram=5.5/16.0GB (35%) swap=0.3/2.9GB (9%) cpu=98% browser_rss=0.69GB
+  [capture-loop] iter=200 t=39.1s state={'complete': False, 'error': None, 'executedCount': 1, 'wsState': 1} eval_ms=167 ram=5.5/16.0GB (35%) swap=0.3/2.9GB (9%) cpu=96% browser_rss=0.68GB
+  [capture-loop] iter=250 t=50.9s state={'complete': False, 'error': None, 'executedCount': 1, 'wsState': 1} eval_ms=57 ram=5.4/16.0GB (34%) swap=0.3/2.9GB (9%) cpu=96% browser_rss=0.67GB
+  [capture-loop] iter=300 t=63.6s state={'complete': False, 'error': None, 'executedCount': 1, 'wsState': 1} eval_ms=49 ram=5.5/16.0GB (35%) swap=0.3/2.9GB (9%) cpu=96% browser_rss=0.68GB
+  Frame 6 saved (frame_005.jpg, t=65.0s)
+  [capture-periodic] freeze=154ms shot=198ms unfreeze=6ms saved=True
+  Node executed (2 total), capturing...
+  Frame 7 saved (frame_006.jpg, t=66.0s)
+  [capture-node] freeze=125ms shot=204ms unfreeze=7ms saved=True
+  Execution complete (t=66.8s)
+  Captured 7 unique frames over 66.87s
+  [debug] iframes: 1
+  [debug]   iframe[0]: src=http://127.0.0.1:8188/extensions/ComfyUI-CADabra/viewer_cad_analysis.html?v=1778, canvas=242x498, rafFrozen=False
+  [timing] trigger_3d_previews: 0.1s
+  Saved high-quality screenshot: raytracing_executed.png
+  [timing] final_screenshot: 0.2s
+    Captured 8 video frames

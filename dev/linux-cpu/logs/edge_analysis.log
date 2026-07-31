@@ -1,0 +1,140 @@
+Capturing execution frames: edge_analysis.json
+[32m[INFO][0m Using RAM pressure cache.
+[32m[INFO][0m Using RAM pressure cache.
+  Frame 1 saved (frame_000.jpg, t=0.0s)
+  Validating workflow...
+  Queuing workflow for execution...
+[32m[INFO][0m === /validate endpoint called ===
+[32m[INFO][0m Received JSON with keys: ['prompt']
+[32m[INFO][0m Prompt has 6 nodes
+[32m[INFO][0m   Node 1: CAD_Load
+[32m[INFO][0m     Inputs: {"filename": "cad/brake_shoe.igs", "upload_progress": "", "\u2b06 upload / drop CAD": null}
+[32m[INFO][0m   Node 2: CADEdgeViewer
+[32m[INFO][0m     Inputs: {"edge_json_filepath": ["3", 1], "visualization_mode": "normal", "selected_edge_id": 0, "edge_viewer": ""}
+[32m[INFO][0m   Node 3: CADEdgeAnalysis
+[32m[INFO][0m     Inputs: {"linear_deflection": 0.1, "report_panel": "false", "cad_model": ["1", 0]}
+[32m[INFO][0m   Node 5: CADEdgeDetailAnalyzer
+[32m[INFO][0m     Inputs: {"edge_json_filepath": ["2", 0], "edge_id": ["2", 1], "projection_plane": "auto", "edge_detail_viewer": ""}
+[32m[INFO][0m   Node 6: CADEdgeViewerVTK
+[32m[INFO][0m     Inputs: {"linear_deflection": 0.1, "visualization_mode": "normal", "selected_edge_id": 828, "vtk_edge_viewer": "", "cad_model": ["1", 0]}
+[32m[INFO][0m   Node 7: CADCurvePlotter
+[32m[INFO][0m     Inputs: {"spline_data_file": ["6", 3], "edge_id": 828, "num_samples": 100, "curve_plotter": ""}
+[32m[INFO][0m Generated prompt_id: 4c4ee9ca-2e2d-424f-af22-d835acb40837
+[32m[INFO][0m Calling execution.validate_prompt()...
+[32m[INFO][0m Validation result: valid=True
+[32m[INFO][0m === Validation PASSED ===
+[32m[INFO][0m got prompt
+[comfy-env] Running CAD_Load: filename: 'cad/brake_shoe.igs'
+[SubprocessWorker] call_method: nodes.cad_nodes.CAD_Load.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=39 sending call_method
+[15:37:38] [CADabra]  Loading CAD file: brake_shoe.igs
+[worker:ComfyUI-CADabra] INFO:  Loading CAD file: brake_shoe.igs
+[15:37:38] [CADabra] Starting: IGES ReadFile(file=brake_shoe.igs)
+[worker:ComfyUI-CADabra] INFO: Starting: IGES ReadFile(file=brake_shoe.igs)
+[15:37:38] [CADabra] Completed: IGES ReadFile(file=brake_shoe.igs) in 0.06s
+[worker:ComfyUI-CADabra] INFO: Completed: IGES ReadFile(file=brake_shoe.igs) in 0.06s
+[15:37:38] [CADabra] Starting: IGES TransferRoots(file=brake_shoe.igs)
+[worker:ComfyUI-CADabra] INFO: Starting: IGES TransferRoots(file=brake_shoe.igs)
+[15:37:39] [CADabra] Completed: IGES TransferRoots(file=brake_shoe.igs) in 0.88s
+[worker:ComfyUI-CADabra] INFO: Completed: IGES TransferRoots(file=brake_shoe.igs) in 0.88s
+[15:37:39] [CADabra]  Cached to BREP: brake_shoe.igs
+[worker:ComfyUI-CADabra] INFO:  Cached to BREP: brake_shoe.igs
+[15:37:39] [CADabra]  Ready: brake_shoe.igs
+[worker:ComfyUI-CADabra] INFO:  Ready: brake_shoe.igs
+[SubprocessWorker] got response: ok
+[comfy-env] CAD_Load done (1.02s): result: NodeOutput
+[comfy-env] Running CADEdgeAnalysis: linear_deflection: 0.1, cad_model: dict
+[SubprocessWorker] call_method: nodes.cad_edge_analysis_nodes.CADEdgeAnalysis.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=40 sending call_method
+  Node executed (2 total), capturing...
+[15:37:39] [CADabra] Starting: CAD Edge Analysis(edges=1914)
+[worker:ComfyUI-CADabra] INFO: Starting: CAD Edge Analysis(edges=1914)
+[15:37:39] [CADabra] Completed: CAD Edge Analysis(edges=1914) in 0.14s
+[worker:ComfyUI-CADabra] INFO: Completed: CAD Edge Analysis(edges=1914) in 0.14s
+[SubprocessWorker] got response: ok
+[comfy-env] CADEdgeAnalysis done (0.31s): result: NodeOutput
+[comfy-env] Running CADEdgeViewer: edge_json_filepath: '/home/runner/work/ComfyUI-CADabra/ComfyUI-CADabra/ComfyU..., visualization_mode: 'normal', selected_edge_id: 0
+[SubprocessWorker] call_method: nodes.cad_edge_analysis_nodes.CADEdgeViewer.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=41 sending call_method
+[SubprocessWorker] got response: ok
+[comfy-env] CADEdgeViewer done (0.03s): result: NodeOutput
+[comfy-env] Running CADEdgeViewerVTK: linear_deflection: 0.1, visualization_mode: 'normal', selected_edge_id: 828, cad_model: dict
+[SubprocessWorker] call_method: nodes.cad_edge_viewer_vtk_node.CADEdgeViewerVTK.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=42 sending call_method
+[15:37:39] [CADabra] [CADEdgeViewerVTK] Analyzing 1914 edges, 427 faces, 3828 vertices
+[worker:ComfyUI-CADabra] INFO: [CADEdgeViewerVTK] Analyzing 1914 edges, 427 faces, 3828 vertices
+  Frame 2 saved (frame_001.jpg, t=1.8s)
+  [capture-node] freeze=26ms shot=227ms unfreeze=3ms saved=True
+  Node executed (5 total), capturing...
+[15:37:40] [CADabra] [CADEdgeViewerVTK] VTP saved: cad_edge_vtk_1785512259816.vtp (957 edges)
+[worker:ComfyUI-CADabra] INFO: [CADEdgeViewerVTK] VTP saved: cad_edge_vtk_1785512259816.vtp (957 edges)
+[15:37:40] [CADabra] [CADEdgeViewerVTK] Spline data saved: cad_edge_vtk_1785512259816_spline.json (241 spline edges)
+[worker:ComfyUI-CADabra] INFO: [CADEdgeViewerVTK] Spline data saved: cad_edge_vtk_1785512259816_spline.json (241 spline edges)
+[SubprocessWorker] got response: ok
+[comfy-env] CADEdgeViewerVTK done (0.32s): result: NodeOutput
+[comfy-env] Running CADCurvePlotter: spline_data_file: '/home/runner/work/ComfyUI-CADabra/ComfyUI-CADabra/ComfyU..., edge_id: 828, num_samples: 100
+[SubprocessWorker] call_method: nodes.cad_curve_plotter_node.CADCurvePlotter.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=43 sending call_method
+[SubprocessWorker] got response: ok
+[comfy-env] CADCurvePlotter done (0.02s): result: NodeOutput
+[comfy-env] Running CADEdgeDetailAnalyzer: edge_json_filepath: '/home/runner/work/ComfyUI-CADabra/ComfyUI-CADabra/ComfyU..., edge_id: 0, projection_plane: 'auto'
+[SubprocessWorker] call_method: nodes.cad_edge_analysis_nodes.CADEdgeDetailAnalyzer.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=44 sending call_method
+[SubprocessWorker] got response: ok
+[comfy-env] CADEdgeDetailAnalyzer done (0.02s): result: NodeOutput
+[32m[INFO][0m [32mPrompt executed in 1.74 seconds[0m
+  Frame 3 saved (frame_002.jpg, t=2.4s)
+  [capture-node] freeze=41ms shot=163ms unfreeze=0ms saved=True
+  Execution complete (t=2.4s)
+  Captured 3 unique frames over 2.62s
+  [debug] iframes: 4
+  [debug]   iframe[0]: src=http://127.0.0.1:8188/extensions/ComfyUI-CADabra/viewer_cad_edge.html?v=17855122, canvas=349x301, rafFrozen=True
+  [debug]   iframe[1]: src=http://127.0.0.1:8188/extensions/ComfyUI-CADabra/viewer_cad_edge_vtk.html?v=1785, canvas=248x287, rafFrozen=True
+  [debug]   iframe[2]: src=http://127.0.0.1:8188/extensions/ComfyUI-CADabra/viewer_cad_curve.html?v=1785512, canvas=795x341, rafFrozen=True
+  [debug]   iframe[3]: src=http://127.0.0.1:8188/extensions/ComfyUI-CADabra/viewer_cad_edge_detail.html?v=1, canvas=246x407, rafFrozen=True
+  [timing] trigger_3d_previews: 0.0s
+  Saved high-quality screenshot: edge_analysis_executed.png
+  [timing] final_screenshot: 0.3s
+    Captured 4 video frames

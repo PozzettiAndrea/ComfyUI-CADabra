@@ -1,0 +1,30 @@
+{
+  "frames": [
+    {
+      "file": "frame_000.jpg",
+      "time": 0.0,
+      "log": "Capturing execution frames: cad_quality_metrics.json"
+    },
+    {
+      "file": "frame_001.jpg",
+      "time": 2.24,
+      "log": "Capturing execution frames: cad_quality_metrics.json\n  Frame 1 saved (frame_000.jpg, t=0.0s)\n  Validating workflow...\n  Queuing workflow for execution..."
+    },
+    {
+      "file": "frame_002.jpg",
+      "time": 4.41,
+      "log": "Capturing execution frames: cad_quality_metrics.json\n  Frame 1 saved (frame_000.jpg, t=0.0s)\n  Validating workflow...\n  Queuing workflow for execution...\n  Frame 2 saved (frame_001.jpg, t=2.2s)\n  [capture-periodic] freeze=5ms shot=123ms unfreeze=5ms saved=True"
+    },
+    {
+      "file": "frame_003.jpg",
+      "time": 9.02,
+      "log": "Capturing execution frames: cad_quality_metrics.json\n  Frame 1 saved (frame_000.jpg, t=0.0s)\n  Validating workflow...\n  Queuing workflow for execution...\n  Frame 2 saved (frame_001.jpg, t=2.2s)\n  [capture-periodic] freeze=5ms shot=123ms unfreeze=5ms saved=True\n  Frame 3 saved (frame_002.jpg, t=4.4s)\n  [capture-periodic] freeze=5ms shot=118ms unfreeze=9ms saved=True\n  [capture-loop] iter=50 t=6.0s state={'complete': False, 'error': None, 'executedCount': 0, 'wsState': 1} eval_ms=5 ram=6.3/16.0GB (40%) swap=0.3/2.9GB (10%) cpu=43% browser_rss=0.70GB"
+    },
+    {
+      "file": "frame_004.jpg",
+      "time": 15.860021829605103,
+      "log": "Final screenshot"
+    }
+  ],
+  "total_time": 13.66
+}

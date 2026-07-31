@@ -1,0 +1,35 @@
+{
+  "frames": [
+    {
+      "file": "frame_000.jpg",
+      "time": 0.0,
+      "log": "Capturing execution frames: cad_manipulation.json"
+    },
+    {
+      "file": "frame_001.jpg",
+      "time": 1.02,
+      "log": "Capturing execution frames: cad_manipulation.json\n  Frame 1 saved (frame_000.jpg, t=0.0s)\n  Validating workflow...\n  Queuing workflow for execution..."
+    },
+    {
+      "file": "frame_002.jpg",
+      "time": 6.15,
+      "log": "Capturing execution frames: cad_manipulation.json\n  Frame 1 saved (frame_000.jpg, t=0.0s)\n  Validating workflow...\n  Queuing workflow for execution...\n  Node executed (1 total), capturing...\n  Frame 2 saved (frame_001.jpg, t=1.0s)\n  [capture-node] freeze=13ms shot=140ms unfreeze=7ms saved=True\n  Node executed (2 total), capturing...\n  [capture-node] freeze=27ms shot=127ms unfreeze=5ms saved=False"
+    },
+    {
+      "file": "frame_003.jpg",
+      "time": 8.51,
+      "log": "Capturing execution frames: cad_manipulation.json\n  Frame 1 saved (frame_000.jpg, t=0.0s)\n  Validating workflow...\n  Queuing workflow for execution...\n  Node executed (1 total), capturing...\n  Frame 2 saved (frame_001.jpg, t=1.0s)\n  [capture-node] freeze=13ms shot=140ms unfreeze=7ms saved=True\n  Node executed (2 total), capturing...\n  [capture-node] freeze=27ms shot=127ms unfreeze=5ms saved=False\n  Frame 3 saved (frame_002.jpg, t=6.2s)\n  [capture-periodic] freeze=26ms shot=152ms unfreeze=7ms saved=True"
+    },
+    {
+      "file": "frame_004.jpg",
+      "time": 9.12,
+      "log": "Capturing execution frames: cad_manipulation.json\n  Frame 1 saved (frame_000.jpg, t=0.0s)\n  Validating workflow...\n  Queuing workflow for execution...\n  Node executed (1 total), capturing...\n  Frame 2 saved (frame_001.jpg, t=1.0s)\n  [capture-node] freeze=13ms shot=140ms unfreeze=7ms saved=True\n  Node executed (2 total), capturing...\n  [capture-node] freeze=27ms shot=127ms unfreeze=5ms saved=False\n  Frame 3 saved (frame_002.jpg, t=6.2s)\n  [capture-periodic] freeze=26ms shot=152ms unfreeze=7ms saved=True\n  Frame 4 saved (frame_003.jpg, t=8.5s)\n  [capture-periodic] freeze=27ms shot=150ms unfreeze=4ms saved=True"
+    },
+    {
+      "file": "frame_005.jpg",
+      "time": 11.862632513046265,
+      "log": "Final screenshot"
+    }
+  ],
+  "total_time": 9.55
+}

@@ -1,0 +1,244 @@
+[2026-05-10 22:42:05.700] [info]  setup plugin alembic.autogenerate.schemas
+setup plugin alembic.autogenerate.tables
+
+[2026-05-10 22:42:05.702] [info]  setup plugin alembic.autogenerate.types
+setup plugin alembic.autogenerate.constraints
+setup plugin alembic.autogenerate.defaults
+setup plugin alembic.autogenerate.comments
+
+[2026-05-10 22:42:06.155] [info]  Adding extra search path custom_nodes C:\Users\runneradmin\Documents\ComfyUI\custom_nodes
+Adding extra search path download_model_base C:\Users\runneradmin\Documents\ComfyUI\models
+Adding extra search path custom_nodes C:\Users\runneradmin\.comfy-test-cache\desktop\ComfyUI\resources\ComfyUI\custom_nodes
+
+[2026-05-10 22:42:06.157] [info]  Setting output directory to: C:\Users\runneradmin\Documents\ComfyUI\output
+Setting input directory to: C:\Users\runneradmin\Documents\ComfyUI\input
+Setting user directory to: C:\Users\runneradmin\Documents\ComfyUI\user
+
+[2026-05-10 22:42:07.729] [info]  [START] Security scan
+[DONE] Security scan
+** ComfyUI startup time: 
+[2026-05-10 22:42:07.731] [info]  2026-05-10 22:42:07.729
+** Platform: Windows
+** Python version: 3.12.11 (main, Aug 18 2025, 19:17:54) [MSC v.1944 64 bit (AMD64)]
+** Python executable: C:\Users\runneradmin\Documents\ComfyUI\.venv\Scripts\python.exe
+** ComfyUI Path: C:\Users\runneradmin\.comfy-test-cache\desktop\ComfyUI\resources\ComfyUI
+** ComfyUI Base Folder Path: C:\Users\runneradmin\.comfy-test-cache\desktop\ComfyUI\resources\ComfyUI
+
+[2026-05-10 22:42:07.732] [info]  ** User directory: C:\Users\runneradmin\Documents\ComfyUI\user
+** ComfyUI-Manager config path: C:\Users\runneradmin\Documents\ComfyUI\user\__manager\config.ini
+** Log path: C:\Users\runneradmin\Documents\ComfyUI\user\comfyui.log
+
+[2026-05-10 22:42:08.888] [info]  [ComfyUI-Manager] Skipped fixing the 'comfyui-frontend-package' dependency because the ComfyUI is outdated.
+
+[2026-05-10 22:42:08.890] [info]  [PRE] ComfyUI-Manager
+
+[2026-05-10 22:42:09.220] [error] [comfy-env] comfyui-cadabra: 1 isolation env(s):
+[2026-05-10 22:42:09.222] [error] 
+[comfy-env]   nodes -> C:\Users\runneradmin\Documents\ComfyUI\custom_nodes\comfyui-cadabra\nodes
+[comfy-env] prestartup complete
+[2026-05-10 22:42:09.223] [error] 
+
+[2026-05-10 22:42:09.257] [error] [comfy-env] ComfyUI-GeometryPack: 1 isolation env(s):
+[2026-05-10 22:42:09.259] [error] 
+[comfy-env]   nodes -> C:\Users\runneradmin\Documents\ComfyUI\custom_nodes\ComfyUI-GeometryPack\nodes
+[comfy-env] prestartup complete
+
+[2026-05-10 22:42:12.128] [info]  Found comfy_kitchen backend eager: {'available': True, 'disabled': False, 'unavailable_reason': None, 'capabilities': ['apply_rope', 'apply_rope1', 'dequantize_mxfp8', 'dequantize_nvfp4', 'dequantize_per_tensor_fp8', 'quantize_mxfp8', 'quantize_nvfp4', 'quantize_per_tensor_fp8', 'scaled_mm_mxfp8', 'scaled_mm_nvfp4']}
+Found comfy_kitchen backend triton: {'available': False, 'disabled': True, 'unavailable_reason': "ImportError: No module named 'triton'", 'capabilities': []}
+
+[2026-05-10 22:42:12.130] [info]  Found comfy_kitchen backend cuda: {'available': False, 'disabled': True, 'unavailable_reason': 'CUDA not available on this system', 'capabilities': []}
+
+[2026-05-10 22:42:12.137] [info]  Checkpoint files will always be loaded safely.
+
+[2026-05-10 22:42:12.152] [info]  Total VRAM 16379 MB, total RAM 16379 MB
+
+[2026-05-10 22:42:12.153] [info]  pytorch version: 2.10.0+cpu
+Set vram state to: DISABLED
+Device: cpu
+
+[2026-05-10 22:42:12.459] [info]  Using sub quadratic optimization for attention, if you have memory or speed issues try using: --use-split-cross-attention
+
+[2026-05-10 22:42:15.253] [info]  Python version: 3.12.11 (main, Aug 18 2025, 19:17:54) [MSC v.1944 64 bit (AMD64)]
+ComfyUI version: 0.20.1
+comfy-aimdo version: 0.2.14
+comfy-kitchen version: 0.2.8
+[Prompt Server] web root: C:\Users\runneradmin\.comfy-test-cache\desktop\ComfyUI\resources\ComfyUI\web_custom_versions\desktop_app
+Asset seeder disabled
+[START] ComfyUI-Manager
+
+[2026-05-10 22:42:15.373] [info]  [ComfyUI-Manager] Using GitPython backend
+
+[2026-05-10 22:42:15.443] [info]  [ComfyUI-Manager] network_mode: public
+
+[2026-05-10 22:42:15.448] [info]  [ComfyUI-Manager] The matrix sharing feature has been disabled because the `matrix-nio` dependency is not installed.
+	To use this feature, please run the following command:
+	C:\Users\runneradmin\Documents\ComfyUI\.venv\Scripts\python.exe -m pip install matrix-nio
+
+
+[2026-05-10 22:42:17.235] [error] [comfy-env] Version: 0.3.82
+[2026-05-10 22:42:17.237] [error] 
+
+[2026-05-10 22:42:19.740] [info]  [comfy-env] Removed stale temp dir: C:\Users\RUNNER~1\AppData\Local\Temp\comfyui_pvenv_64lwfwew
+
+[2026-05-10 22:42:21.078] [error] [comfy-env] register_nodes: comfyui-cadabra
+[2026-05-10 22:42:21.081] [error] 
+[comfy-env] ComfyUI source dir: C:\Users\runneradmin\.comfy-test-cache\desktop\ComfyUI\resources\ComfyUI
+[2026-05-10 22:42:21.082] [error] 
+
+[2026-05-10 22:42:21.087] [error] [comfy-env] Scanning nodes metadata (isolation root)...
+[2026-05-10 22:42:21.088] [error] 
+
+[2026-05-10 22:42:21.092] [error] [comfy-env] Cache hit for nodes: 39 nodes
+[2026-05-10 22:42:21.093] [error] 
+[comfy-env] Scanned nodes root: 39 nodes (0.0s)
+
+[2026-05-10 22:42:21.094] [error] [comfy-env] Imported nodes root: 39 nodes (isolation)
+[2026-05-10 22:42:21.095] [error] 
+[comfy-env] Registered 39 total nodes
+[2026-05-10 22:42:21.097] [error] 
+
+[2026-05-10 22:42:21.101] [info]  loading...
+
+[2026-05-10 22:42:21.102] [info]  calling register_nodes
+
+[2026-05-10 22:42:21.103] [error] [comfy-env] Version: 0.3.82
+[2026-05-10 22:42:21.105] [error] 
+
+[2026-05-10 22:42:21.135] [error] [comfy-env] register_nodes: ComfyUI-GeometryPack
+[2026-05-10 22:42:21.137] [error] 
+
+[2026-05-10 22:42:21.162] [error] [comfy-env] ComfyUI source dir: C:\Users\runneradmin\.comfy-test-cache\desktop\ComfyUI\resources\ComfyUI
+[2026-05-10 22:42:21.165] [error] 
+
+[2026-05-10 22:42:21.170] [error] [comfy-env] Scanning nodes metadata (isolation root)...
+[2026-05-10 22:42:21.171] [error] 
+
+[2026-05-10 22:42:21.212] [error] [comfy-env] Cache hit for nodes: 125 nodes
+[2026-05-10 22:42:21.213] [error] 
+[comfy-env] Scanned nodes root: 125 nodes (0.0s)
+
+[2026-05-10 22:42:21.217] [error] [comfy-env] Imported nodes root: 125 nodes (isolation)
+[2026-05-10 22:42:21.219] [error] 
+[comfy-env] Registered 125 total nodes
+
+[2026-05-10 22:42:21.253] [info]  ComfyUI-Multiband loaded: 15 nodes registered
+
+[2026-05-10 22:42:21.258] [info]  
+Import times for custom nodes:
+
+[2026-05-10 22:42:21.259] [info]     0.0 seconds: C:\Users\runneradmin\.comfy-test-cache\desktop\ComfyUI\resources\ComfyUI\custom_nodes\websocket_image_save.py
+   0.0 seconds: C:\Users\runneradmin\Documents\ComfyUI\custom_nodes\ComfyUI-Multiband
+   0.1 seconds: C:\Users\runneradmin\Documents\ComfyUI\custom_nodes\ComfyUI-GeometryPack
+   3.9 seconds: C:\Users\runneradmin\Documents\ComfyUI\custom_nodes\comfyui-cadabra
+
+
+[2026-05-10 22:42:21.263] [info]  Context impl SQLiteImpl.
+
+[2026-05-10 22:42:21.265] [info]  Will assume non-transactional DDL.
+
+[2026-05-10 22:42:21.270] [error] Failed to initialize database. Please ensure you have installed the latest requirements. If the error persists, please report this as in future the database will be required: Could not acquire lock on database 'C:/Users/runneradmin/Documents/ComfyUI/user/comfyui.db'. Another ComfyUI process may already be using it. Use --database-url to specify a separate database file.
+
+[2026-05-10 22:42:21.380] [info]  Starting server
+
+
+[2026-05-10 22:42:21.381] [info]  To see the GUI go to: http://127.0.0.1:8001
+
+[2026-05-10 22:42:24.734] [info]  [ComfyUI-Manager] The ComfyRegistry cache update is still in progress, so an outdated cache is being used.
+
+[2026-05-10 22:42:24.991] [info]  FETCH DATA from: C:\Users\runneradmin\Documents\ComfyUI\.venv\Lib\site-packages\comfyui_manager\custom-node-list.json
+[2026-05-10 22:42:25.039] [info]   [DONE]
+
+[2026-05-10 22:42:27.648] [info]  [ComfyUI-Manager] The ComfyRegistry cache update is still in progress, so an outdated cache is being used.
+
+[2026-05-10 22:42:27.774] [info]  FETCH DATA from: C:\Users\runneradmin\Documents\ComfyUI\.venv\Lib\site-packages\comfyui_manager\custom-node-list.json
+[2026-05-10 22:42:27.797] [info]   [DONE]
+
+[2026-05-10 22:42:48.857] [info]  got prompt
+
+[2026-05-10 22:42:48.863] [info]  WARNING: _path_exists: path should be string, bytes, os.PathLike or integer, not NoneType
+
+[2026-05-10 22:42:48.882] [info]  [comfyui-cadabra] python: C:\ce\.pixi\envs\cadabra-nodes\python.exe
+[2026-05-10 22:42:48.883] [info]  
+
+[2026-05-10 22:42:48.885] [info]  [comfyui-cadabra] sys_path sent to worker: ['C:\\Users\\runneradmin\\.comfy-test-cache\\desktop\\ComfyUI\\resources\\ComfyUI', 'C:\\Users\\runneradmin\\Documents\\ComfyUI\\custom_nodes\\comfyui-cadabra', 'C:\\ce\\.pixi\\envs\\cadabra-nodes\\Lib\\site-packages', 'C:\\Users\\runneradmin\\Documents\\ComfyUI\\custom_nodes\\comfyui-cadabra']
+[2026-05-10 22:42:48.886] [info]  
+
+[2026-05-10 22:42:51.837] [error] [worker:comfyui-cadabra] ERROR: Failed to import comfy_kitchen, Error: No module named 'comfy_kitchen', fp8 and fp4 support will not be available.
+
+[2026-05-10 22:42:55.932] [error] [comfyui-cadabra] Health check: ping (timeout=5.0s)...
+
+[2026-05-10 22:42:55.939] [error] [comfyui-cadabra] Health check: ok
+
+[2026-05-10 22:42:56.015] [error] [22:42:56] [CADabra] Starting: BRepMesh ROI Selector(linear_deflection=0.1, angular_deflection=0.5)
+
+[2026-05-10 22:42:56.016] [error] [worker:comfyui-cadabra] INFO: Starting: BRepMesh ROI Selector(linear_deflection=0.1, angular_deflection=0.5)
+
+[2026-05-10 22:42:56.118] [error] [22:42:56] [CADabra] Completed: BRepMesh ROI Selector(linear_deflection=0.1, angular_deflection=0.5) in 0.10s
+
+[2026-05-10 22:42:56.120] [error] [worker:comfyui-cadabra] INFO: Completed: BRepMesh ROI Selector(linear_deflection=0.1, angular_deflection=0.5) in 0.10s
+
+[2026-05-10 22:42:56.524] [error] !!! Exception during processing !!! [Errno 2] No such file or directory: 'C:\\Users\\runneradmin\\.comfy-test-cache\\desktop\\ComfyUI\\resources\\ComfyUI\\temp\\roi_selector_2223476300928.glb'
+
+Worker traceback:
+Traceback (most recent call last):
+  File "C:\Users\RUNNER~1\AppData\Local\Temp\comfyui_pvenv_ff5tndma\persistent_worker.py", line 1762, in main
+    result = method(**inputs)
+             ^^^^^^^^^^^^^^^^
+  File "C:\Users\runneradmin\.comfy-test-cache\desktop\ComfyUI\resources\ComfyUI\comfy_api\latest\_io.py", line 1826, in EXECUTE_NORMALIZED
+    to_return = cls.execute(*args, **kwargs)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\runneradmin\Documents\ComfyUI\custom_nodes\comfyui-cadabra\nodes\cad_roi_selector_node.py", line 191, in execute
+    cls._export_glb_with_colors(vertices_array, faces_array, colors_array, glb_filepath)
+  File "C:\Users\runneradmin\Documents\ComfyUI\custom_nodes\comfyui-cadabra\nodes\cad_roi_selector_node.py", line 316, in _export_glb_with_colors
+    gltf.save(filepath)
+  File "C:\ce\.pixi\envs\cadabra-nodes\Lib\site-packages\pygltflib\__init__.py", line 1112, in save
+    return self.save_binary(fname)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\ce\.pixi\envs\cadabra-nodes\Lib\site-packages\pygltflib\__init__.py", line 1098, in save_binary
+    with open(fname, 'wb') as f:
+         ^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\runneradmin\\.comfy-test-cache\\desktop\\ComfyUI\\resources\\ComfyUI\\temp\\roi_selector_2223476300928.glb'
+
+Traceback (most recent call last):
+  File "C:\Users\runneradmin\.comfy-test-cache\desktop\ComfyUI\resources\ComfyUI\execution.py", line 534, in execute
+    output_data, output_ui, has_subgraph, has_pending_tasks = await get_output_data(prompt_id, unique_id, obj, input_data_all, execution_block_cb=execution_block_cb, pre_execute_cb=pre_execute_cb, v3_data=v3_data)
+                                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\runneradmin\.comfy-test-cache\desktop\ComfyUI\resources\ComfyUI\execution.py", line 334, in get_output_data
+    return_values = await _async_map_node_over_list(prompt_id, unique_id, obj, input_data_all, obj.FUNCTION, allow_interrupt=True, execution_block_cb=execution_block_cb, pre_execute_cb=pre_execute_cb, v3_data=v3_data)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\runneradmin\.comfy-test-cache\desktop\ComfyUI\resources\ComfyUI\execution.py", line 308, in _async_map_node_over_list
+    await process_inputs(input_dict, i)
+  File "C:\Users\runneradmin\.comfy-test-cache\desktop\ComfyUI\resources\ComfyUI\execution.py", line 296, in process_inputs
+    result = f(**inputs)
+             ^^^^^^^^^^^
+  File "C:\Users\runneradmin\Documents\ComfyUI\.venv\Lib\site-packages\comfy_env\isolation\metadata.py", line 536, in proxy
+    result = worker.call_method(
+             ^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\runneradmin\Documents\ComfyUI\.venv\Lib\site-packages\comfy_env\isolation\workers\subprocess.py", line 674, in call_method
+    raise WorkerError(
+comfy_env.isolation.workers.base.WorkerError: [Errno 2] No such file or directory: 'C:\\Users\\runneradmin\\.comfy-test-cache\\desktop\\ComfyUI\\resources\\ComfyUI\\temp\\roi_selector_2223476300928.glb'
+
+Worker traceback:
+Traceback (most recent call last):
+  File "C:\Users\RUNNER~1\AppData\Local\Temp\comfyui_pvenv_ff5tndma\persistent_worker.py", line 1762, in main
+    result = method(**inputs)
+             ^^^^^^^^^^^^^^^^
+  File "C:\Users\runneradmin\.comfy-test-cache\desktop\ComfyUI\resources\ComfyUI\comfy_api\latest\_io.py", line 1826, in EXECUTE_NORMALIZED
+    to_return = cls.execute(*args, **kwargs)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\runneradmin\Documents\ComfyUI\custom_nodes\comfyui-cadabra\nodes\cad_roi_selector_node.py", line 191, in execute
+    cls._export_glb_with_colors(vertices_array, faces_array, colors_array, glb_filepath)
+  File "C:\Users\runneradmin\Documents\ComfyUI\custom_nodes\comfyui-cadabra\nodes\cad_roi_selector_node.py", line 316, in _export_glb_with_colors
+    gltf.save(filepath)
+  File "C:\ce\.pixi\envs\cadabra-nodes\Lib\site-packages\pygltflib\__init__.py", line 1112, in save
+    return self.save_binary(fname)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\ce\.pixi\envs\cadabra-nodes\Lib\site-packages\pygltflib\__init__.py", line 1098, in save_binary
+    with open(fname, 'wb') as f:
+         ^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: 'C:\\Users\\runneradmin\\.comfy-test-cache\\desktop\\ComfyUI\\resources\\ComfyUI\\temp\\roi_selector_2223476300928.glb'
+
+
+
+[2026-05-10 22:42:56.525] [info]  Prompt executed in 7.66 seconds
+

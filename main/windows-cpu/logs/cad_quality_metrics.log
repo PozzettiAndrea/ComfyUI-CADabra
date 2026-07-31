@@ -1,0 +1,103 @@
+  [ComfyUI] [32m[INFO][0m Using RAM pressure cache.
+Capturing execution frames: cad_quality_metrics.json
+  [ComfyUI] [32m[INFO][0m Using RAM pressure cache.
+  Frame 1 saved (frame_000.jpg, t=0.0s)
+  Validating workflow...
+  [ComfyUI] [32m[INFO][0m === /validate endpoint called ===
+  [ComfyUI] [32m[INFO][0m Received JSON with keys: ['prompt']
+  [ComfyUI] [32m[INFO][0m Prompt has 4 nodes
+  [ComfyUI] [32m[INFO][0m   Node 1: CAD_Load
+  [ComfyUI] [32m[INFO][0m     Inputs: {"filename": "cad/bellow_pipe.igs", "upload_progress": "", "\u2b06 upload / drop CAD": null}
+  [ComfyUI] [32m[INFO][0m   Node 2: CAD_Quality_Metrics
+  [ComfyUI] [32m[INFO][0m     Inputs: {"check_watertightness": true, "check_degeneracy": true, "check_boundaries": true, "area_tolerance": 1e-06, "report_panel": "false", "cad_model": ["1", 0]}
+  [ComfyUI] [32m[INFO][0m   Node 4: PreviewCADOCC
+  [ComfyUI] [32m[INFO][0m     Inputs: {"linear_deflection": 0.1, "angular_deflection": 0.5, "preview_occ": "", "cad_model": ["1", 0]}
+  Queuing workflow for execution...
+  [ComfyUI] [32m[INFO][0m   Node 5: PreviewAny
+  [ComfyUI] [32m[INFO][0m     Inputs: {"source": ["2", 1]}
+  [ComfyUI] [32m[INFO][0m Generated prompt_id: 17f7bdea-6507-443c-bf04-4890242225cc
+  [ComfyUI] [32m[INFO][0m Calling execution.validate_prompt()...
+  [ComfyUI] [32m[INFO][0m Validation result: valid=True
+  [ComfyUI] [32m[INFO][0m === Validation PASSED ===
+  [ComfyUI] [32m[INFO][0m got prompt
+  [ComfyUI] [comfy-env] Running CAD_Load: filename: 'cad/bellow_pipe.igs'
+  [ComfyUI] [SubprocessWorker] call_method: nodes.cad_nodes.CAD_Load.EXECUTE_NORMALIZED
+  [ComfyUI] [SubprocessWorker] acquired lock, ensuring started...
+  [ComfyUI] [ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+  [ComfyUI] [ComfyUI-CADabra] Health check: ok
+  [ComfyUI] [SubprocessWorker] worker started/confirmed
+  [ComfyUI] [SubprocessWorker] serializing kwargs to shm...
+  [ComfyUI] [SubprocessWorker] created 0 shm blocks
+  [ComfyUI] [SubprocessWorker] sending request via socket...
+  [ComfyUI] [SubprocessWorker] call_id=31 sending call_method
+  [ComfyUI] [14:26:01] [CADabra]  Using cache: bellow_pipe.igs
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO:  Using cache: bellow_pipe.igs
+  [ComfyUI] [14:26:01] [CADabra]  Ready: bellow_pipe.igs
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO:  Ready: bellow_pipe.igs
+  [ComfyUI] [SubprocessWorker] got response: ok
+  [ComfyUI] [comfy-env] CAD_Load done (0.15s): result: NodeOutput
+  [ComfyUI] [comfy-env] Running PreviewCADOCC: linear_deflection: 0.1, angular_deflection: 0.5, cad_model: dict
+  [ComfyUI] [SubprocessWorker] call_method: nodes.cad_nodes.PreviewCADOCC.EXECUTE_NORMALIZED
+  [ComfyUI] [SubprocessWorker] acquired lock, ensuring started...
+  [ComfyUI] [ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+  [ComfyUI] [ComfyUI-CADabra] Health check: ok
+  [ComfyUI] [SubprocessWorker] worker started/confirmed
+  [ComfyUI] [SubprocessWorker] serializing kwargs to shm...
+  [ComfyUI] [SubprocessWorker] created 0 shm blocks
+  [ComfyUI] [SubprocessWorker] sending request via socket...
+  [ComfyUI] [SubprocessWorker] call_id=32 sending call_method
+  [ComfyUI] [14:26:01] [CADabra]  Tessellating (linear: 0.1, angular: 0.5)
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO:  Tessellating (linear: 0.1, angular: 0.5)
+  [ComfyUI] [14:26:01] [CADabra] Starting: BRepMesh(linear_deflection=0.1, angular_deflection=0.5)
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO: Starting: BRepMesh(linear_deflection=0.1, angular_deflection=0.5)
+  Frame 2 saved (frame_001.jpg, t=2.2s)
+  [capture-periodic] freeze=6ms shot=109ms unfreeze=4ms saved=True
+  [ComfyUI] [14:26:05] [CADabra] Completed: BRepMesh(linear_deflection=0.1, angular_deflection=0.5) in 3.91s
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO: Completed: BRepMesh(linear_deflection=0.1, angular_deflection=0.5) in 3.91s
+  Frame 3 saved (frame_002.jpg, t=4.4s)
+  [capture-periodic] freeze=3ms shot=99ms unfreeze=4ms saved=True
+  [ComfyUI] [14:26:07] [CADabra]  Mesh: 189600 vertices, 342166 triangles
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO:  Mesh: 189600 vertices, 342166 triangles
+  [capture-loop] iter=50 t=5.9s state={'complete': False, 'error': None, 'executedCount': 0, 'wsState': 1} eval_ms=4 ram=5.2/16.0GB (32%) swap=0.3/2.9GB (12%) cpu=57% browser_rss=0.74GB
+  [ComfyUI] [14:26:10] [CADabra]  Exported VTP: preview_b6a00374.vtp (19,555,359 bytes)
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO:  Exported VTP: preview_b6a00374.vtp (19,555,359 bytes)
+  [ComfyUI] [14:26:10] [CADabra]  Entities: 1 volumes, 236 faces, 1122 edges
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO:  Entities: 1 volumes, 236 faces, 1122 edges
+  [ComfyUI] [14:26:10] [CADabra]  Face types: {'BSpline': 236}
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO:  Face types: {'BSpline': 236}
+  [ComfyUI] [14:26:10] [CADabra]  Edge types: {'BSpline': 1122}
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO:  Edge types: {'BSpline': 1122}
+  [ComfyUI] [SubprocessWorker] got response: ok
+  [ComfyUI] [comfy-env] PreviewCADOCC done (9.31s): result: NodeOutput
+  [ComfyUI] [comfy-env] Running CAD_Quality_Metrics: check_watertightness: True, check_degeneracy: True, check_boundaries: True, area_tolerance: 1e-06, cad_model: dict
+  [ComfyUI] [SubprocessWorker] call_method: nodes.cad_nodes.CAD_Quality_Metrics.EXECUTE_NORMALIZED
+  [ComfyUI] [SubprocessWorker] acquired lock, ensuring started...
+  [ComfyUI] [ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+  [ComfyUI] [ComfyUI-CADabra] Health check: ok
+  [ComfyUI] [SubprocessWorker] worker started/confirmed
+  [ComfyUI] [SubprocessWorker] serializing kwargs to shm...
+  [ComfyUI] [SubprocessWorker] created 0 shm blocks
+  [ComfyUI] [SubprocessWorker] sending request via socket...
+  [ComfyUI] [SubprocessWorker] call_id=33 sending call_method
+  Node executed (1 total), capturing...
+  [ComfyUI] Error   : Gmsh has not been initialized
+  [ComfyUI] [14:26:11] [CADabra]  Topology: 0 volumes, 0 faces, 0 edges, 0 vertices
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO:  Topology: 0 volumes, 0 faces, 0 edges, 0 vertices
+  [ComfyUI] Error   : Gmsh has not been initialized
+  [ComfyUI] [14:26:11] [CADabra]  Quality analysis complete
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO:  Quality analysis complete
+  [ComfyUI] [SubprocessWorker] got response: ok
+  [ComfyUI] [comfy-env] CAD_Quality_Metrics done (0.37s): result: NodeOutput
+  [ComfyUI] [32m[INFO][0m [32mPrompt executed in 9.84 seconds[0m
+  Frame 4 saved (frame_003.jpg, t=9.9s)
+  [capture-node] freeze=2320ms shot=507ms unfreeze=3ms saved=True
+  Node executed (2 total), capturing...
+  [capture-node] freeze=176ms shot=458ms unfreeze=0ms saved=False
+  Execution complete (t=13.3s)
+  Captured 4 unique frames over 13.89s
+  [debug] iframes: 1
+  [debug]   iframe[0]: src=http://127.0.0.1:41895/extensions/ComfyUI-CADabra/viewer_cad_analysis.html?v=178, canvas=374x498, rafFrozen=True
+  [timing] trigger_3d_previews: 0.0s
+  Saved high-quality screenshot: cad_quality_metrics_executed.png
+  [timing] final_screenshot: 0.2s
+    Captured 5 video frames

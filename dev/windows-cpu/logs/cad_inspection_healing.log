@@ -1,0 +1,272 @@
+Capturing execution frames: cad_inspection_healing.json
+[32m[INFO][0m Using RAM pressure cache.
+[32m[INFO][0m Using RAM pressure cache.
+  Frame 1 saved (frame_000.jpg, t=0.0s)
+  Validating workflow...
+  Queuing workflow for execution...
+[32m[INFO][0m === /validate endpoint called ===
+[32m[INFO][0m Received JSON with keys: ['prompt']
+[32m[INFO][0m Prompt has 8 nodes
+[32m[INFO][0m   Node 1: CADUltimateInspection
+[32m[INFO][0m     Inputs: {"report_panel": "true", "cad_model": ["2", 0]}
+[32m[INFO][0m   Node 2: CAD_Load
+[32m[INFO][0m     Inputs: {"filename": "cad/S23_phone.STEP", "upload_progress": "", "\u2b06 upload / drop CAD": null}
+[32m[INFO][0m   Node 3: PreviewCADOCC
+[32m[INFO][0m     Inputs: {"linear_deflection": 0.1, "angular_deflection": 0.5, "preview_occ": "", "cad_model": ["1", 0]}
+[32m[INFO][0m   Node 5: CADHealShape
+[32m[INFO][0m     Inputs: {"precision": 0.01, "max_tolerance": 1, "execution_mode": "single_core", "fix_small_faces": "enabled", "fix_small_faces.small_face_precision": 0.1, "merge_colinear_edges": "disabled", "merge_g2_edges"
+[32m[INFO][0m   Node 6: PreviewCADOCC
+[32m[INFO][0m     Inputs: {"linear_deflection": 0.1, "angular_deflection": 0.5, "preview_occ": "", "cad_model": ["8", 0]}
+[32m[INFO][0m   Node 7: CADUltimateInspection
+[32m[INFO][0m     Inputs: {"report_panel": "true", "cad_model": ["8", 0]}
+[32m[INFO][0m   Node 8: CADSewFaces
+[32m[INFO][0m     Inputs: {"tolerance": 1, "execution_mode": "single_core", "report_panel": "false", "cad_model": ["5", 0]}
+[32m[INFO][0m   Node 9: CADSave
+[32m[INFO][0m     Inputs: {"filename": "output_clean", "format": "step", "stl_linear_deflection": 0.1, "cad_model": ["8", 0]}
+[32m[INFO][0m Generated prompt_id: a0c181ec-8a75-4883-8100-199c4133f3aa
+[32m[INFO][0m Calling execution.validate_prompt()...
+[32m[INFO][0m Validation result: valid=True
+[32m[INFO][0m === Validation PASSED ===
+[32m[INFO][0m got prompt
+[comfy-env] Running CAD_Load: filename: 'cad/S23_phone.STEP'
+[SubprocessWorker] call_method: nodes.cad_nodes.CAD_Load.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=17 sending call_method
+[15:39:28] [CADabra]  Using cache: S23_phone.STEP
+[worker:ComfyUI-CADabra] INFO:  Using cache: S23_phone.STEP
+[15:39:28] [CADabra]  Ready: S23_phone.STEP
+[worker:ComfyUI-CADabra] INFO:  Ready: S23_phone.STEP
+[SubprocessWorker] got response: ok
+[comfy-env] CAD_Load done (0.35s): result: NodeOutput
+[comfy-env] Running CADUltimateInspection: cad_model: dict
+[SubprocessWorker] call_method: nodes.cad_inspect_nodes.CADUltimateInspection.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=18 sending call_method
+[15:39:29] [CADabra] [UltimateInspection]
+=== Ultimate CAD Inspection ===
+Valid B-rep:         OK Yes   (BRepCheck_Analyzer)
+Watertight (closed): X No   (24 free edges)
+Manifold:            OK Yes   (0 non-manifold edges)
+Solid:               X No   (0 solids)
+
+Topology:
+  Solids:   0
+  Shells:   7
+  Faces:    176
+  Edges:    423   (free: 24, non-manifold: 0, degenerate: 0)
+  Vertices: 276
+
+Geometry:
+  Surface area:  43,486.610
+  Face area:     min 0.4066   max 11,151.6   (176 faces)
+  Bounding box:  [-0.000, -0.250, -163.300] to [77.900, 10.400, 0.000]
+  Extents:       77.900 x 10.650 x 163.300
+  Diagonal:      181.242
+[worker:ComfyUI-CADabra] INFO: [UltimateInspection]
+=== Ultimate CAD Inspection ===
+Valid B-rep:         OK Yes   (BRepCheck_Analyzer)
+Watertight (closed): X No   (24 free edges)
+Manifold:            OK Yes   (0 non-manifold edges)
+Solid:               X No   (0 solids)
+
+Topology:
+  Solids:   0
+  Shells:   7
+  Faces:    176
+  Edges:    423   (free: 24, non-manifold: 0, degenerate: 0)
+  Vertices: 276
+
+Geometry:
+  Surface area:  43,486.610
+  Face area:     min 0.4066   max 11,151.6   (176 faces)
+  Bounding box:  [-0.000, -0.250, -163.300] to [77.900, 10.400, 0.000]
+  Extents:       77.900 x 10.650 x 163.300
+  Diagonal:      181.242
+[SubprocessWorker] got response: ok
+[comfy-env] CADUltimateInspection done (0.86s): result: NodeOutput
+[comfy-env] Running PreviewCADOCC: linear_deflection: 0.1, angular_deflection: 0.5, cad_model: dict
+[SubprocessWorker] call_method: nodes.cad_nodes.PreviewCADOCC.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=19 sending call_method
+  Node executed (1 total), capturing...
+  Frame 2 saved (frame_001.jpg, t=1.7s)
+  [capture-node] freeze=12ms shot=117ms unfreeze=6ms saved=True
+[15:39:29] [CADabra]  Tessellating (linear: 0.1, angular: 0.5)
+[worker:ComfyUI-CADabra] INFO:  Tessellating (linear: 0.1, angular: 0.5)
+[15:39:29] [CADabra] Starting: BRepMesh(linear_deflection=0.1, angular_deflection=0.5)
+[worker:ComfyUI-CADabra] INFO: Starting: BRepMesh(linear_deflection=0.1, angular_deflection=0.5)
+[15:39:29] [CADabra] Completed: BRepMesh(linear_deflection=0.1, angular_deflection=0.5) in 0.19s
+[worker:ComfyUI-CADabra] INFO: Completed: BRepMesh(linear_deflection=0.1, angular_deflection=0.5) in 0.19s
+  Node executed (2 total), capturing...
+[15:39:29] [CADabra]  Mesh: 6298 vertices, 7802 triangles
+[worker:ComfyUI-CADabra] INFO:  Mesh: 6298 vertices, 7802 triangles
+[15:39:30] [CADabra]  Exported VTP: preview_fff94be5.vtp (447,379 bytes)
+[worker:ComfyUI-CADabra] INFO:  Exported VTP: preview_fff94be5.vtp (447,379 bytes)
+[15:39:30] [CADabra]  Entities: 0 volumes, 176 faces, 822 edges
+[worker:ComfyUI-CADabra] INFO:  Entities: 0 volumes, 176 faces, 822 edges
+[15:39:30] [CADabra]  Face types: {'Cylinder': 84, 'Torus': 24, 'Plane': 68}
+[worker:ComfyUI-CADabra] INFO:  Face types: {'Cylinder': 84, 'Torus': 24, 'Plane': 68}
+[15:39:30] [CADabra]  Edge types: {'Line': 366, 'Circle': 416, 'BSpline': 40}
+[worker:ComfyUI-CADabra] INFO:  Edge types: {'Line': 366, 'Circle': 416, 'BSpline': 40}
+[SubprocessWorker] got response: ok
+[comfy-env] PreviewCADOCC done (0.80s): result: NodeOutput
+[comfy-env] Running CADHealShape: precision: list[1], max_tolerance: list[1], fix_small_edges: list[1], fix_wire_gaps: list[1], unify_faces: list[1], cad_model: list[1], execution_mode: dict, fix_small_faces: dict, merge_colinear_edges: dict, merge_g2_edges: dict
+[SubprocessWorker] call_method: nodes.cad_utility_nodes.CADHealShape.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=20 sending call_method
+  Frame 3 saved (frame_002.jpg, t=2.7s)
+  [capture-node] freeze=24ms shot=159ms unfreeze=13ms saved=True
+[SubprocessWorker] got response: ok
+[comfy-env] CADHealShape done (0.78s): result: NodeOutput
+[comfy-env] Running CADSewFaces: tolerance: list[1], cad_model: list[1], execution_mode: dict
+[SubprocessWorker] call_method: nodes.cad_utility_nodes.CADSewFaces.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=21 sending call_method
+[15:39:31] [CADabra] Starting: Sewing(faces=176, tolerance=1.0)
+[worker:ComfyUI-CADabra] INFO: Starting: Sewing(faces=176, tolerance=1.0)
+[15:39:31] [CADabra] Completed: Sewing(faces=176, tolerance=1.0) in 0.14s
+[worker:ComfyUI-CADabra] INFO: Completed: Sewing(faces=176, tolerance=1.0) in 0.14s
+[SubprocessWorker] got response: ok
+[comfy-env] CADSewFaces done (1.27s): result: NodeOutput
+[comfy-env] Running CADSave: filename: 'output_clean', format: 'step', stl_linear_deflection: 0.1, cad_model: dict
+[SubprocessWorker] call_method: nodes.cad_utility_nodes.CADSave.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=22 sending call_method
+  Frame 4 saved (frame_003.jpg, t=5.1s)
+  [capture-periodic] freeze=39ms shot=114ms unfreeze=6ms saved=True
+[SubprocessWorker] got response: ok
+[comfy-env] CADSave done (0.95s): result: NodeOutput
+[comfy-env] Running PreviewCADOCC: linear_deflection: 0.1, angular_deflection: 0.5, cad_model: dict
+[SubprocessWorker] call_method: nodes.cad_nodes.PreviewCADOCC.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=23 sending call_method
+[15:39:33] [CADabra]  Tessellating (linear: 0.1, angular: 0.5)
+[worker:ComfyUI-CADabra] INFO:  Tessellating (linear: 0.1, angular: 0.5)
+[15:39:33] [CADabra] Starting: BRepMesh(linear_deflection=0.1, angular_deflection=0.5)
+[worker:ComfyUI-CADabra] INFO: Starting: BRepMesh(linear_deflection=0.1, angular_deflection=0.5)
+[15:39:34] [CADabra] Completed: BRepMesh(linear_deflection=0.1, angular_deflection=0.5) in 0.95s
+[worker:ComfyUI-CADabra] INFO: Completed: BRepMesh(linear_deflection=0.1, angular_deflection=0.5) in 0.95s
+[15:39:34] [CADabra]  Mesh: 6298 vertices, 7802 triangles
+[worker:ComfyUI-CADabra] INFO:  Mesh: 6298 vertices, 7802 triangles
+  Frame 5 saved (frame_004.jpg, t=7.4s)
+  [capture-periodic] freeze=61ms shot=121ms unfreeze=114ms saved=True
+[15:39:35] [CADabra]  Exported VTP: preview_109003da.vtp (446,822 bytes)
+[worker:ComfyUI-CADabra] INFO:  Exported VTP: preview_109003da.vtp (446,822 bytes)
+[15:39:35] [CADabra]  Entities: 0 volumes, 176 faces, 822 edges
+[worker:ComfyUI-CADabra] INFO:  Entities: 0 volumes, 176 faces, 822 edges
+[15:39:35] [CADabra]  Face types: {'Cylinder': 84, 'Plane': 68, 'Torus': 24}
+[worker:ComfyUI-CADabra] INFO:  Face types: {'Cylinder': 84, 'Plane': 68, 'Torus': 24}
+[15:39:35] [CADabra]  Edge types: {'Line': 366, 'Circle': 416, 'BSpline': 40}
+[worker:ComfyUI-CADabra] INFO:  Edge types: {'Line': 366, 'Circle': 416, 'BSpline': 40}
+[SubprocessWorker] got response: ok
+[comfy-env] PreviewCADOCC done (2.26s): result: NodeOutput
+[comfy-env] Running CADUltimateInspection: cad_model: dict
+[SubprocessWorker] call_method: nodes.cad_inspect_nodes.CADUltimateInspection.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=24 sending call_method
+  Node executed (3 total), capturing...
+[15:39:36] [CADabra] [UltimateInspection]
+=== Ultimate CAD Inspection ===
+Valid B-rep:         OK Yes   (BRepCheck_Analyzer)
+Watertight (closed): X No   (14 free edges)
+Manifold:            OK Yes   (0 non-manifold edges)
+Solid:               X No   (0 solids)
+
+Topology:
+  Solids:   0
+  Shells:   2
+  Faces:    176
+  Edges:    423   (free: 14, non-manifold: 0, degenerate: 0)
+  Vertices: 276
+
+Geometry:
+  Surface area:  43,486.610
+  Face area:     min 0.4066   max 11,151.6   (176 faces)
+  Bounding box:  [-0.000, -0.250, -163.300] to [77.900, 10.400, 0.000]
+  Extents:       77.900 x 10.650 x 163.300
+  Diagonal:      181.242
+[worker:ComfyUI-CADabra] INFO: [UltimateInspection]
+=== Ultimate CAD Inspection ===
+Valid B-rep:         OK Yes   (BRepCheck_Analyzer)
+Watertight (closed): X No   (14 free edges)
+Manifold:            OK Yes   (0 non-manifold edges)
+Solid:               X No   (0 solids)
+
+Topology:
+  Solids:   0
+  Shells:   2
+  Faces:    176
+  Edges:    423   (free: 14, non-manifold: 0, degenerate: 0)
+  Vertices: 276
+
+Geometry:
+  Surface area:  43,486.610
+  Face area:     min 0.4066   max 11,151.6   (176 faces)
+  Bounding box:  [-0.000, -0.250, -163.300] to [77.900, 10.400, 0.000]
+  Extents:       77.900 x 10.650 x 163.300
+  Diagonal:      181.242
+[SubprocessWorker] got response: ok
+[comfy-env] CADUltimateInspection done (0.67s): result: NodeOutput
+[32m[INFO][0m [32mPrompt executed in 7.98 seconds[0m
+  Frame 6 saved (frame_005.jpg, t=8.1s)
+  [capture-node] freeze=45ms shot=163ms unfreeze=9ms saved=True
+  Node executed (4 total), capturing...
+  Frame 7 saved (frame_006.jpg, t=8.8s)
+  [capture-node] freeze=94ms shot=116ms unfreeze=0ms saved=True
+  Execution complete (t=8.8s)
+  Captured 7 unique frames over 9.05s
+  [debug] iframes: 2
+  [debug]   iframe[0]: src=http://127.0.0.1:8188/extensions/ComfyUI-CADabra/viewer_cad_analysis.html?v=1785, canvas=379x498, rafFrozen=True
+  [debug]   iframe[1]: src=http://127.0.0.1:8188/extensions/ComfyUI-CADabra/viewer_cad_analysis.html?v=1785, canvas=379x498, rafFrozen=True
+  [timing] trigger_3d_previews: 0.0s
+  Saved high-quality screenshot: cad_inspection_healing_executed.png
+  [timing] final_screenshot: 0.2s
+    Captured 8 video frames

@@ -1,0 +1,37 @@
+Loading workflow from /Users/runner/work/comfy-gpu-ci/comfy-gpu-ci/ComfyUI/custom_nodes/ComfyUI-CADabra/workflows/view_cads.json...
+Converting litegraph workflow to prompt format...
+Queuing workflow: /Users/runner/work/comfy-gpu-ci/comfy-gpu-ci/ComfyUI/custom_nodes/ComfyUI-CADabra/workflows/view_cads.json...
+[DEBUG] Connecting WebSocket to ws://127.0.0.1:8188/ws?clientId=9b2c514d-1179-4a62-9772-ccdabc3a3f69
+[DEBUG] WebSocket connected successfully
+Queued with ID: e832b2cd-81d6-4a2e-a47e-d70bf9b4458c
+[DEBUG] WS msg: type=status prompt_id=None (waiting for e832b2cd-81d6-4a2e-a47e-d70bf9b4458c)
+[DEBUG] WS msg: type=status prompt_id=None (waiting for e832b2cd-81d6-4a2e-a47e-d70bf9b4458c)
+[DEBUG] WS msg: type=status prompt_id=None (waiting for e832b2cd-81d6-4a2e-a47e-d70bf9b4458c)
+[DEBUG] WS msg: type=progress_state prompt_id=e832b2cd-81d6-4a2e-a47e-d70bf9b4458c (waiting for e832b2cd-81d6-4a2e-a47e-d70bf9b4458c)
+[DEBUG] Unhandled msg_type: progress_state
+[DEBUG] WS msg: type=progress_state prompt_id=e832b2cd-81d6-4a2e-a47e-d70bf9b4458c (waiting for e832b2cd-81d6-4a2e-a47e-d70bf9b4458c)
+[DEBUG] Unhandled msg_type: progress_state
+[DEBUG] WS msg: type=progress_state prompt_id=e832b2cd-81d6-4a2e-a47e-d70bf9b4458c (waiting for e832b2cd-81d6-4a2e-a47e-d70bf9b4458c)
+[DEBUG] Unhandled msg_type: progress_state
+[DEBUG] WS msg: type=progress_state prompt_id=e832b2cd-81d6-4a2e-a47e-d70bf9b4458c (waiting for e832b2cd-81d6-4a2e-a47e-d70bf9b4458c)
+[DEBUG] Unhandled msg_type: progress_state
+[DEBUG] WS msg: type=progress_state prompt_id=e832b2cd-81d6-4a2e-a47e-d70bf9b4458c (waiting for e832b2cd-81d6-4a2e-a47e-d70bf9b4458c)
+[DEBUG] Unhandled msg_type: progress_state
+[DEBUG] WS msg: type=progress_state prompt_id=e832b2cd-81d6-4a2e-a47e-d70bf9b4458c (waiting for e832b2cd-81d6-4a2e-a47e-d70bf9b4458c)
+[DEBUG] Unhandled msg_type: progress_state
+[DEBUG] WS msg: type=progress_state prompt_id=e832b2cd-81d6-4a2e-a47e-d70bf9b4458c (waiting for e832b2cd-81d6-4a2e-a47e-d70bf9b4458c)
+[DEBUG] Unhandled msg_type: progress_state
+[DEBUG] WS msg: type=progress_state prompt_id=e832b2cd-81d6-4a2e-a47e-d70bf9b4458c (waiting for e832b2cd-81d6-4a2e-a47e-d70bf9b4458c)
+[DEBUG] Unhandled msg_type: progress_state
+[DEBUG] WS msg: type=progress_state prompt_id=e832b2cd-81d6-4a2e-a47e-d70bf9b4458c (waiting for e832b2cd-81d6-4a2e-a47e-d70bf9b4458c)
+[DEBUG] Unhandled msg_type: progress_state
+[DEBUG] WS msg: type=progress_state prompt_id=e832b2cd-81d6-4a2e-a47e-d70bf9b4458c (waiting for e832b2cd-81d6-4a2e-a47e-d70bf9b4458c)
+[DEBUG] Unhandled msg_type: progress_state
+[DEBUG] WS msg: type=progress_state prompt_id=e832b2cd-81d6-4a2e-a47e-d70bf9b4458c (waiting for e832b2cd-81d6-4a2e-a47e-d70bf9b4458c)
+[DEBUG] Unhandled msg_type: progress_state
+[DEBUG] WS msg: type=progress_state prompt_id=e832b2cd-81d6-4a2e-a47e-d70bf9b4458c (waiting for e832b2cd-81d6-4a2e-a47e-d70bf9b4458c)
+[DEBUG] Unhandled msg_type: progress_state
+[DEBUG] WS msg: type=status prompt_id=None (waiting for e832b2cd-81d6-4a2e-a47e-d70bf9b4458c)
+Execution complete (queue empty)
+Workflow completed successfully!
+    Saved screenshot: view_cads_executed.png

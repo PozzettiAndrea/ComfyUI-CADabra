@@ -1,0 +1,102 @@
+  [ComfyUI] [32m[INFO][0m Using RAM pressure cache.
+Capturing execution frames: spline_to_circle.json
+  [ComfyUI] [32m[INFO][0m Using RAM pressure cache.
+  Frame 1 saved (frame_000.jpg, t=0.0s)
+  Validating workflow...
+  [ComfyUI] [32m[INFO][0m === /validate endpoint called ===
+  [ComfyUI] [32m[INFO][0m Received JSON with keys: ['prompt']
+  [ComfyUI] [32m[INFO][0m Prompt has 3 nodes
+  [ComfyUI] [32m[INFO][0m   Node 1: CADPrimitiveReconstruction
+  [ComfyUI] [32m[INFO][0m     Inputs: {"circle_tolerance": 0.0001, "line_tolerance": 1e-06, "replace_circles": true, "replace_lines": true, "n_samples": 20, "report_panel": "false", "cad_model": ["3", 0]}
+  [ComfyUI] [32m[INFO][0m   Node 3: CAD_Load
+  [ComfyUI] [32m[INFO][0m     Inputs: {"filename": "cad/circle_as_spline.stp", "upload_progress": "", "\u2b06 upload / drop CAD": null}
+  [ComfyUI] [32m[INFO][0m   Node 6: PreviewCADDual
+  [ComfyUI] [32m[INFO][0m     Inputs: {"layout": "side_by_side", "opacity_1": 1, "opacity_2": 0.6, "linear_deflection": 0.1, "angular_deflection": 0.5, "preview_cad_dual": "{\"show_edges\":false,\"camera_state\":\"\",\"selected_field\":\"
+  [ComfyUI] [32m[INFO][0m Generated prompt_id: e3e32a59-1773-43a5-8de0-39536e7f3d6e
+  [ComfyUI] [32m[INFO][0m Calling execution.validate_prompt()...
+  [ComfyUI] [32m[INFO][0m Validation result: valid=True
+  [ComfyUI] [32m[INFO][0m === Validation PASSED ===
+  Queuing workflow for execution...
+  [ComfyUI] [32m[INFO][0m got prompt
+  [ComfyUI] [comfy-env] Running CAD_Load: filename: 'cad/circle_as_spline.stp'
+  [ComfyUI] [SubprocessWorker] call_method: nodes.cad_nodes.CAD_Load.EXECUTE_NORMALIZED
+  [ComfyUI] [SubprocessWorker] acquired lock, ensuring started...
+  [ComfyUI] [ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+  [ComfyUI] [ComfyUI-CADabra] Health check: ok
+  [ComfyUI] [SubprocessWorker] worker started/confirmed
+  [ComfyUI] [SubprocessWorker] serializing kwargs to shm...
+  [ComfyUI] [SubprocessWorker] created 0 shm blocks
+  [ComfyUI] [SubprocessWorker] sending request via socket...
+  [ComfyUI] [SubprocessWorker] call_id=21 sending call_method
+  [ComfyUI] [14:25:21] [CADabra]  Loading CAD file: circle_as_spline.stp
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO:  Loading CAD file: circle_as_spline.stp
+  [ComfyUI] [14:25:21] [CADabra] Starting: STEP ReadFile(file=circle_as_spline.stp)
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO: Starting: STEP ReadFile(file=circle_as_spline.stp)
+  [ComfyUI] [14:25:21] [CADabra] Completed: STEP ReadFile(file=circle_as_spline.stp) in 0.01s
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO: Completed: STEP ReadFile(file=circle_as_spline.stp) in 0.01s
+  [ComfyUI] [14:25:21] [CADabra] Starting: STEP TransferRoots(file=circle_as_spline.stp)
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO: Starting: STEP TransferRoots(file=circle_as_spline.stp)
+  [ComfyUI] [14:25:21] [CADabra] Completed: STEP TransferRoots(file=circle_as_spline.stp) in 0.00s
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO: Completed: STEP TransferRoots(file=circle_as_spline.stp) in 0.00s
+  [ComfyUI] [14:25:21] [CADabra]  Cached to BREP: circle_as_spline.stp
+  [ComfyUI] [14:25:21] [CADabra]  Ready: circle_as_spline.stp
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO:  Cached to BREP: circle_as_spline.stp
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO:  Ready: circle_as_spline.stp
+  [ComfyUI] [SubprocessWorker] got response: ok
+  [ComfyUI] [comfy-env] CAD_Load done (0.04s): result: NodeOutput
+  [ComfyUI] [comfy-env] Running CADPrimitiveReconstruction: circle_tolerance: 0.0001, line_tolerance: 1e-06, replace_circles: True, replace_lines: True, n_samples: 20, cad_model: dict
+  [ComfyUI] [SubprocessWorker] call_method: nodes.cad_primitive_reconstruction_node.CADPrimitiveReconstruction.EXECUTE_NORMALIZED
+  [ComfyUI] [SubprocessWorker] acquired lock, ensuring started...
+  [ComfyUI] [ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+  [ComfyUI] [ComfyUI-CADabra] Health check: ok
+  [ComfyUI] [SubprocessWorker] worker started/confirmed
+  [ComfyUI] [SubprocessWorker] serializing kwargs to shm...
+  [ComfyUI] [SubprocessWorker] created 0 shm blocks
+  [ComfyUI] [SubprocessWorker] sending request via socket...
+  [ComfyUI] [SubprocessWorker] call_id=22 sending call_method
+  [ComfyUI] [14:25:21] [CADabra] [PrimitiveReconstruction] Received cad_model keys: ['brep_path', 'file_path', 'format']
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO: [PrimitiveReconstruction] Received cad_model keys: ['brep_path', 'file_path', 'format']
+  [ComfyUI] [14:25:21] [CADabra] [PrimitiveReconstruction] Shape type: <class 'OCC.Core.TopoDS.TopoDS_Shape'>, is None: False
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO: [PrimitiveReconstruction] Shape type: <class 'OCC.Core.TopoDS.TopoDS_Shape'>, is None: False
+  [ComfyUI] [14:25:21] [CADabra] [PrimitiveReconstruction] Analyzing 1 edges...
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO: [PrimitiveReconstruction] Analyzing 1 edges...
+  [ComfyUI] [14:25:21] [CADabra] [CircleEdge] Angles: start=360.0°, mid=180.0°, end=360.0°, R=25.0
+  [ComfyUI] [14:25:21] [CADabra] [CircleEdge] Full circle (start~end, midpoint elsewhere) -- building whole circle
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO: [CircleEdge] Angles: start=360.0°, mid=180.0°, end=360.0°, R=25.0
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO: [CircleEdge] Full circle (start~end, midpoint elsewhere) -- building whole circle
+  [ComfyUI] [14:25:21] [CADabra] [PrimitiveReconstruction] Applied 1 replacements
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO: [PrimitiveReconstruction] Applied 1 replacements
+  [ComfyUI] [SubprocessWorker] got response: ok
+  [ComfyUI] [comfy-env] CADPrimitiveReconstruction done (0.05s): result: NodeOutput
+  [ComfyUI] [comfy-env] Running PreviewCADDual: layout: 'side_by_side', opacity_1: 1.0, opacity_2: 0.6, linear_deflection: 0.1, angular_deflection: 0.5, cad_1: dict, cad_2: dict
+  [ComfyUI] [SubprocessWorker] call_method: nodes.cad_preview_dual_node.PreviewCADDual.EXECUTE_NORMALIZED
+  [ComfyUI] [SubprocessWorker] acquired lock, ensuring started...
+  [ComfyUI] [ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+  [ComfyUI] [ComfyUI-CADabra] Health check: ok
+  [ComfyUI] [SubprocessWorker] worker started/confirmed
+  [ComfyUI] [SubprocessWorker] serializing kwargs to shm...
+  [ComfyUI] [SubprocessWorker] created 0 shm blocks
+  [ComfyUI] [SubprocessWorker] sending request via socket...
+  [ComfyUI] [SubprocessWorker] call_id=23 sending call_method
+  [ComfyUI] [14:25:21] [CADabra] Starting: BRepMesh(linear_deflection=0.1, angular_deflection=0.5)
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO: Starting: BRepMesh(linear_deflection=0.1, angular_deflection=0.5)
+  [ComfyUI] [14:25:21] [CADabra] Completed: BRepMesh(linear_deflection=0.1, angular_deflection=0.5) in 0.01s
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO: Completed: BRepMesh(linear_deflection=0.1, angular_deflection=0.5) in 0.01s
+  [ComfyUI] [14:25:21] [CADabra] Starting: BRepMesh(linear_deflection=0.1, angular_deflection=0.5)
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO: Starting: BRepMesh(linear_deflection=0.1, angular_deflection=0.5)
+  [ComfyUI] [14:25:21] [CADabra] Completed: BRepMesh(linear_deflection=0.1, angular_deflection=0.5) in 0.00s
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO: Completed: BRepMesh(linear_deflection=0.1, angular_deflection=0.5) in 0.00s
+  [ComfyUI] [SubprocessWorker] got response: ok
+  [ComfyUI] [comfy-env] PreviewCADDual done (0.04s): result: NodeOutput
+  [ComfyUI] [32m[INFO][0m [32mPrompt executed in 0.14 seconds[0m
+  Node executed (1 total), capturing...
+  Frame 2 saved (frame_001.jpg, t=0.5s)
+  [capture-node] freeze=30ms shot=315ms unfreeze=5ms saved=True
+  Execution complete (t=1.0s)
+  Captured 2 unique frames over 0.99s
+  [debug] iframes: 1
+  [debug]   iframe[0]: src=http://127.0.0.1:41883/extensions/ComfyUI-CADabra/viewer_cad_dual.html?v=1785507, canvas=371x485, rafFrozen=False
+  [timing] trigger_3d_previews: 0.0s
+  Saved high-quality screenshot: spline_to_circle_executed.png
+  [timing] final_screenshot: 0.2s
+    Captured 3 video frames

@@ -1,0 +1,396 @@
+{
+  "timestamp": "2026-07-31T14:26:13.366616+00:00",
+  "platform": "macos",
+  "hardware": {
+    "os": "macOS-26.5.2-arm64-arm-64bit",
+    "cpu": "arm"
+  },
+  "commit_hash": "1651951d8e67651931ae974d345647860de09889",
+  "run_url": "https://github.com/PozzettiAndrea/comfy-ci/actions/runs/30637656617",
+  "success": false,
+  "summary": {
+    "total": 21,
+    "passed": 19,
+    "failed": 2
+  },
+  "workflows": [
+    {
+      "name": "analyse_CAD",
+      "status": "pass",
+      "duration_seconds": 53.15,
+      "error": null,
+      "hardware": {
+        "os": "macOS-26.5.2-arm64-arm-64bit",
+        "cpu": "arm"
+      },
+      "resources": {
+        "ram": {
+          "peak": 1.28,
+          "avg": 0.95
+        },
+        "total_ram_gb": 7.0,
+        "samples": 48
+      }
+    },
+    {
+      "name": "cad_curvature",
+      "status": "pass",
+      "duration_seconds": 41.9,
+      "error": null,
+      "hardware": {
+        "os": "macOS-26.5.2-arm64-arm-64bit",
+        "cpu": "arm"
+      },
+      "resources": {
+        "ram": {
+          "peak": 1.87,
+          "avg": 1.39
+        },
+        "total_ram_gb": 7.0,
+        "samples": 38
+      }
+    },
+    {
+      "name": "cad_fix_degenerate_faces",
+      "status": "pass",
+      "duration_seconds": 33.63,
+      "error": null,
+      "hardware": {
+        "os": "macOS-26.5.2-arm64-arm-64bit",
+        "cpu": "arm"
+      },
+      "resources": {
+        "ram": {
+          "peak": 1.72,
+          "avg": 1.53
+        },
+        "total_ram_gb": 7.0,
+        "samples": 31
+      }
+    },
+    {
+      "name": "cad_heal_advanced",
+      "status": "pass",
+      "duration_seconds": 12.65,
+      "error": null,
+      "hardware": {
+        "os": "macOS-26.5.2-arm64-arm-64bit",
+        "cpu": "arm"
+      },
+      "resources": {
+        "ram": {
+          "peak": 1.78,
+          "avg": 1.74
+        },
+        "total_ram_gb": 7.0,
+        "samples": 12
+      }
+    },
+    {
+      "name": "cad_inspection_healing",
+      "status": "pass",
+      "duration_seconds": 10.5,
+      "error": null,
+      "hardware": {
+        "os": "macOS-26.5.2-arm64-arm-64bit",
+        "cpu": "arm"
+      },
+      "resources": {
+        "ram": {
+          "peak": 1.77,
+          "avg": 1.77
+        },
+        "total_ram_gb": 7.0,
+        "samples": 10
+      }
+    },
+    {
+      "name": "cad_manipulation",
+      "status": "pass",
+      "duration_seconds": 12.6,
+      "error": null,
+      "hardware": {
+        "os": "macOS-26.5.2-arm64-arm-64bit",
+        "cpu": "arm"
+      },
+      "resources": {
+        "ram": {
+          "peak": 1.77,
+          "avg": 1.75
+        },
+        "total_ram_gb": 7.0,
+        "samples": 12
+      }
+    },
+    {
+      "name": "cad_quality_metrics",
+      "status": "fail",
+      "duration_seconds": 35.02,
+      "error": "Workflow execution failed: {'prompt_id': '1a298460-f3b8-471e-8484-c782d871c2fe', 'node_id': '2', 'node_type': 'CAD_Quality_Metrics', 'executed': ['4', '1'], 'exception_message': 'Quality analysis failed: Could not get last error\\n\\nWorker traceback:\\nTraceback (most recent call last):\\n  File \"/Users/runner/work/comfy-ci/comfy-ci/test_workspaces/CADabra-1413/ComfyUI/custom_nodes/ComfyUI-CADabra/nodes/cad_nodes.py\", line 1936, in execute\\n    entities = gmsh.model.getEntities()\\n               ^^^^^^^^^^^^^^^^^^^^^^^^\\n  File \"/Users/runner/.ce/envs/cadabra-nodes/.pixi/envs/default/lib/python3.1/site-packages/gmsh.py\", line 750, in getEntities\\n    raise Exception(logger.getLastError())\\n                    ^^^^^^^^^^^^^^^^^^^^^\\n  File \"/Users/runner/.ce/envs/cadabra-nodes/.pixi/envs/default/lib/python3.1/site-packages/gmsh.py\", line 11259, in getLastError\\n    raise Exception(\\'Could not get last error\\')\\nException: Could not get last error\\n\\nDuring handling of the above exception, another exception occurred:\\n\\nTraceback (most recent call last):\\n  File \"/var/folders/df/djsxfhc17x95674wsm_g8s980000gn/T/comfyui_pvenv_2ok3irew/persistent_worker.py\", line 1767, in main\\n    result = method(**inputs)\\n             ^^^^^^^^^^^^^^^^\\n  File \"/Users/runner/work/comfy-ci/comfy-ci/test_workspaces/CADabra-1413/ComfyUI/comfy_api/latest/_io.py\", line 1935, in EXECUTE_NORMALIZED\\n    to_return = cls.execute(*args, **kwargs)\\n                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\\n  File \"/Users/runner/work/comfy-ci/comfy-ci/test_workspaces/CADabra-1413/ComfyUI/custom_nodes/ComfyUI-CADabra/nodes/cad_nodes.py\", line 2194, in execute\\n    raise RuntimeError(f\"Quality analysis failed: {str(e)}\")\\nRuntimeError: Quality analysis failed: Could not get last error\\n\\n', 'exception_type': 'comfy_env.isolation.workers.base.WorkerError', 'traceback': ['  File \"/Users/runner/work/comfy-ci/comfy-ci/test_workspaces/CADabra-1413/ComfyUI/execution.py\", line 545, in execute\\n    output_data, output_ui, has_subgraph, has_pending_tasks = await get_output_data(prompt_id, unique_id, obj, input_data_all, execution_block_cb=execution_block_cb, pre_execute_cb=pre_execute_cb, v3_data=v3_data)\\n                                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\\n', '  File \"/Users/runner/work/comfy-ci/comfy-ci/test_workspaces/CADabra-1413/ComfyUI/execution.py\", line 344, in get_output_data\\n    return_values = await _async_map_node_over_list(prompt_id, unique_id, obj, input_data_all, obj.FUNCTION, allow_interrupt=True, execution_block_cb=execution_block_cb, pre_execute_cb=pre_execute_cb, v3_data=v3_data)\\n                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\\n', '  File \"/Users/runner/work/comfy-ci/comfy-ci/test_workspaces/CADabra-1413/ComfyUI/execution.py\", line 318, in _async_map_node_over_list\\n    await process_inputs(input_dict, i)\\n', '  File \"/Users/runner/work/comfy-ci/comfy-ci/test_workspaces/CADabra-1413/ComfyUI/execution.py\", line 306, in process_inputs\\n    result = f(**inputs)\\n             ^^^^^^^^^^^\\n', '  File \"/Users/runner/work/comfy-ci/comfy-ci/test_workspaces/CADabra-1413/ComfyUI/comfy_api/internal/__init__.py\", line 149, in wrapped_func\\n    return method(locked_class, **inputs)\\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\\n', '  File \"/Users/runner/work/comfy-ci/comfy-ci/test_workspaces/CADabra-1413/venv/lib/python3.11/site-packages/comfy_env/isolation/metadata.py\", line 710, in proxy\\n    result = worker.call_method(\\n             ^^^^^^^^^^^^^^^^^^^\\n', '  File \"/Users/runner/work/comfy-ci/comfy-ci/test_workspaces/CADabra-1413/venv/lib/python3.11/site-packages/comfy_env/isolation/workers/subprocess.py\", line 674, in call_method\\n    raise WorkerError(\\n'], 'current_inputs': {'check_watertightness': [True], 'check_degeneracy': [True], 'check_boundaries': [True], 'area_tolerance': [1e-06], 'cad_model': [\"{'brep_path': '/Users/runner/work/comfy-ci/comfy-ci/test_workspaces/CADabra-1413/ComfyUI/input/cad/.brep_cache/efa5b7edaef05c9ea946cc6bf553de72.brep', 'file_path': '/Users/runner/work/comfy-ci/comfy-ci/test_workspaces/CADabra-1413/ComfyUI/input/cad/bellow_pipe.igs', 'format': '.igs', 'metadata': {'resolution': 0.01, 'unit_flag': 2, 'units': 'millimeters', 'author': 'ASUS', 'filename': 'bellow pipe', 'company': '', 'iges_version': 11, 'drafting_standard': 0}}\"]}, 'current_outputs': ['2', '4', '1', '5'], 'timestamp': 1785507656845}\n\nDetails:\nWorkflow: /private/var/folders/df/djsxfhc17x95674wsm_g8s980000gn/T/comfy-test-run-wnlva0kr/ComfyUI-CADabra/workflows/cad_quality_metrics.json\nNode error: CAD_Quality_Metrics",
+      "hardware": {
+        "os": "macOS-26.5.2-arm64-arm-64bit",
+        "cpu": "arm"
+      },
+      "resources": {
+        "ram": {
+          "peak": 1.73,
+          "avg": 1.52
+        },
+        "total_ram_gb": 7.0,
+        "samples": 32
+      }
+    },
+    {
+      "name": "coordtransform",
+      "status": "pass",
+      "duration_seconds": 12.58,
+      "error": null,
+      "hardware": {
+        "os": "macOS-26.5.2-arm64-arm-64bit",
+        "cpu": "arm"
+      },
+      "resources": {
+        "ram": {
+          "peak": 1.72,
+          "avg": 1.69
+        },
+        "total_ram_gb": 7.0,
+        "samples": 12
+      }
+    },
+    {
+      "name": "edge_analysis",
+      "status": "pass",
+      "duration_seconds": 13.89,
+      "error": null,
+      "hardware": {
+        "os": "macOS-26.5.2-arm64-arm-64bit",
+        "cpu": "arm"
+      },
+      "resources": {
+        "ram": {
+          "peak": 1.74,
+          "avg": 1.71
+        },
+        "total_ram_gb": 7.0,
+        "samples": 13
+      }
+    },
+    {
+      "name": "extract_largest_component",
+      "status": "pass",
+      "duration_seconds": 27.45,
+      "error": null,
+      "hardware": {
+        "os": "macOS-26.5.2-arm64-arm-64bit",
+        "cpu": "arm"
+      },
+      "resources": {
+        "ram": {
+          "peak": 1.68,
+          "avg": 1.47
+        },
+        "total_ram_gb": 7.0,
+        "samples": 25
+      }
+    },
+    {
+      "name": "hierarchy_tree",
+      "status": "pass",
+      "duration_seconds": 12.91,
+      "error": null,
+      "hardware": {
+        "os": "macOS-26.5.2-arm64-arm-64bit",
+        "cpu": "arm"
+      },
+      "resources": {
+        "ram": {
+          "peak": 1.65,
+          "avg": 1.62
+        },
+        "total_ram_gb": 7.0,
+        "samples": 12
+      }
+    },
+    {
+      "name": "load_cad_path",
+      "status": "pass",
+      "duration_seconds": 10.81,
+      "error": null,
+      "hardware": {
+        "os": "macOS-26.5.2-arm64-arm-64bit",
+        "cpu": "arm"
+      },
+      "resources": {
+        "ram": {
+          "peak": 1.65,
+          "avg": 1.65
+        },
+        "total_ram_gb": 7.0,
+        "samples": 10
+      }
+    },
+    {
+      "name": "load_preview_cad_batch",
+      "status": "pass",
+      "duration_seconds": 13.13,
+      "error": null,
+      "hardware": {
+        "os": "macOS-26.5.2-arm64-arm-64bit",
+        "cpu": "arm"
+      },
+      "resources": {
+        "ram": {
+          "peak": 1.64,
+          "avg": 1.59
+        },
+        "total_ram_gb": 7.0,
+        "samples": 13
+      }
+    },
+    {
+      "name": "mesh_CAD",
+      "status": "fail",
+      "duration_seconds": 26.35,
+      "error": "Workflow execution failed: {'prompt_id': '8c572fda-8a13-477e-a3d1-06a4d083c354', 'node_id': '20', 'node_type': 'CAD_Mesh', 'executed': ['13', '1'], 'exception_message': \"ComfyUI-CADabra: Socket closed but worker process still running.\\n  exit code: None\\n  worker log (/var/folders/df/djsxfhc17x95674wsm_g8s980000gn/T/comfy_worker_debug.log, last 20 lines):\\n    14:22:57 [log] INFO: [GMSH] >>> _mesh_gmsh called\\n    14:22:57 [log] INFO: [GMSH] size: size_mode='Absolute' target_size=1.0 size_factor=1.0 min_size_factor=1.0 max_size_factor=10.0\\n    14:22:57 [log] INFO: [GMSH] curv: elements_per_2pi=20 extend_from_boundary=True max_edge_length=0.0 min_edge_length=0.0\\n    14:22:57 [log] INFO: [GMSH] algo: output_dim='2D Surface' algorithm_2d='Delaunay' algorithm_3d='Delaunay' element_order='1'\\n    14:22:57 [log] INFO: [GMSH] post: smoothing_steps=0 optimize=False optimization_passes=1 recombine=False subdivision='None' extract_face_ids=True\\n    14:22:59 [log] INFO:  Model diagonal: 213.47\\n    14:22:59 [log] INFO:  Absolute sizing: target=1.0\\n    14:22:59 [log] INFO: [GMSH] sizing branch='Absolute' diagonal=213.467529 -> actual_target=1.000000 actual_min=1.000000 actual_max=10.000000\\n    14:22:59 [log] INFO: [GMSH]   effective Mesh.MeshSizeFactor = 1.0\\n    14:22:59 [log] INFO: [GMSH]   effective Mesh.MeshSizeMin = 1.0\\n    14:22:59 [log] INFO: [GMSH]   effective Mesh.MeshSizeMax = 10.0\\n    14:22:59 [log] INFO: [GMSH]   effective Mesh.CharacteristicLengthMin = 1.0\\n    14:22:59 [log] INFO: [GMSH]   effective Mesh.CharacteristicLengthMax = 10.0\\n    14:22:59 [log] INFO: [GMSH]   effective Mesh.MeshSizeFromCurvature = 0.0\\n    14:22:59 [log] INFO: [GMSH]   effective Mesh.MeshSizeFromPoints = 1.0\\n    14:22:59 [log] INFO: [GMSH]   effective Mesh.MeshSizeExtendFromBoundary = 1.0\\n    14:22:59 [log] INFO: [GMSH]   effective Mesh.MinimumCirclePoints = 7.0\\n    14:22:59 [log] INFO: [GMSH] threads = 3 (num_threads input=0, cores=3)\\n    14:22:59 [log] INFO:  Starting mesh generation (log: /Users/runner/work/comfy-ci/comfy-ci/test_workspaces/CADabra-1413/ComfyUI/output/gmsh_mesh_spiral_wind_turbine.log)...\\n    14:22:59 [log] INFO: Starting: GMSH mesh.generate(dim=2, algorithm_2d=Delaunay)\\n\", 'exception_type': 'RuntimeError', 'traceback': ['  File \"/Users/runner/work/comfy-ci/comfy-ci/test_workspaces/CADabra-1413/ComfyUI/execution.py\", line 545, in execute\\n    output_data, output_ui, has_subgraph, has_pending_tasks = await get_output_data(prompt_id, unique_id, obj, input_data_all, execution_block_cb=execution_block_cb, pre_execute_cb=pre_execute_cb, v3_data=v3_data)\\n                                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\\n', '  File \"/Users/runner/work/comfy-ci/comfy-ci/test_workspaces/CADabra-1413/ComfyUI/execution.py\", line 344, in get_output_data\\n    return_values = await _async_map_node_over_list(prompt_id, unique_id, obj, input_data_all, obj.FUNCTION, allow_interrupt=True, execution_block_cb=execution_block_cb, pre_execute_cb=pre_execute_cb, v3_data=v3_data)\\n                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\\n', '  File \"/Users/runner/work/comfy-ci/comfy-ci/test_workspaces/CADabra-1413/ComfyUI/execution.py\", line 318, in _async_map_node_over_list\\n    await process_inputs(input_dict, i)\\n', '  File \"/Users/runner/work/comfy-ci/comfy-ci/test_workspaces/CADabra-1413/ComfyUI/execution.py\", line 306, in process_inputs\\n    result = f(**inputs)\\n             ^^^^^^^^^^^\\n', '  File \"/Users/runner/work/comfy-ci/comfy-ci/test_workspaces/CADabra-1413/ComfyUI/comfy_api/internal/__init__.py\", line 149, in wrapped_func\\n    return method(locked_class, **inputs)\\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\\n', '  File \"/Users/runner/work/comfy-ci/comfy-ci/test_workspaces/CADabra-1413/venv/lib/python3.11/site-packages/comfy_env/isolation/metadata.py\", line 710, in proxy\\n    result = worker.call_method(\\n             ^^^^^^^^^^^^^^^^^^^\\n', '  File \"/Users/runner/work/comfy-ci/comfy-ci/test_workspaces/CADabra-1413/venv/lib/python3.11/site-packages/comfy_env/isolation/workers/subprocess.py\", line 669, in call_method\\n    response = self._send_request(request, timeout)\\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\\n', '  File \"/Users/runner/work/comfy-ci/comfy-ci/test_workspaces/CADabra-1413/venv/lib/python3.11/site-packages/comfy_env/isolation/workers/subprocess.py\", line 589, in _send_request\\n    raise RuntimeError(\\n'], 'current_inputs': {'backend': ['GMSH'], 'backend.output_dim': ['2D Surface'], 'backend.algorithm_2d': ['Delaunay'], 'backend.size_mode': ['Absolute'], 'backend.size_mode.target_size': [1], 'backend.size_mode.size_factor': [1], 'backend.size_mode.min_size_factor': [1], 'backend.size_mode.max_size_factor': [10], 'backend.element_order': ['1'], 'backend.smoothing_steps': [0], 'backend.optimize': [False], 'backend.optimization_passes': [1], 'backend.recombine_to_quads': [False], 'backend.subdivision': ['None'], 'backend.num_threads': [0], 'backend.gmsh_options': ['{}'], 'extract_face_ids': [True], 'cad_model': [\"{'brep_path': '/Users/runner/work/comfy-ci/comfy-ci/test_workspaces/CADabra-1413/ComfyUI/input/cad/.brep_cache/7451bdaddcf4e16e40f1b9252eb9f841.brep', 'file_path': '/Users/runner/work/comfy-ci/comfy-ci/test_workspaces/CADabra-1413/ComfyUI/input/cad/spiral_wind_turbine.stp', 'format': '.stp'}\"]}, 'current_outputs': ['19', '20', '13', '1', '18'], 'timestamp': 1785507779384}\n\nDetails:\nWorkflow: /private/var/folders/df/djsxfhc17x95674wsm_g8s980000gn/T/comfy-test-run-wnlva0kr/ComfyUI-CADabra/workflows/mesh_CAD.json\nNode error: CAD_Mesh",
+      "hardware": {
+        "os": "macOS-26.5.2-arm64-arm-64bit",
+        "cpu": "arm"
+      },
+      "resources": {
+        "ram": {
+          "peak": 1.58,
+          "avg": 1.37
+        },
+        "total_ram_gb": 7.0,
+        "samples": 25
+      }
+    },
+    {
+      "name": "mesh_face_seg",
+      "status": "pass",
+      "duration_seconds": 52.62,
+      "error": null,
+      "hardware": {
+        "os": "macOS-26.5.2-arm64-arm-64bit",
+        "cpu": "arm"
+      },
+      "resources": {
+        "ram": {
+          "peak": 1.42,
+          "avg": 0.66
+        },
+        "total_ram_gb": 7.0,
+        "samples": 48
+      }
+    },
+    {
+      "name": "overlapping_faces",
+      "status": "pass",
+      "duration_seconds": 47.68,
+      "error": null,
+      "hardware": {
+        "os": "macOS-26.5.2-arm64-arm-64bit",
+        "cpu": "arm"
+      },
+      "resources": {
+        "ram": {
+          "peak": 1.57,
+          "avg": 1.49
+        },
+        "total_ram_gb": 7.0,
+        "samples": 45
+      }
+    },
+    {
+      "name": "raytracing",
+      "status": "pass",
+      "duration_seconds": 19.47,
+      "error": null,
+      "hardware": {
+        "os": "macOS-26.5.2-arm64-arm-64bit",
+        "cpu": "arm"
+      },
+      "resources": {
+        "ram": {
+          "peak": 1.82,
+          "avg": 1.63
+        },
+        "total_ram_gb": 7.0,
+        "samples": 18
+      }
+    },
+    {
+      "name": "raytracing_roi",
+      "status": "pass",
+      "duration_seconds": 11.73,
+      "error": null,
+      "hardware": {
+        "os": "macOS-26.5.2-arm64-arm-64bit",
+        "cpu": "arm"
+      },
+      "resources": {
+        "ram": {
+          "peak": 1.83,
+          "avg": 1.81
+        },
+        "total_ram_gb": 7.0,
+        "samples": 11
+      }
+    },
+    {
+      "name": "spline_to_circle",
+      "status": "pass",
+      "duration_seconds": 10.13,
+      "error": null,
+      "hardware": {
+        "os": "macOS-26.5.2-arm64-arm-64bit",
+        "cpu": "arm"
+      },
+      "resources": {
+        "ram": {
+          "peak": 1.77,
+          "avg": 1.77
+        },
+        "total_ram_gb": 7.0,
+        "samples": 10
+      }
+    },
+    {
+      "name": "spline_viewer",
+      "status": "pass",
+      "duration_seconds": 28.21,
+      "error": null,
+      "hardware": {
+        "os": "macOS-26.5.2-arm64-arm-64bit",
+        "cpu": "arm"
+      },
+      "resources": {
+        "ram": {
+          "peak": 1.77,
+          "avg": 1.38
+        },
+        "total_ram_gb": 7.0,
+        "samples": 26
+      }
+    },
+    {
+      "name": "view_cads",
+      "status": "pass",
+      "duration_seconds": 18.55,
+      "error": null,
+      "hardware": {
+        "os": "macOS-26.5.2-arm64-arm-64bit",
+        "cpu": "arm"
+      },
+      "resources": {
+        "ram": {
+          "peak": 1.63,
+          "avg": 1.54
+        },
+        "total_ram_gb": 7.0,
+        "samples": 17
+      }
+    }
+  ]
+}

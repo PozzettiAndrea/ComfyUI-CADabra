@@ -1,0 +1,30 @@
+Loading workflow from /Users/runner/work/comfy-gpu-ci/comfy-gpu-ci/ComfyUI/custom_nodes/ComfyUI-CADabra/workflows/cad_quality_metrics.json...
+Converting litegraph workflow to prompt format...
+Queuing workflow: /Users/runner/work/comfy-gpu-ci/comfy-gpu-ci/ComfyUI/custom_nodes/ComfyUI-CADabra/workflows/cad_quality_metrics.json...
+[DEBUG] Connecting WebSocket to ws://127.0.0.1:8188/ws?clientId=5f56a1f6-b439-464b-a7df-9ece38e2d23d
+[DEBUG] WebSocket connected successfully
+Queued with ID: 215bb4c0-42f4-42e6-a441-d5fdad57659a
+[DEBUG] WS msg: type=status prompt_id=None (waiting for 215bb4c0-42f4-42e6-a441-d5fdad57659a)
+[DEBUG] WS msg: type=status prompt_id=None (waiting for 215bb4c0-42f4-42e6-a441-d5fdad57659a)
+[DEBUG] WS msg: type=status prompt_id=None (waiting for 215bb4c0-42f4-42e6-a441-d5fdad57659a)
+[DEBUG] WS msg: type=progress_state prompt_id=215bb4c0-42f4-42e6-a441-d5fdad57659a (waiting for 215bb4c0-42f4-42e6-a441-d5fdad57659a)
+[DEBUG] Unhandled msg_type: progress_state
+[DEBUG] WS msg: type=progress_state prompt_id=215bb4c0-42f4-42e6-a441-d5fdad57659a (waiting for 215bb4c0-42f4-42e6-a441-d5fdad57659a)
+[DEBUG] Unhandled msg_type: progress_state
+[DEBUG] WS msg: type=progress_state prompt_id=215bb4c0-42f4-42e6-a441-d5fdad57659a (waiting for 215bb4c0-42f4-42e6-a441-d5fdad57659a)
+[DEBUG] Unhandled msg_type: progress_state
+[DEBUG] WS recv timeout at 0.0s, checking history fallback...
+[DEBUG] WS msg: type=progress_state prompt_id=215bb4c0-42f4-42e6-a441-d5fdad57659a (waiting for 215bb4c0-42f4-42e6-a441-d5fdad57659a)
+[DEBUG] Unhandled msg_type: progress_state
+[DEBUG] WS msg: type=progress_state prompt_id=215bb4c0-42f4-42e6-a441-d5fdad57659a (waiting for 215bb4c0-42f4-42e6-a441-d5fdad57659a)
+[DEBUG] Unhandled msg_type: progress_state
+[DEBUG] WS msg: type=progress_state prompt_id=215bb4c0-42f4-42e6-a441-d5fdad57659a (waiting for 215bb4c0-42f4-42e6-a441-d5fdad57659a)
+[DEBUG] Unhandled msg_type: progress_state
+[DEBUG] WS msg: type=progress_state prompt_id=215bb4c0-42f4-42e6-a441-d5fdad57659a (waiting for 215bb4c0-42f4-42e6-a441-d5fdad57659a)
+[DEBUG] Unhandled msg_type: progress_state
+[DEBUG] WS msg: type=progress_state prompt_id=215bb4c0-42f4-42e6-a441-d5fdad57659a (waiting for 215bb4c0-42f4-42e6-a441-d5fdad57659a)
+[DEBUG] Unhandled msg_type: progress_state
+[DEBUG] WS msg: type=status prompt_id=None (waiting for 215bb4c0-42f4-42e6-a441-d5fdad57659a)
+Execution complete (queue empty)
+Workflow completed successfully!
+    Saved screenshot: cad_quality_metrics_executed.png

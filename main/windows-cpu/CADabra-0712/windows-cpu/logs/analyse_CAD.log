@@ -1,0 +1,30 @@
+Capturing execution frames: analyse_CAD.json
+  Frame 1 saved (frame_000.jpg, t=0.0s)
+  Validating workflow...
+  Queuing workflow for execution...
+  Frame 2 saved (frame_001.jpg, t=2.5s)
+  [capture-periodic] freeze=9ms shot=157ms unfreeze=5ms saved=True
+  Frame 3 saved (frame_002.jpg, t=4.8s)
+  [capture-periodic] freeze=8ms shot=145ms unfreeze=8ms saved=True
+  [capture-loop] iter=50 t=6.5s state={'complete': False, 'error': None, 'executedCount': 0, 'wsState': 1} eval_ms=7 ram=5.9/16.0GB (37%) swap=0.3/2.9GB (10%) cpu=61% browser_rss=0.74GB
+  [capture-loop] iter=100 t=13.1s state={'complete': False, 'error': None, 'executedCount': 0, 'wsState': 1} eval_ms=7 ram=5.9/16.0GB (37%) swap=0.3/2.9GB (10%) cpu=89% browser_rss=0.74GB
+  [capture-loop] iter=150 t=19.3s state={'complete': False, 'error': None, 'executedCount': 0, 'wsState': 1} eval_ms=5 ram=6.1/16.0GB (38%) swap=0.3/2.9GB (10%) cpu=88% browser_rss=0.74GB
+  Frame 4 saved (frame_003.jpg, t=22.5s)
+  [capture-periodic] freeze=10ms shot=186ms unfreeze=14ms saved=True
+  [capture-loop] iter=200 t=25.6s state={'complete': False, 'error': None, 'executedCount': 0, 'wsState': 1} eval_ms=4 ram=6.2/16.0GB (39%) swap=0.3/2.9GB (10%) cpu=71% browser_rss=0.68GB
+  Node executed (1 total), capturing...
+  Frame 5 saved (frame_004.jpg, t=29.3s)
+  [capture-node] freeze=13ms shot=1141ms unfreeze=8ms saved=True
+  Node executed (5 total), capturing...
+  Frame 6 saved (frame_005.jpg, t=31.3s)
+  [capture-node] freeze=277ms shot=572ms unfreeze=0ms saved=True
+  Execution complete (t=31.3s)
+  Captured 6 unique frames over 32.19s
+  [debug] iframes: 3
+  [debug]   iframe[0]: src=http://127.0.0.1:8188/extensions/ComfyUI-CADabra/viewer_cad_edge_detail.html?v=1, canvas=244x381, rafFrozen=True
+  [debug]   iframe[1]: src=http://127.0.0.1:8188/extensions/ComfyUI-CADabra/viewer_cad_edge.html?v=17782243, canvas=244x260, rafFrozen=True
+  [debug]   iframe[2]: src=http://127.0.0.1:8188/extensions/ComfyUI-CADabra/viewer_cad_analysis.html?v=1778, canvas=480x279, rafFrozen=True
+  [timing] trigger_3d_previews: 0.0s
+  Saved high-quality screenshot: analyse_CAD_executed.png
+  [timing] final_screenshot: 0.2s
+    Captured 7 video frames

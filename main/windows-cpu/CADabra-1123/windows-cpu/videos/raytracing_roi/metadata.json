@@ -1,0 +1,40 @@
+{
+  "frames": [
+    {
+      "file": "frame_000.jpg",
+      "time": 0.0,
+      "log": "Capturing execution frames: raytracing_roi.json"
+    },
+    {
+      "file": "frame_001.jpg",
+      "time": 2.35,
+      "log": "Capturing execution frames: raytracing_roi.json\n  Frame 1 saved (frame_000.jpg, t=0.0s)\n  Validating workflow...\n  Queuing workflow for execution..."
+    },
+    {
+      "file": "frame_002.jpg",
+      "time": 4.5,
+      "log": "Capturing execution frames: raytracing_roi.json\n  Frame 1 saved (frame_000.jpg, t=0.0s)\n  Validating workflow...\n  Queuing workflow for execution...\n  Frame 2 saved (frame_001.jpg, t=2.4s)\n  [capture-periodic] freeze=6ms shot=117ms unfreeze=4ms saved=True"
+    },
+    {
+      "file": "frame_003.jpg",
+      "time": 11.63,
+      "log": "Capturing execution frames: raytracing_roi.json\n  Frame 1 saved (frame_000.jpg, t=0.0s)\n  Validating workflow...\n  Queuing workflow for execution...\n  Frame 2 saved (frame_001.jpg, t=2.4s)\n  [capture-periodic] freeze=6ms shot=117ms unfreeze=4ms saved=True\n  Frame 3 saved (frame_002.jpg, t=4.5s)\n  [capture-periodic] freeze=5ms shot=136ms unfreeze=9ms saved=True\n  [capture-loop] iter=50 t=6.5s state={'complete': False, 'error': None, 'executedCount': 0, 'wsState': 1} eval_ms=16 ram=6.1/16.0GB (38%) swap=0.4/2.9GB (15%) cpu=66% browser_rss=0.74GB"
+    },
+    {
+      "file": "frame_004.jpg",
+      "time": 12.27,
+      "log": "Capturing execution frames: raytracing_roi.json\n  Frame 1 saved (frame_000.jpg, t=0.0s)\n  Validating workflow...\n  Queuing workflow for execution...\n  Frame 2 saved (frame_001.jpg, t=2.4s)\n  [capture-periodic] freeze=6ms shot=117ms unfreeze=4ms saved=True\n  Frame 3 saved (frame_002.jpg, t=4.5s)\n  [capture-periodic] freeze=5ms shot=136ms unfreeze=9ms saved=True\n  [capture-loop] iter=50 t=6.5s state={'complete': False, 'error': None, 'executedCount': 0, 'wsState': 1} eval_ms=16 ram=6.1/16.0GB (38%) swap=0.4/2.9GB (15%) cpu=66% browser_rss=0.74GB\n  Node executed (1 total), capturing...\n  Frame 4 saved (frame_003.jpg, t=11.6s)\n  [capture-node] freeze=28ms shot=213ms unfreeze=13ms saved=True"
+    },
+    {
+      "file": "frame_005.jpg",
+      "time": 16.7,
+      "log": "Capturing execution frames: raytracing_roi.json\n  Frame 1 saved (frame_000.jpg, t=0.0s)\n  Validating workflow...\n  Queuing workflow for execution...\n  Frame 2 saved (frame_001.jpg, t=2.4s)\n  [capture-periodic] freeze=6ms shot=117ms unfreeze=4ms saved=True\n  Frame 3 saved (frame_002.jpg, t=4.5s)\n  [capture-periodic] freeze=5ms shot=136ms unfreeze=9ms saved=True\n  [capture-loop] iter=50 t=6.5s state={'complete': False, 'error': None, 'executedCount': 0, 'wsState': 1} eval_ms=16 ram=6.1/16.0GB (38%) swap=0.4/2.9GB (15%) cpu=66% browser_rss=0.74GB\n  Node executed (1 total), capturing...\n  Frame 4 saved (frame_003.jpg, t=11.6s)\n  [capture-node] freeze=28ms shot=213ms unfreeze=13ms saved=True\n  Node executed (2 total), capturing...\n  Frame 5 saved (frame_004.jpg, t=12.3s)\n  [capture-node] freeze=30ms shot=188ms unfreeze=4ms saved=True\n  [capture-loop] iter=100 t=14.4s state={'complete': False, 'error': None, 'executedCount': 2, 'wsState': 1} eval_ms=46 ram=6.4/16.0GB (40%) swap=0.4/2.9GB (15%) cpu=86% browser_rss=0.76GB"
+    },
+    {
+      "file": "frame_006.jpg",
+      "time": 19.17643141746521,
+      "log": "Final screenshot"
+    }
+  ],
+  "total_time": 16.94
+}

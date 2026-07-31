@@ -1,0 +1,40 @@
+{
+  "frames": [
+    {
+      "file": "frame_000.jpg",
+      "time": 0.0,
+      "log": "Capturing execution frames: raytracing.json"
+    },
+    {
+      "file": "frame_001.jpg",
+      "time": 2.28,
+      "log": "Capturing execution frames: raytracing.json\n  Frame 1 saved (frame_000.jpg, t=0.0s)\n  Validating workflow...\n  Queuing workflow for execution..."
+    },
+    {
+      "file": "frame_002.jpg",
+      "time": 4.54,
+      "log": "Capturing execution frames: raytracing.json\n  Frame 1 saved (frame_000.jpg, t=0.0s)\n  Validating workflow...\n  Queuing workflow for execution...\n  Frame 2 saved (frame_001.jpg, t=2.3s)\n  [capture-periodic] freeze=5ms shot=139ms unfreeze=8ms saved=True"
+    },
+    {
+      "file": "frame_003.jpg",
+      "time": 11.11,
+      "log": "Capturing execution frames: raytracing.json\n  Frame 1 saved (frame_000.jpg, t=0.0s)\n  Validating workflow...\n  Queuing workflow for execution...\n  Frame 2 saved (frame_001.jpg, t=2.3s)\n  [capture-periodic] freeze=5ms shot=139ms unfreeze=8ms saved=True\n  Frame 3 saved (frame_002.jpg, t=4.5s)\n  [capture-periodic] freeze=4ms shot=116ms unfreeze=5ms saved=True\n  [capture-loop] iter=50 t=6.1s state={'complete': False, 'error': None, 'executedCount': 0, 'wsState': 1} eval_ms=4 ram=6.7/16.0GB (42%) swap=0.4/2.9GB (15%) cpu=62% browser_rss=0.81GB"
+    },
+    {
+      "file": "frame_004.jpg",
+      "time": 12.05,
+      "log": "Capturing execution frames: raytracing.json\n  Frame 1 saved (frame_000.jpg, t=0.0s)\n  Validating workflow...\n  Queuing workflow for execution...\n  Frame 2 saved (frame_001.jpg, t=2.3s)\n  [capture-periodic] freeze=5ms shot=139ms unfreeze=8ms saved=True\n  Frame 3 saved (frame_002.jpg, t=4.5s)\n  [capture-periodic] freeze=4ms shot=116ms unfreeze=5ms saved=True\n  [capture-loop] iter=50 t=6.1s state={'complete': False, 'error': None, 'executedCount': 0, 'wsState': 1} eval_ms=4 ram=6.7/16.0GB (42%) swap=0.4/2.9GB (15%) cpu=62% browser_rss=0.81GB\n  Frame 4 saved (frame_003.jpg, t=11.1s)\n  [capture-periodic] freeze=4ms shot=111ms unfreeze=4ms saved=True"
+    },
+    {
+      "file": "frame_005.jpg",
+      "time": 65.57,
+      "log": "Capturing execution frames: raytracing.json\n  Frame 1 saved (frame_000.jpg, t=0.0s)\n  Validating workflow...\n  Queuing workflow for execution...\n  Frame 2 saved (frame_001.jpg, t=2.3s)\n  [capture-periodic] freeze=5ms shot=139ms unfreeze=8ms saved=True\n  Frame 3 saved (frame_002.jpg, t=4.5s)\n  [capture-periodic] freeze=4ms shot=116ms unfreeze=5ms saved=True\n  [capture-loop] iter=50 t=6.1s state={'complete': False, 'error': None, 'executedCount': 0, 'wsState': 1} eval_ms=4 ram=6.7/16.0GB (42%) swap=0.4/2.9GB (15%) cpu=62% browser_rss=0.81GB\n  Frame 4 saved (frame_003.jpg, t=11.1s)\n  [capture-periodic] freeze=4ms shot=111ms unfreeze=4ms saved=True\n  Node executed (1 total), capturing...\n  Frame 5 saved (frame_004.jpg, t=12.1s)\n  [capture-node] freeze=247ms shot=183ms unfreeze=4ms saved=True\n  [capture-loop] iter=100 t=14.1s state={'complete': False, 'error': None, 'executedCount': 1, 'wsState': 1} eval_ms=49 ram=6.7/16.0GB (42%) swap=0.6/2.9GB (20%) cpu=73% browser_rss=0.79GB\n  [capture-loop] iter=150 t=29.4s state={'complete': False, 'error': None, 'executedCount': 1, 'wsState': 1} eval_ms=58 ram=6.6/16.0GB (41%) swap=0.6/2.9GB (20%) cpu=98% browser_rss=0.69GB\n  [capture-loop] iter=200 t=40.4s state={'complete': False, 'error': None, 'executedCount': 1, 'wsState': 1} eval_ms=57 ram=6.6/16.0GB (41%) swap=0.6/2.9GB (20%) cpu=96% browser_rss=0.69GB\n  [capture-loop] iter=250 t=52.2s state={'complete': False, 'error': None, 'executedCount': 1, 'wsState': 1} eval_ms=27 ram=6.5/16.0GB (41%) swap=0.6/2.9GB (20%) cpu=97% browser_rss=0.69GB\n  [capture-loop] iter=300 t=64.7s state={'complete': False, 'error': None, 'executedCount': 1, 'wsState': 1} eval_ms=79 ram=6.3/16.0GB (40%) swap=0.7/2.9GB (26%) cpu=97% browser_rss=0.69GB"
+    },
+    {
+      "file": "frame_006.jpg",
+      "time": 68.0519917011261,
+      "log": "Final screenshot"
+    }
+  ],
+  "total_time": 65.83
+}

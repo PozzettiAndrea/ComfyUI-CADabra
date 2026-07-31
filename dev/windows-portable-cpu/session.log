@@ -1,0 +1,560 @@
+[00:00] Crash dump logging enabled: D:\a\ComfyUI-CADabra\ComfyUI-CADabra\comfy-test-logs\CADabra-1541\windows-portable-cpu\crash_dump.log
+[00:00] 
+[00:00] [1/6] SYNTAX
+[00:00] ----------------------------------------
+[00:00] 
+[DEBUG] server=None, api=None
+[00:00] Found pyproject.toml (modern format)
+[00:00] Found requirements.txt (legacy format)
+[00:00] Unicode check: OK (all characters cp1252-safe)
+[00:00] Forbidden patterns check: OK
+[00:00] [SYNTAX] PASSED
+[00:00] 
+[00:00] [2/6] COVERAGE
+[00:00] ----------------------------------------
+[00:00] 
+Analyzing workflow coverage...
+[00:01] Coverage: 40/40 registered nodes used across 21 workflow(s) (100%)
+[00:01] Coverage check: OK (all registered nodes used by at least one workflow)
+[00:01] [COVERAGE] PASSED
+[00:01] 
+[00:01] [3/6] INSTALL
+[00:01] ----------------------------------------
+[00:01] 
+[DEBUG] server=None, api=None
+[00:01] Attach mode: using prebuilt env at D:\a\ComfyUI-CADabra\ComfyUI-CADabra\ComfyUI_windows_portable\ComfyUI (server: http://127.0.0.1:8188)
+[00:01] ComfyUI under test: 0.29.2
+[00:01] [INSTALL] PASSED
+[00:01] 
+[00:01] [4/6] REGISTRATION
+[00:01] ----------------------------------------
+[00:01] 
+[DEBUG] server=None, api=None
+[00:01] 
+Attaching to ComfyUI server at http://127.0.0.1:8188 (log: D:\a\ComfyUI-CADabra\ComfyUI-CADabra\comfy-test-logs\server.log)...
+[00:01] Checking for import errors in server logs...
+[00:01] No import errors detected
+[00:01] Found 1003 registered nodes
+[00:01] ComfyUI version (server-reported): 0.29.2
+[00:01] [REGISTRATION] PASSED
+[00:01] 
+[00:01] [5/6] INSTANTIATION
+[00:01] ----------------------------------------
+[00:01] 
+[DEBUG] server=<comfy_test.comfyui.server.AttachedServer object at 0x000001FE9FCD7380>, api=<comfy_test.comfyui.api.ComfyUIAPI object at 0x000001FE9FCD74D0>
+[00:01] Testing node constructors...
+[00:06] All 40 node(s) instantiated successfully!
+[00:06] [INSTANTIATION] PASSED
+[00:06] 
+[00:06] [6/6] EXECUTION
+[00:06] ----------------------------------------
+[00:06] 
+[DEBUG] server=<comfy_test.comfyui.server.AttachedServer object at 0x000001FE9FCD7380>, api=<comfy_test.comfyui.api.ComfyUIAPI object at 0x000001FE9FCD74D0>
+[00:06] CPU runner - will execute 21 workflow(s)
+[00:06] Running 21 workflow(s) (all with videos)...
+[00:06] Starting headless browser...
+[00:07]   Downloading Mesa llvmpipe for Windows...
+[00:13]   Copied opengl32.dll to Chromium dir
+[00:13]   Copied libgallium_wgl.dll to Chromium dir
+[00:13]   Using Mesa llvmpipe (desktop GL) -- multithreaded CPU rendering
+[00:14] Capturing execution frames: analyse_CAD.json
+[00:25]   Frame 1 saved (frame_000.jpg, t=0.0s)
+[00:25]   Validating workflow...
+[00:25]   Queuing workflow for execution...
+[00:28]   Frame 2 saved (frame_001.jpg, t=2.5s)
+[00:28]   [capture-periodic] freeze=5ms shot=156ms unfreeze=7ms saved=True
+[00:30]   Frame 3 saved (frame_002.jpg, t=4.8s)
+[00:30]   [capture-periodic] freeze=5ms shot=165ms unfreeze=6ms saved=True
+[00:32]   [capture-loop] iter=50 t=6.9s state={'complete': False, 'error': None, 'executedCount': 0, 'wsState': 1} eval_ms=45 ram=5.7/16.0GB (36%) swap=0.3/2.9GB (12%) cpu=58% browser_rss=0.74GB
+[00:39]   [capture-loop] iter=100 t=13.6s state={'complete': False, 'error': None, 'executedCount': 0, 'wsState': 1} eval_ms=5 ram=5.9/16.0GB (37%) swap=0.3/2.9GB (12%) cpu=68% browser_rss=0.74GB
+[00:43]   Node executed (1 total), capturing...
+[00:43]   Frame 4 saved (frame_003.jpg, t=17.8s)
+[00:43]   [capture-node] freeze=45ms shot=257ms unfreeze=4ms saved=True
+[00:43]   Node executed (3 total), capturing...
+[00:44]   Frame 5 saved (frame_004.jpg, t=18.6s)
+[00:44]   [capture-node] freeze=32ms shot=160ms unfreeze=6ms saved=True
+[00:46]   [capture-loop] iter=150 t=21.4s state={'complete': False, 'error': None, 'executedCount': 3, 'wsState': 1} eval_ms=75 ram=6.0/16.0GB (37%) swap=0.3/2.9GB (12%) cpu=67% browser_rss=0.79GB
+[00:57]   [capture-loop] iter=200 t=32.1s state={'complete': False, 'error': None, 'executedCount': 3, 'wsState': 1} eval_ms=36 ram=5.9/16.0GB (37%) swap=0.3/2.9GB (12%) cpu=98% browser_rss=0.72GB
+[01:06]   [capture-loop] iter=250 t=40.6s state={'complete': False, 'error': None, 'executedCount': 3, 'wsState': 1} eval_ms=29 ram=6.0/16.0GB (38%) swap=0.3/2.9GB (12%) cpu=94% browser_rss=0.72GB
+[01:14]   [capture-loop] iter=300 t=48.8s state={'complete': False, 'error': None, 'executedCount': 3, 'wsState': 1} eval_ms=34 ram=6.0/16.0GB (38%) swap=0.3/2.9GB (12%) cpu=93% browser_rss=0.72GB
+[01:20]   Node executed (4 total), capturing...
+[01:20]   Frame 6 saved (frame_005.jpg, t=55.1s)
+[01:20]   [capture-node] freeze=67ms shot=130ms unfreeze=4ms saved=True
+[01:20]   Node executed (5 total), capturing...
+[01:21]   Frame 7 saved (frame_006.jpg, t=55.7s)
+[01:21]   [capture-node] freeze=33ms shot=167ms unfreeze=0ms saved=True
+[01:21]   Execution complete (t=55.7s)
+[01:21]   Captured 7 unique frames over 55.93s
+[01:21]   [debug] iframes: 3
+[01:21]   [debug]   iframe[0]: src=http://127.0.0.1:8188/extensions/ComfyUI-CADabra/viewer_cad_edge_detail.html?v=1, canvas=246x402, rafFrozen=True
+[01:21]   [debug]   iframe[1]: src=http://127.0.0.1:8188/extensions/ComfyUI-CADabra/viewer_cad_edge.html?v=17855125, canvas=246x289, rafFrozen=True
+[01:21]   [debug]   iframe[2]: src=http://127.0.0.1:8188/extensions/ComfyUI-CADabra/viewer_cad_analysis.html?v=1785, canvas=482x300, rafFrozen=True
+[01:21]   [timing] trigger_3d_previews: 0.0s
+[01:23]   Saved high-quality screenshot: analyse_CAD_executed.png
+[01:23]   [timing] final_screenshot: 0.3s
+[01:23] Capturing execution frames: cad_curvature.json
+[01:31]   Frame 1 saved (frame_000.jpg, t=0.0s)
+[01:31]   Validating workflow...
+[01:31]   Queuing workflow for execution...
+[01:33]   Frame 2 saved (frame_001.jpg, t=2.3s)
+[01:33]   [capture-periodic] freeze=4ms shot=97ms unfreeze=5ms saved=True
+[01:35]   Frame 3 saved (frame_002.jpg, t=4.5s)
+[01:35]   [capture-periodic] freeze=5ms shot=112ms unfreeze=6ms saved=True
+[01:36]   [capture-loop] iter=50 t=5.9s state={'complete': False, 'error': None, 'executedCount': 0, 'wsState': 1} eval_ms=4 ram=5.9/16.0GB (37%) swap=0.3/2.9GB (12%) cpu=60% browser_rss=0.76GB
+[01:38]   Frame 4 saved (frame_003.jpg, t=6.7s)
+[01:38]   [capture-periodic] freeze=22ms shot=152ms unfreeze=5ms saved=True
+[01:42]   [capture-loop] iter=100 t=11.9s state={'complete': False, 'error': None, 'executedCount': 0, 'wsState': 1} eval_ms=4 ram=5.9/16.0GB (37%) swap=0.3/2.9GB (12%) cpu=53% browser_rss=0.64GB
+[01:46]   Frame 5 saved (frame_004.jpg, t=15.5s)
+[01:46]   [capture-periodic] freeze=4ms shot=110ms unfreeze=6ms saved=True
+[01:48]   [capture-loop] iter=150 t=17.6s state={'complete': False, 'error': None, 'executedCount': 0, 'wsState': 1} eval_ms=7 ram=6.4/16.0GB (40%) swap=0.3/2.9GB (12%) cpu=36% browser_rss=0.64GB
+[01:53]   Node executed (1 total), capturing...
+[01:53]   Frame 6 saved (frame_005.jpg, t=22.6s)
+[01:53]   [capture-node] freeze=5ms shot=120ms unfreeze=0ms saved=True
+[01:53]   Execution complete (t=22.6s)
+[01:53]   Captured 6 unique frames over 22.8s
+[01:53]   [debug] iframes: 1
+[01:53]   [debug]   iframe[0]: src=http://127.0.0.1:8188/extensions/ComfyUI-GeometryPack/viewer_vtk.html?v=17855126, canvas=0x0, rafFrozen=False
+[01:53]   [timing] trigger_3d_previews: 0.0s
+[01:56]   Saved high-quality screenshot: cad_curvature_executed.png
+[01:56]   [timing] final_screenshot: 0.6s
+[01:56] Capturing execution frames: cad_fix_degenerate_faces.json
+[02:03]   Frame 1 saved (frame_000.jpg, t=0.0s)
+[02:03]   Validating workflow...
+[02:03]   Queuing workflow for execution...
+[02:05]   Node executed (2 total), capturing...
+[02:05]   Frame 2 saved (frame_001.jpg, t=2.0s)
+[02:05]   [capture-node] freeze=5ms shot=110ms unfreeze=7ms saved=True
+[02:06]   Node executed (3 total), capturing...
+[02:06]   Frame 3 saved (frame_002.jpg, t=3.0s)
+[02:06]   [capture-node] freeze=39ms shot=127ms unfreeze=5ms saved=True
+[02:06]   Node executed (5 total), capturing...
+[02:07]   Frame 4 saved (frame_003.jpg, t=3.7s)
+[02:07]   [capture-node] freeze=24ms shot=127ms unfreeze=0ms saved=True
+[02:07]   Execution complete (t=3.7s)
+[02:07]   Captured 4 unique frames over 3.85s
+[02:07]   [debug] iframes: 1
+[02:07]   [debug]   iframe[0]: src=http://127.0.0.1:8188/extensions/ComfyUI-CADabra/viewer_cad_analysis.html?v=1785, canvas=244x498, rafFrozen=True
+[02:07]   [timing] trigger_3d_previews: 0.0s
+[02:09]   Saved high-quality screenshot: cad_fix_degenerate_faces_executed.png
+[02:09]   [timing] final_screenshot: 0.2s
+[02:09] Capturing execution frames: cad_heal_advanced.json
+[02:16]   Frame 1 saved (frame_000.jpg, t=0.0s)
+[02:16]   Validating workflow...
+[02:16]   Queuing workflow for execution...
+[02:19]   Frame 2 saved (frame_001.jpg, t=2.2s)
+[02:19]   [capture-periodic] freeze=5ms shot=153ms unfreeze=6ms saved=True
+[02:19]   Node executed (1 total), capturing...
+[02:19]   Frame 3 saved (frame_002.jpg, t=2.8s)
+[02:19]   [capture-node] freeze=6ms shot=124ms unfreeze=6ms saved=True
+[02:21]   Node executed (2 total), capturing...
+[02:21]   Frame 4 saved (frame_003.jpg, t=4.5s)
+[02:21]   [capture-node] freeze=5ms shot=382ms unfreeze=0ms saved=True
+[02:21]   Execution complete (t=4.5s)
+[02:21]   Captured 4 unique frames over 4.93s
+[02:21]   [debug] iframes: 1
+[02:21]   [debug]   iframe[0]: src=http://127.0.0.1:8188/extensions/ComfyUI-CADabra/viewer_cad_analysis.html?v=1785, canvas=379x498, rafFrozen=True
+[02:21]   [timing] trigger_3d_previews: 0.0s
+[02:23]   Saved high-quality screenshot: cad_heal_advanced_executed.png
+[02:23]   [timing] final_screenshot: 0.2s
+[02:24] Capturing execution frames: cad_inspection_healing.json
+[02:30]   Frame 1 saved (frame_000.jpg, t=0.0s)
+[02:30]   Validating workflow...
+[02:31]   Queuing workflow for execution...
+[02:31]   Node executed (1 total), capturing...
+[02:31]   Frame 2 saved (frame_001.jpg, t=0.7s)
+[02:31]   [capture-node] freeze=4ms shot=109ms unfreeze=5ms saved=True
+[02:31]   Node executed (2 total), capturing...
+[02:32]   Frame 3 saved (frame_002.jpg, t=1.3s)
+[02:32]   [capture-node] freeze=31ms shot=116ms unfreeze=4ms saved=True
+[02:33]   Node executed (3 total), capturing...
+[02:34]   Frame 4 saved (frame_003.jpg, t=3.1s)
+[02:34]   [capture-node] freeze=22ms shot=120ms unfreeze=6ms saved=True
+[02:34]   Node executed (4 total), capturing...
+[02:35]   Frame 5 saved (frame_004.jpg, t=4.2s)
+[02:35]   [capture-node] freeze=77ms shot=230ms unfreeze=10ms saved=True
+[02:35]   Execution complete (t=4.8s)
+[02:35]   Captured 5 unique frames over 4.84s
+[02:35]   [debug] iframes: 2
+[02:35]   [debug]   iframe[0]: src=http://127.0.0.1:8188/extensions/ComfyUI-CADabra/viewer_cad_analysis.html?v=1785, canvas=379x498, rafFrozen=False
+[02:35]   [debug]   iframe[1]: src=http://127.0.0.1:8188/extensions/ComfyUI-CADabra/viewer_cad_analysis.html?v=1785, canvas=379x498, rafFrozen=False
+[02:35]   [timing] trigger_3d_previews: 0.0s
+[02:38]   Saved high-quality screenshot: cad_inspection_healing_executed.png
+[02:38]   [timing] final_screenshot: 0.2s
+[02:38] Capturing execution frames: cad_manipulation.json
+[02:44]   Frame 1 saved (frame_000.jpg, t=0.0s)
+[02:44]   Validating workflow...
+[02:44]   Queuing workflow for execution...
+[02:45]   Node executed (1 total), capturing...
+[02:46]   Frame 2 saved (frame_001.jpg, t=1.3s)
+[02:46]   [capture-node] freeze=6ms shot=175ms unfreeze=5ms saved=True
+[02:46]   Node executed (2 total), capturing...
+[02:46]   [capture-node] freeze=28ms shot=154ms unfreeze=6ms saved=False
+[02:49]   Frame 3 saved (frame_002.jpg, t=4.1s)
+[02:49]   [capture-periodic] freeze=52ms shot=187ms unfreeze=6ms saved=True
+[02:54]   [capture-loop] iter=50 t=10.1s state={'complete': False, 'error': None, 'executedCount': 2, 'wsState': 1} eval_ms=5 ram=6.4/16.0GB (40%) swap=0.5/2.9GB (17%) cpu=52% browser_rss=0.80GB
+[02:57]   Node executed (3 total), capturing...
+[02:57]   Frame 4 saved (frame_003.jpg, t=12.6s)
+[02:57]   [capture-node] freeze=28ms shot=157ms unfreeze=7ms saved=True
+[02:57]   Execution complete (t=13.0s)
+[02:57]   Captured 4 unique frames over 13.07s
+[02:57]   [debug] iframes: 2
+[02:57]   [debug]   iframe[0]: src=http://127.0.0.1:8188/extensions/ComfyUI-CADabra/viewer_cad_analysis.html?v=1785, canvas=374x498, rafFrozen=False
+[02:57]   [debug]   iframe[1]: src=http://127.0.0.1:8188/extensions/ComfyUI-CADabra/viewer_cad_analysis.html?v=1785, canvas=274x498, rafFrozen=False
+[02:57]   [timing] trigger_3d_previews: 0.0s
+[03:00]   Saved high-quality screenshot: cad_manipulation_executed.png
+[03:00]   [timing] final_screenshot: 0.2s
+[03:00] Capturing execution frames: cad_quality_metrics.json
+[03:07]   Frame 1 saved (frame_000.jpg, t=0.0s)
+[03:07]   Validating workflow...
+[03:07]   Queuing workflow for execution...
+[03:09]   Frame 2 saved (frame_001.jpg, t=2.2s)
+[03:09]   [capture-periodic] freeze=4ms shot=121ms unfreeze=5ms saved=True
+[03:11]   Frame 3 saved (frame_002.jpg, t=4.4s)
+[03:11]   [capture-periodic] freeze=6ms shot=123ms unfreeze=6ms saved=True
+[03:13]   [capture-loop] iter=50 t=6.0s state={'complete': False, 'error': None, 'executedCount': 0, 'wsState': 1} eval_ms=7 ram=6.3/16.0GB (39%) swap=0.6/2.9GB (22%) cpu=50% browser_rss=0.79GB
+[03:16]   Node executed (1 total), capturing...
+[03:19]   Frame 4 saved (frame_003.jpg, t=9.5s)
+[03:19]   [capture-node] freeze=2214ms shot=507ms unfreeze=4ms saved=True
+[03:19]   Node executed (2 total), capturing...
+[03:20]   [capture-node] freeze=165ms shot=460ms unfreeze=0ms saved=False
+[03:20]   Execution complete (t=12.8s)
+[03:20]   Captured 4 unique frames over 13.44s
+[03:20]   [debug] iframes: 1
+[03:20]   [debug]   iframe[0]: src=http://127.0.0.1:8188/extensions/ComfyUI-CADabra/viewer_cad_analysis.html?v=1785, canvas=374x498, rafFrozen=True
+[03:20]   [timing] trigger_3d_previews: 0.0s
+[03:22]   Saved high-quality screenshot: cad_quality_metrics_executed.png
+[03:22]   [timing] final_screenshot: 0.2s
+[03:23] Capturing execution frames: coordtransform.json
+[03:29]   Frame 1 saved (frame_000.jpg, t=0.0s)
+[03:29]   Validating workflow...
+[03:29]   Queuing workflow for execution...
+[03:31]   Frame 2 saved (frame_001.jpg, t=2.2s)
+[03:31]   [capture-periodic] freeze=5ms shot=97ms unfreeze=5ms saved=True
+[03:32]   Node executed (1 total), capturing...
+[03:32]   Frame 3 saved (frame_002.jpg, t=3.1s)
+[03:32]   [capture-node] freeze=12ms shot=269ms unfreeze=0ms saved=True
+[03:32]   Execution complete (t=3.1s)
+[03:32]   Captured 3 unique frames over 3.4s
+[03:32]   [debug] iframes: 1
+[03:32]   [debug]   iframe[0]: src=http://127.0.0.1:8188/extensions/ComfyUI-CADabra/viewer_cad_dual.html?v=17855127, canvas=371x485, rafFrozen=True
+[03:32]   [timing] trigger_3d_previews: 0.0s
+[03:35]   Saved high-quality screenshot: coordtransform_executed.png
+[03:35]   [timing] final_screenshot: 0.3s
+[03:35] Capturing execution frames: edge_analysis.json
+[03:43]   Frame 1 saved (frame_000.jpg, t=0.0s)
+[03:43]   Validating workflow...
+[03:43]   Queuing workflow for execution...
+[03:45]   Frame 2 saved (frame_001.jpg, t=2.4s)
+[03:45]   [capture-periodic] freeze=8ms shot=143ms unfreeze=6ms saved=True
+[03:48]   Frame 3 saved (frame_002.jpg, t=4.6s)
+[03:48]   [capture-periodic] freeze=4ms shot=137ms unfreeze=4ms saved=True
+[03:49]   [capture-loop] iter=50 t=6.2s state={'complete': False, 'error': None, 'executedCount': 0, 'wsState': 1} eval_ms=5 ram=6.3/16.0GB (40%) swap=0.6/2.9GB (22%) cpu=44% browser_rss=0.77GB
+[03:52]   Frame 4 saved (frame_003.jpg, t=8.9s)
+[03:52]   [capture-periodic] freeze=5ms shot=151ms unfreeze=5ms saved=True
+[03:53]   Node executed (1 total), capturing...
+[03:53]   Frame 5 saved (frame_004.jpg, t=9.9s)
+[03:53]   [capture-node] freeze=45ms shot=152ms unfreeze=7ms saved=True
+[03:53]   Node executed (2 total), capturing...
+[03:54]   [capture-node] freeze=5ms shot=168ms unfreeze=7ms saved=False
+[03:55]   Node executed (3 total), capturing...
+[03:55]   Frame 6 saved (frame_005.jpg, t=11.8s)
+[03:55]   [capture-node] freeze=6ms shot=192ms unfreeze=7ms saved=True
+[03:55]   Node executed (5 total), capturing...
+[03:56]   Frame 7 saved (frame_006.jpg, t=12.4s)
+[03:56]   [capture-node] freeze=38ms shot=265ms unfreeze=0ms saved=True
+[03:56]   Execution complete (t=12.4s)
+[03:56]   Captured 7 unique frames over 12.76s
+[03:56]   [debug] iframes: 4
+[03:56]   [debug]   iframe[0]: src=http://127.0.0.1:8188/extensions/ComfyUI-CADabra/viewer_cad_edge.html?v=17855127, canvas=349x298, rafFrozen=True
+[03:56]   [debug]   iframe[1]: src=http://127.0.0.1:8188/extensions/ComfyUI-CADabra/viewer_cad_edge_vtk.html?v=1785, canvas=248x287, rafFrozen=True
+[03:56]   [debug]   iframe[2]: src=http://127.0.0.1:8188/extensions/ComfyUI-CADabra/viewer_cad_curve.html?v=1785512, canvas=795x340, rafFrozen=True
+[03:56]   [debug]   iframe[3]: src=http://127.0.0.1:8188/extensions/ComfyUI-CADabra/viewer_cad_edge_detail.html?v=1, canvas=246x402, rafFrozen=True
+[03:56]   [timing] trigger_3d_previews: 0.0s
+[03:58]   Saved high-quality screenshot: edge_analysis_executed.png
+[03:58]   [timing] final_screenshot: 0.3s
+[03:58] Capturing execution frames: extract_largest_component.json
+[04:05]   Frame 1 saved (frame_000.jpg, t=0.0s)
+[04:05]   Validating workflow...
+[04:05]   Queuing workflow for execution...
+[04:06]   Node executed (1 total), capturing...
+[04:06]   Frame 2 saved (frame_001.jpg, t=1.0s)
+[04:06]   [capture-node] freeze=5ms shot=114ms unfreeze=5ms saved=True
+[04:07]   Node executed (2 total), capturing...
+[04:07]   Frame 3 saved (frame_002.jpg, t=1.8s)
+[04:07]   [capture-node] freeze=5ms shot=145ms unfreeze=6ms saved=True
+[04:07]   Node executed (3 total), capturing...
+[04:07]   Frame 4 saved (frame_003.jpg, t=2.4s)
+[04:07]   [capture-node] freeze=16ms shot=119ms unfreeze=0ms saved=True
+[04:07]   Execution complete (t=2.4s)
+[04:07]   Captured 4 unique frames over 2.52s
+[04:07]   [debug] iframes: 1
+[04:07]   [debug]   iframe[0]: src=http://127.0.0.1:8188/extensions/ComfyUI-CADabra/viewer_cad_analysis.html?v=1785, canvas=379x498, rafFrozen=True
+[04:07]   [timing] trigger_3d_previews: 0.0s
+[04:10]   Saved high-quality screenshot: extract_largest_component_executed.png
+[04:10]   [timing] final_screenshot: 0.2s
+[04:10] Capturing execution frames: hierarchy_tree.json
+[04:16]   Frame 1 saved (frame_000.jpg, t=0.0s)
+[04:16]   Validating workflow...
+[04:16]   Queuing workflow for execution...
+[04:17]   Node executed (1 total), capturing...
+[04:18]   Frame 2 saved (frame_001.jpg, t=1.2s)
+[04:18]   [capture-node] freeze=29ms shot=161ms unfreeze=0ms saved=True
+[04:18]   Execution complete (t=1.2s)
+[04:18]   Captured 2 unique frames over 1.41s
+[04:18]   [debug] iframes: 1
+[04:18]   [debug]   iframe[0]: src=http://127.0.0.1:8188/extensions/ComfyUI-CADabra/viewer_cad_hierarchy.html?v=178, canvas=756x195, rafFrozen=True
+[04:18]   [timing] trigger_3d_previews: 0.0s
+[04:20]   Saved high-quality screenshot: hierarchy_tree_executed.png
+[04:20]   [timing] final_screenshot: 0.2s
+[04:20] Capturing execution frames: load_cad_path.json
+[04:27]   Frame 1 saved (frame_000.jpg, t=0.0s)
+[04:27]   Validating workflow...
+[04:27]   Queuing workflow for execution...
+[04:27]   Node executed (1 total), capturing...
+[04:28]   Frame 2 saved (frame_001.jpg, t=1.0s)
+[04:28]   [capture-node] freeze=24ms shot=116ms unfreeze=0ms saved=True
+[04:28]   Execution complete (t=1.0s)
+[04:28]   Captured 2 unique frames over 1.21s
+[04:28]   [debug] iframes: 1
+[04:28]   [debug]   iframe[0]: src=http://127.0.0.1:8188/extensions/ComfyUI-CADabra/viewer_cad_analysis.html?v=1785, canvas=244x498, rafFrozen=True
+[04:28]   [timing] trigger_3d_previews: 0.0s
+[04:30]   Saved high-quality screenshot: load_cad_path_executed.png
+[04:30]   [timing] final_screenshot: 0.2s
+[04:30] Capturing execution frames: load_preview_cad_batch.json
+[04:37]   Frame 1 saved (frame_000.jpg, t=0.0s)
+[04:37]   Validating workflow...
+[04:37]   Queuing workflow for execution...
+[04:39]   Frame 2 saved (frame_001.jpg, t=2.3s)
+[04:39]   [capture-periodic] freeze=5ms shot=124ms unfreeze=5ms saved=True
+[04:41]   Frame 3 saved (frame_002.jpg, t=4.5s)
+[04:41]   [capture-periodic] freeze=4ms shot=104ms unfreeze=6ms saved=True
+[04:43]   [capture-loop] iter=50 t=6.3s state={'complete': False, 'error': None, 'executedCount': 0, 'wsState': 1} eval_ms=5 ram=5.6/16.0GB (35%) swap=0.9/2.9GB (31%) cpu=44% browser_rss=0.68GB
+[04:49]   [capture-loop] iter=100 t=12.4s state={'complete': False, 'error': None, 'executedCount': 0, 'wsState': 1} eval_ms=4 ram=5.8/16.0GB (36%) swap=0.9/2.9GB (31%) cpu=67% browser_rss=0.67GB
+[04:55]   [capture-loop] iter=150 t=18.5s state={'complete': False, 'error': None, 'executedCount': 0, 'wsState': 1} eval_ms=4 ram=5.9/16.0GB (37%) swap=0.9/2.9GB (31%) cpu=60% browser_rss=0.67GB
+[04:55]   Node executed (1 total), capturing...
+[04:56]   Frame 4 saved (frame_003.jpg, t=18.8s)
+[04:56]   [capture-node] freeze=5ms shot=113ms unfreeze=4ms saved=True
+[04:56]   Node executed (2 total), capturing...
+[04:56]   Frame 5 saved (frame_004.jpg, t=19.3s)
+[04:56]   [capture-node] freeze=6ms shot=107ms unfreeze=0ms saved=True
+[04:56]   Execution complete (t=19.3s)
+[04:56]   Captured 5 unique frames over 19.44s
+[04:56]   [debug] iframes: 1
+[04:56]   [debug]   iframe[0]: src=http://127.0.0.1:8188/extensions/ComfyUI-CADabra/viewer_cad_analysis.html?v=1785, canvas=488x518, rafFrozen=True
+[04:56]   [timing] trigger_3d_previews: 0.0s
+[04:58]   Saved high-quality screenshot: load_preview_cad_batch_executed.png
+[04:58]   [timing] final_screenshot: 0.2s
+[04:59] Capturing execution frames: mesh_CAD.json
+[05:06]   Frame 1 saved (frame_000.jpg, t=0.0s)
+[05:06]   Validating workflow...
+[05:06]   Queuing workflow for execution...
+[05:06]   Node executed (1 total), capturing...
+[05:07]   Frame 2 saved (frame_001.jpg, t=1.0s)
+[05:07]   [capture-node] freeze=98ms shot=157ms unfreeze=4ms saved=True
+[05:09]   Frame 3 saved (frame_002.jpg, t=3.4s)
+[05:09]   [capture-periodic] freeze=25ms shot=180ms unfreeze=6ms saved=True
+[05:09]   Node executed (2 total), capturing...
+[05:10]   Frame 4 saved (frame_003.jpg, t=4.0s)
+[05:10]   [capture-node] freeze=25ms shot=163ms unfreeze=8ms saved=True
+[05:10]   Node executed (3 total), capturing...
+[05:10]   Frame 5 saved (frame_004.jpg, t=4.7s)
+[05:10]   [capture-node] freeze=49ms shot=137ms unfreeze=7ms saved=True
+[05:16]   [capture-loop] iter=50 t=10.5s state={'complete': False, 'error': None, 'executedCount': 3, 'wsState': 1} eval_ms=24 ram=5.6/16.0GB (35%) swap=0.8/2.9GB (29%) cpu=64% browser_rss=0.75GB
+[05:25]   [capture-loop] iter=100 t=19.3s state={'complete': False, 'error': None, 'executedCount': 3, 'wsState': 1} eval_ms=25 ram=5.7/16.0GB (35%) swap=0.8/2.9GB (29%) cpu=95% browser_rss=0.74GB
+[05:35]   [capture-loop] iter=150 t=29.7s state={'complete': False, 'error': None, 'executedCount': 3, 'wsState': 1} eval_ms=44 ram=5.6/16.0GB (35%) swap=0.8/2.9GB (29%) cpu=95% browser_rss=0.64GB
+[05:45]   [capture-loop] iter=200 t=39.2s state={'complete': False, 'error': None, 'executedCount': 3, 'wsState': 1} eval_ms=42 ram=5.7/16.0GB (36%) swap=0.8/2.9GB (29%) cpu=96% browser_rss=0.63GB
+[05:46]   Node executed (4 total), capturing...
+[05:47]   Frame 6 saved (frame_005.jpg, t=41.2s)
+[05:47]   [capture-node] freeze=26ms shot=193ms unfreeze=0ms saved=True
+[05:47]   Execution complete (t=41.2s)
+[05:47]   Captured 6 unique frames over 41.43s
+[05:47]   [debug] iframes: 2
+[05:47]   [debug]   iframe[0]: src=http://127.0.0.1:8188/extensions/ComfyUI-CADabra/viewer_cad_analysis.html?v=1785, canvas=244x498, rafFrozen=True
+[05:47]   [debug]   iframe[1]: src=http://127.0.0.1:8188/extensions/ComfyUI-GeometryPack/viewer_dual.html?v=1785512, canvas=0x0, rafFrozen=True
+[05:47]   [timing] trigger_3d_previews: 0.0s
+[05:49]   Saved high-quality screenshot: mesh_CAD_executed.png
+[05:49]   [timing] final_screenshot: 0.3s
+[05:49] Capturing execution frames: mesh_face_seg.json
+[05:56]   Frame 1 saved (frame_000.jpg, t=0.0s)
+[05:56]   Validating workflow...
+[05:56]   Queuing workflow for execution...
+[05:58]   Frame 2 saved (frame_001.jpg, t=2.2s)
+[05:58]   [capture-periodic] freeze=5ms shot=102ms unfreeze=5ms saved=True
+[06:00]   Frame 3 saved (frame_002.jpg, t=4.4s)
+[06:00]   [capture-periodic] freeze=5ms shot=101ms unfreeze=6ms saved=True
+[06:02]   [capture-loop] iter=50 t=5.8s state={'complete': False, 'error': None, 'executedCount': 0, 'wsState': 1} eval_ms=5 ram=5.7/16.0GB (36%) swap=0.8/2.9GB (28%) cpu=43% browser_rss=0.68GB
+[06:03]   Node executed (1 total), capturing...
+[06:03]   Frame 4 saved (frame_003.jpg, t=6.8s)
+[06:03]   [capture-node] freeze=5ms shot=99ms unfreeze=5ms saved=True
+[06:03]   Execution complete (t=7.1s)
+[06:03]   Captured 4 unique frames over 7.07s
+[06:03]   [debug] iframes: 1
+[06:03]   [debug]   iframe[0]: src=http://127.0.0.1:8188/extensions/ComfyUI-GeometryPack/viewer_vtk.html?v=17855128, canvas=0x0, rafFrozen=False
+[06:03]   [timing] trigger_3d_previews: 0.0s
+[06:05]   Saved high-quality screenshot: mesh_face_seg_executed.png
+[06:05]   [timing] final_screenshot: 0.2s
+[06:06] Capturing execution frames: overlapping_faces.json
+[06:13]   Frame 1 saved (frame_000.jpg, t=0.0s)
+[06:13]   Validating workflow...
+[06:13]   Queuing workflow for execution...
+[06:15]   Frame 2 saved (frame_001.jpg, t=2.3s)
+[06:15]   [capture-periodic] freeze=4ms shot=118ms unfreeze=6ms saved=True
+[06:17]   Frame 3 saved (frame_002.jpg, t=4.4s)
+[06:17]   [capture-periodic] freeze=5ms shot=123ms unfreeze=5ms saved=True
+[06:19]   [capture-loop] iter=50 t=6.1s state={'complete': False, 'error': None, 'executedCount': 0, 'wsState': 1} eval_ms=5 ram=5.9/16.0GB (37%) swap=0.8/2.9GB (28%) cpu=48% browser_rss=0.78GB
+[06:19]   Frame 4 saved (frame_003.jpg, t=6.7s)
+[06:19]   [capture-periodic] freeze=5ms shot=105ms unfreeze=6ms saved=True
+[06:25]   [capture-loop] iter=100 t=12.2s state={'complete': False, 'error': None, 'executedCount': 0, 'wsState': 1} eval_ms=5 ram=5.9/16.0GB (37%) swap=0.8/2.9GB (28%) cpu=46% browser_rss=0.69GB
+[06:31]   [capture-loop] iter=150 t=18.1s state={'complete': False, 'error': None, 'executedCount': 0, 'wsState': 1} eval_ms=5 ram=5.8/16.0GB (36%) swap=0.8/2.9GB (28%) cpu=42% browser_rss=0.64GB
+[06:37]   [capture-loop] iter=200 t=24.2s state={'complete': False, 'error': None, 'executedCount': 0, 'wsState': 1} eval_ms=5 ram=5.8/16.0GB (36%) swap=0.8/2.9GB (28%) cpu=68% browser_rss=0.64GB
+[06:43]   [capture-loop] iter=250 t=30.2s state={'complete': False, 'error': None, 'executedCount': 0, 'wsState': 1} eval_ms=7 ram=5.7/16.0GB (36%) swap=0.8/2.9GB (28%) cpu=56% browser_rss=0.64GB
+[06:49]   [capture-loop] iter=300 t=36.2s state={'complete': False, 'error': None, 'executedCount': 0, 'wsState': 1} eval_ms=5 ram=5.7/16.0GB (36%) swap=0.8/2.9GB (28%) cpu=59% browser_rss=0.64GB
+[06:55]   [capture-loop] iter=350 t=42.3s state={'complete': False, 'error': None, 'executedCount': 0, 'wsState': 1} eval_ms=4 ram=5.7/16.0GB (36%) swap=0.8/2.9GB (28%) cpu=57% browser_rss=0.64GB
+[07:01]   [capture-loop] iter=400 t=48.4s state={'complete': False, 'error': None, 'executedCount': 0, 'wsState': 1} eval_ms=4 ram=5.7/16.0GB (36%) swap=0.8/2.9GB (28%) cpu=75% browser_rss=0.64GB
+[07:05]   Node executed (1 total), capturing...
+[07:05]   Frame 5 saved (frame_004.jpg, t=52.4s)
+[07:05]   [capture-node] freeze=8ms shot=114ms unfreeze=6ms saved=True
+[07:07]   Frame 6 saved (frame_005.jpg, t=54.6s)
+[07:07]   [capture-periodic] freeze=5ms shot=141ms unfreeze=7ms saved=True
+[07:07]   [capture-loop] iter=450 t=54.9s state={'complete': False, 'error': None, 'executedCount': 2, 'wsState': 1} eval_ms=9 ram=5.8/16.0GB (36%) swap=0.8/2.9GB (28%) cpu=71% browser_rss=0.64GB
+[07:07]   Node executed (2 total), capturing...
+[07:08]   Frame 7 saved (frame_006.jpg, t=55.0s)
+[07:08]   [capture-node] freeze=27ms shot=401ms unfreeze=5ms saved=True
+[07:08]   Node executed (3 total), capturing...
+[07:09]   Frame 8 saved (frame_007.jpg, t=56.1s)
+[07:09]   [capture-node] freeze=132ms shot=271ms unfreeze=6ms saved=True
+[07:12]   Node executed (4 total), capturing...
+[07:13]   Frame 9 saved (frame_008.jpg, t=60.0s)
+[07:13]   [capture-node] freeze=132ms shot=252ms unfreeze=0ms saved=True
+[07:13]   Execution complete (t=60.0s)
+[07:13]   Captured 9 unique frames over 60.39s
+[07:13]   [debug] iframes: 2
+[07:13]   [debug]   iframe[0]: src=http://127.0.0.1:8188/extensions/ComfyUI-CADabra/viewer_cad_analysis.html?v=1785, canvas=467x290, rafFrozen=True
+[07:13]   [debug]   iframe[1]: src=http://127.0.0.1:8188/extensions/ComfyUI-CADabra/viewer_cad_analysis.html?v=1785, canvas=244x498, rafFrozen=True
+[07:13]   [timing] trigger_3d_previews: 0.0s
+[07:15]   Saved high-quality screenshot: overlapping_faces_executed.png
+[07:15]   [timing] final_screenshot: 0.2s
+[07:15] Capturing execution frames: raytracing.json
+[07:23]   Frame 1 saved (frame_000.jpg, t=0.0s)
+[07:23]   Validating workflow...
+[07:23]   Queuing workflow for execution...
+[07:25]   Frame 2 saved (frame_001.jpg, t=2.3s)
+[07:25]   [capture-periodic] freeze=5ms shot=143ms unfreeze=5ms saved=True
+[07:27]   Node executed (1 total), capturing...
+[07:28]   Frame 3 saved (frame_002.jpg, t=4.5s)
+[07:28]   [capture-node] freeze=152ms shot=186ms unfreeze=4ms saved=True
+[07:30]   Frame 4 saved (frame_003.jpg, t=7.1s)
+[07:30]   [capture-periodic] freeze=75ms shot=202ms unfreeze=7ms saved=True
+[07:32]   [capture-loop] iter=50 t=9.0s state={'complete': False, 'error': None, 'executedCount': 1, 'wsState': 1} eval_ms=39 ram=5.9/16.0GB (37%) swap=0.8/2.9GB (28%) cpu=66% browser_rss=0.76GB
+[07:44]   [capture-loop] iter=100 t=21.3s state={'complete': False, 'error': None, 'executedCount': 1, 'wsState': 1} eval_ms=77 ram=5.8/16.0GB (36%) swap=0.8/2.9GB (28%) cpu=96% browser_rss=0.64GB
+[07:55]   [capture-loop] iter=150 t=32.3s state={'complete': False, 'error': None, 'executedCount': 1, 'wsState': 1} eval_ms=79 ram=5.6/16.0GB (35%) swap=1.0/2.9GB (34%) cpu=96% browser_rss=0.64GB
+[08:06]   [capture-loop] iter=200 t=43.8s state={'complete': False, 'error': None, 'executedCount': 1, 'wsState': 1} eval_ms=48 ram=5.6/16.0GB (35%) swap=1.0/2.9GB (34%) cpu=96% browser_rss=0.64GB
+[08:17]   [capture-loop] iter=250 t=54.5s state={'complete': False, 'error': None, 'executedCount': 1, 'wsState': 1} eval_ms=10 ram=5.7/16.0GB (35%) swap=1.0/2.9GB (34%) cpu=96% browser_rss=0.65GB
+[08:17]   Node executed (2 total), capturing...
+[08:18]   Frame 5 saved (frame_004.jpg, t=55.0s)
+[08:18]   [capture-node] freeze=14ms shot=226ms unfreeze=0ms saved=True
+[08:18]   Execution complete (t=55.0s)
+[08:18]   Captured 5 unique frames over 55.24s
+[08:18]   [debug] iframes: 1
+[08:18]   [debug]   iframe[0]: src=http://127.0.0.1:8188/extensions/ComfyUI-CADabra/viewer_cad_analysis.html?v=1785, canvas=244x498, rafFrozen=True
+[08:18]   [timing] trigger_3d_previews: 0.0s
+[08:20]   Saved high-quality screenshot: raytracing_executed.png
+[08:20]   [timing] final_screenshot: 0.3s
+[08:20] Capturing execution frames: raytracing_roi.json
+[08:27]   Frame 1 saved (frame_000.jpg, t=0.0s)
+[08:27]   Validating workflow...
+[08:27]   Queuing workflow for execution...
+[08:28]   Node executed (1 total), capturing...
+[08:28]   Frame 2 saved (frame_001.jpg, t=0.9s)
+[08:28]   [capture-node] freeze=59ms shot=196ms unfreeze=5ms saved=True
+[08:29]   Node executed (2 total), capturing...
+[08:29]   Frame 3 saved (frame_002.jpg, t=1.9s)
+[08:29]   [capture-node] freeze=61ms shot=207ms unfreeze=3ms saved=True
+[08:32]   Frame 4 saved (frame_003.jpg, t=4.4s)
+[08:32]   [capture-periodic] freeze=44ms shot=196ms unfreeze=5ms saved=True
+[08:33]   Node executed (3 total), capturing...
+[08:33]   Frame 5 saved (frame_004.jpg, t=6.0s)
+[08:33]   [capture-node] freeze=24ms shot=196ms unfreeze=0ms saved=True
+[08:33]   Execution complete (t=6.0s)
+[08:33]   Captured 5 unique frames over 6.43s
+[08:33]   [debug] iframes: 2
+[08:33]   [debug]   iframe[0]: src=http://127.0.0.1:8188/extensions/ComfyUI-CADabra/viewer_cad_analysis.html?v=1785, canvas=244x498, rafFrozen=True
+[08:33]   [debug]   iframe[1]: src=http://127.0.0.1:8188/extensions/ComfyUI-CADabra/viewer_cad_roi.html?v=178551302, canvas=294x498, rafFrozen=True
+[08:33]   [timing] trigger_3d_previews: 0.0s
+[08:36]   Saved high-quality screenshot: raytracing_roi_executed.png
+[08:36]   [timing] final_screenshot: 0.2s
+[08:36] Capturing execution frames: spline_to_circle.json
+[08:42]   Frame 1 saved (frame_000.jpg, t=0.0s)
+[08:42]   Validating workflow...
+[08:42]   Queuing workflow for execution...
+[08:43]   Node executed (1 total), capturing...
+[08:43]   Frame 2 saved (frame_001.jpg, t=0.8s)
+[08:43]   [capture-node] freeze=4ms shot=103ms unfreeze=0ms saved=True
+[08:43]   Execution complete (t=0.8s)
+[08:43]   Captured 2 unique frames over 0.95s
+[08:43]   [debug] iframes: 1
+[08:43]   [debug]   iframe[0]: src=http://127.0.0.1:8188/extensions/ComfyUI-CADabra/viewer_cad_dual.html?v=17855130, canvas=371x485, rafFrozen=True
+[08:43]   [timing] trigger_3d_previews: 0.0s
+[08:45]   Saved high-quality screenshot: spline_to_circle_executed.png
+[08:45]   [timing] final_screenshot: 0.2s
+[08:46] Capturing execution frames: spline_viewer.json
+[08:52]   Frame 1 saved (frame_000.jpg, t=0.0s)
+[08:52]   Validating workflow...
+[08:52]   Queuing workflow for execution...
+[08:53]   Node executed (1 total), capturing...
+[08:53]   Frame 2 saved (frame_001.jpg, t=1.0s)
+[08:53]   [capture-node] freeze=6ms shot=216ms unfreeze=37ms saved=True
+[08:54]   Node executed (2 total), capturing...
+[08:54]   Frame 3 saved (frame_002.jpg, t=1.6s)
+[08:54]   [capture-node] freeze=123ms shot=355ms unfreeze=5ms saved=True
+[08:55]   Node executed (3 total), capturing...
+[08:55]   Frame 4 saved (frame_003.jpg, t=2.5s)
+[08:55]   [capture-node] freeze=63ms shot=278ms unfreeze=0ms saved=True
+[08:55]   Execution complete (t=2.6s)
+[08:55]   Captured 4 unique frames over 2.93s
+[08:55]   [debug] iframes: 2
+[08:55]   [debug]   iframe[0]: src=http://127.0.0.1:8188/extensions/ComfyUI-CADabra/viewer_cad_analysis.html?v=1785, canvas=248x278, rafFrozen=True
+[08:55]   [debug]   iframe[1]: src=http://127.0.0.1:8188/extensions/ComfyUI-CADabra/viewer_cad_spline.html?v=178551, canvas=526x602, rafFrozen=True
+[08:55]   [timing] trigger_3d_previews: 0.0s
+[08:57]   Saved high-quality screenshot: spline_viewer_executed.png
+[08:57]   [timing] final_screenshot: 0.3s
+[08:58] Capturing execution frames: view_cads.json
+[09:05]   Frame 1 saved (frame_000.jpg, t=0.0s)
+[09:05]   Validating workflow...
+[09:05]   Queuing workflow for execution...
+[09:07]   Frame 2 saved (frame_001.jpg, t=2.3s)
+[09:07]   [capture-periodic] freeze=3ms shot=119ms unfreeze=6ms saved=True
+[09:09]   Node executed (1 total), capturing...
+[09:09]   Frame 3 saved (frame_002.jpg, t=4.5s)
+[09:09]   [capture-node] freeze=6ms shot=114ms unfreeze=5ms saved=True
+[09:11]   [capture-loop] iter=50 t=6.2s state={'complete': False, 'error': None, 'executedCount': 1, 'wsState': 1} eval_ms=6 ram=5.6/16.0GB (35%) swap=1.1/2.9GB (39%) cpu=45% browser_rss=0.72GB
+[09:11]   Node executed (2 total), capturing...
+[09:12]   Frame 4 saved (frame_003.jpg, t=7.1s)
+[09:12]   [capture-node] freeze=13ms shot=143ms unfreeze=4ms saved=True
+[09:12]   Node executed (3 total), capturing...
+[09:13]   Frame 5 saved (frame_004.jpg, t=8.0s)
+[09:13]   [capture-node] freeze=77ms shot=142ms unfreeze=5ms saved=True
+[09:26]   [capture-loop] iter=100 t=21.6s state={'complete': False, 'error': None, 'executedCount': 3, 'wsState': 1} eval_ms=310 ram=5.5/16.0GB (35%) swap=1.1/2.9GB (39%) cpu=95% browser_rss=0.65GB
+[09:36]   [capture-loop] iter=150 t=31.2s state={'complete': False, 'error': None, 'executedCount': 3, 'wsState': 1} eval_ms=25 ram=5.4/16.0GB (34%) swap=1.3/2.9GB (45%) cpu=98% browser_rss=0.64GB
+[09:45]   [capture-loop] iter=200 t=40.2s state={'complete': False, 'error': None, 'executedCount': 3, 'wsState': 1} eval_ms=26 ram=5.5/16.0GB (34%) swap=1.3/2.9GB (45%) cpu=96% browser_rss=0.65GB
+[09:53]   [capture-loop] iter=250 t=48.4s state={'complete': False, 'error': None, 'executedCount': 3, 'wsState': 1} eval_ms=46 ram=5.4/16.0GB (34%) swap=1.3/2.9GB (45%) cpu=95% browser_rss=0.64GB
+[10:00]   Node executed (4 total), capturing...
+[10:01]   Frame 6 saved (frame_005.jpg, t=56.0s)
+[10:01]   [capture-node] freeze=51ms shot=154ms unfreeze=4ms saved=True
+[10:01]   Node executed (5 total), capturing...
+[10:01]   [capture-node] freeze=37ms shot=145ms unfreeze=0ms saved=False
+[10:01]   Execution complete (t=56.6s)
+[10:01]   Captured 6 unique frames over 56.84s
+[10:01]   [debug] iframes: 3
+[10:01]   [debug]   iframe[0]: src=http://127.0.0.1:8188/extensions/ComfyUI-CADabra/viewer_cad_edge_detail.html?v=1, canvas=246x402, rafFrozen=True
+[10:01]   [debug]   iframe[1]: src=http://127.0.0.1:8188/extensions/ComfyUI-CADabra/viewer_cad_edge.html?v=17855130, canvas=246x289, rafFrozen=True
+[10:01]   [debug]   iframe[2]: src=http://127.0.0.1:8188/extensions/ComfyUI-CADabra/viewer_cad_analysis.html?v=1785, canvas=246x278, rafFrozen=True
+[10:01]   [timing] trigger_3d_previews: 0.0s
+[10:04]   Saved high-quality screenshot: view_cads_executed.png
+[10:04]   [timing] final_screenshot: 0.2s
+[10:04] Results saved to D:\a\ComfyUI-CADabra\ComfyUI-CADabra\comfy-test-logs\CADabra-1541\windows-portable-cpu\results.json
+[10:04] Model report: 8 files, 18.7 MB -> D:\a\ComfyUI-CADabra\ComfyUI-CADabra\comfy-test-logs\CADabra-1541\windows-portable-cpu\models.json
+[10:04] Saved: D:\a\ComfyUI-CADabra\ComfyUI-CADabra\comfy-test-logs\CADabra-1541\windows-portable-cpu\index.html
+[10:04] [EXECUTION] PASSED
+[10:04] 
+windows_portable: PASSED

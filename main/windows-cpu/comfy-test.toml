@@ -1,0 +1,10 @@
+[test]
+levels = ["syntax", "coverage", "install", "registration", "instantiation", "execution"]
+publish = true
+
+[test.workflows]
+cpu =  'all'
+gpu = []
+
+[test.platforms]
+platforms = ["linux", "macos", "windows", "windows_portable", "macos_desktop", "windows_desktop"]

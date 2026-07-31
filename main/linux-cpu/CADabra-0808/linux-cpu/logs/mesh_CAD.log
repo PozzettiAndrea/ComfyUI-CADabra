@@ -1,0 +1,29 @@
+Capturing execution frames: mesh_CAD.json
+  Frame 1 saved (frame_000.jpg, t=0.0s)
+  Validating workflow...
+  Queuing workflow for execution...
+  Frame 2 saved (frame_001.jpg, t=2.3s)
+  [capture-periodic] freeze=2ms shot=193ms unfreeze=7ms saved=True
+  Frame 3 saved (frame_002.jpg, t=4.6s)
+  [capture-periodic] freeze=3ms shot=165ms unfreeze=8ms saved=True
+  [capture-loop] iter=50 t=6.1s state={'complete': False, 'error': None, 'executedCount': 1, 'wsState': 1} eval_ms=5 ram=2.7/15.6GB (17%) swap=0.0/3.0GB (0%) cpu=40% browser_rss=1.07GB
+  Node executed (1 total), capturing...
+  Frame 4 saved (frame_003.jpg, t=6.3s)
+  [capture-node] freeze=29ms shot=148ms unfreeze=5ms saved=True
+  Node executed (2 total), capturing...
+  Frame 5 saved (frame_004.jpg, t=7.7s)
+  [capture-node] freeze=37ms shot=206ms unfreeze=6ms saved=True
+  Frame 6 saved (frame_005.jpg, t=10.1s)
+  [capture-periodic] freeze=22ms shot=150ms unfreeze=9ms saved=True
+  Node executed (3 total), capturing...
+  Frame 7 saved (frame_006.jpg, t=11.7s)
+  [capture-node] freeze=22ms shot=149ms unfreeze=0ms saved=True
+  Execution complete (t=11.7s)
+  Captured 7 unique frames over 11.88s
+  [debug] iframes: 2
+  [debug]   iframe[0]: src=http://127.0.0.1:8188/extensions/ComfyUI-CADabra/viewer_cad_analysis.html?v=1778, canvas=242x498, rafFrozen=True
+  [debug]   iframe[1]: src=http://127.0.0.1:8188/extensions/ComfyUI-GeometryPack/viewer_dual.html?v=1778227, canvas=0x0, rafFrozen=False
+  [timing] trigger_3d_previews: 0.0s
+  Saved high-quality screenshot: mesh_CAD_executed.png
+  [timing] final_screenshot: 0.3s
+    Captured 8 video frames

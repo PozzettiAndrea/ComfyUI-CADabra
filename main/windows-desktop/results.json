@@ -1,0 +1,66 @@
+{
+  "timestamp": "2026-05-19T11:50:42.429549+00:00",
+  "platform": "windows_desktop",
+  "hardware": {
+    "os": "Windows-2025Server-10.0.26100-SP0",
+    "cpu": "AMD64 Family 25 Model 1 Stepping 1, AuthenticAMD"
+  },
+  "commit_hash": "cca0fcf8875211355fb8e51311e830f11ebc806d",
+  "run_url": "https://github.com/PozzettiAndrea/comfy-gpu-ci/actions/runs/26092215363",
+  "success": true,
+  "summary": {
+    "total": 8,
+    "passed": 8,
+    "failed": 0
+  },
+  "workflows": [
+    {
+      "name": "analyse_CAD",
+      "status": "pass",
+      "duration_seconds": 56,
+      "error": null
+    },
+    {
+      "name": "cad_manipulation",
+      "status": "pass",
+      "duration_seconds": 22,
+      "error": null
+    },
+    {
+      "name": "cad_quality_metrics",
+      "status": "pass",
+      "duration_seconds": 22,
+      "error": null
+    },
+    {
+      "name": "edge_analysis",
+      "status": "pass",
+      "duration_seconds": 8,
+      "error": null
+    },
+    {
+      "name": "mesh_CAD",
+      "status": "pass",
+      "duration_seconds": 95,
+      "error": null
+    },
+    {
+      "name": "raytracing",
+      "status": "pass",
+      "duration_seconds": 203,
+      "error": null
+    },
+    {
+      "name": "raytracing_roi",
+      "status": "pass",
+      "duration_seconds": 23,
+      "error": null
+    },
+    {
+      "name": "view_cads",
+      "status": "pass",
+      "duration_seconds": 28,
+      "error": null
+    }
+  ]
+}

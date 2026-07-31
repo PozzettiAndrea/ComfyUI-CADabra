@@ -1,0 +1,161 @@
+[32m[INFO][0m setup plugin alembic.autogenerate.schemas
+[32m[INFO][0m setup plugin alembic.autogenerate.tables
+[32m[INFO][0m setup plugin alembic.autogenerate.types
+[32m[INFO][0m setup plugin alembic.autogenerate.constraints
+[32m[INFO][0m setup plugin alembic.autogenerate.defaults
+[32m[INFO][0m setup plugin alembic.autogenerate.comments
+[1m[33m[WARNING][0m Could not autodetect AIMDO implementation, assuming Nvidia
+[32m[INFO][0m comfy-aimdo unsupported operating system: Darwin
+[32m[INFO][0m NOTE: comfy-aimdo currently only supports Windows and Linux
+[comfy-env] ComfyUI-CADabra: 1 isolation env(s):
+[comfy-env]   nodes -> /Users/runner/work/ComfyUI-CADabra/ComfyUI-CADabra/ComfyUI/custom_nodes/ComfyUI-CADabra/nodes
+[comfy-env] Workspace: /Users/runner/.ce
+[comfy-env]     env: /Users/runner/.ce/envs/cadabra-nodes/.pixi/envs/default  [MISSING -- run install.py]
+[comfy-env] prestartup complete
+[comfy-env] ComfyUI-GeometryPack: 1 isolation env(s):
+[comfy-env]   nodes -> /Users/runner/work/ComfyUI-CADabra/ComfyUI-CADabra/ComfyUI/custom_nodes/ComfyUI-GeometryPack/nodes
+[comfy-env]     env: /Users/runner/.ce/envs/geometrypack-nodes/.pixi/envs/default  [MISSING -- run install.py]
+[comfy-env] prestartup complete
+[32m[INFO][0m 
+Prestartup times for custom nodes:
+[32m[INFO][0m    0.3 seconds: /Users/runner/work/ComfyUI-CADabra/ComfyUI-CADabra/ComfyUI/custom_nodes/ComfyUI-GeometryPack
+[32m[INFO][0m    3.5 seconds: /Users/runner/work/ComfyUI-CADabra/ComfyUI-CADabra/ComfyUI/custom_nodes/ComfyUI-CADabra
+[32m[INFO][0m 
+[1m[33m[WARNING][0m WARNING: Potential Error in code: Torch already imported, torch should never be imported before this point.
+[32m[INFO][0m Found comfy_kitchen backend hip: {'available': False, 'disabled': False, 'unavailable_reason': 'PyTorch ROCm/HIP runtime not available', 'capabilities': []}
+[32m[INFO][0m Found comfy_kitchen backend triton: {'available': False, 'disabled': True, 'unavailable_reason': "ImportError: No module named 'triton'", 'capabilities': []}
+[32m[INFO][0m Found comfy_kitchen backend eager: {'available': True, 'disabled': False, 'unavailable_reason': None, 'capabilities': ['adaln', 'apply_rope', 'apply_rope1', 'apply_rope1_', 'apply_rope_', 'apply_rope_split_half', 'apply_rope_split_half1', 'apply_rope_split_half1_', 'apply_rope_split_half_', 'convrot_w4a4_linear', 'dequantize_convrot_w4a4_weight', 'dequantize_int8_convrot_weight', 'dequantize_int8_convrot_weight_dtype', 'dequantize_int8_embedding', 'dequantize_int8_simple', 'dequantize_int8_simple_dtype', 'dequantize_mxfp8', 'dequantize_nvfp4', 'dequantize_per_tensor_fp8', 'gemv_awq_w4a16', 'int8_linear', 'prepare_int4_weight_for_int8_linear', 'quantize_and_rotate_rowwise', 'quantize_convrot_w4a4_weight', 'quantize_int8_convrot_weight', 'quantize_int8_rowwise', 'quantize_int8_tensorwise', 'quantize_mxfp8', 'quantize_nvfp4', 'quantize_per_tensor_fp8', 'quantize_svdquant_w4a4', 'rms_adaln', 'rms_rope', 'rms_rope1', 'rms_rope1_', 'rms_rope_', 'rms_rope_split_half', 'rms_rope_split_half1', 'rms_rope_split_half1_', 'rms_rope_split_half_', 'scaled_mm_mxfp8', 'scaled_mm_nvfp4', 'scaled_mm_svdquant_w4a4', 'stochastic_rounding_fp8']}
+[32m[INFO][0m Found comfy_kitchen backend cuda: {'available': False, 'disabled': True, 'unavailable_reason': 'Extension file not found: /Users/runner/work/ComfyUI-CADabra/ComfyUI-CADabra/.venv/lib/python3.11/site-packages/comfy_kitchen/backends/cuda/_C.abi3.so', 'capabilities': []}
+[32m[INFO][0m Checkpoint files will always be loaded safely.
+[32m[INFO][0m Total VRAM 7168 MB, total RAM 7168 MB
+[32m[INFO][0m pytorch version: 2.13.0
+[32m[INFO][0m Mac Version (26, 5, 2)
+[32m[INFO][0m Set vram state to: SHARED
+[32m[INFO][0m Device: mps
+[32m[INFO][0m Using sub quadratic optimization for attention, if you have memory or speed issues try using: --use-split-cross-attention
+[32m[INFO][0m Python version: 3.11.9 (v3.11.9:de54cf5be3, Apr  2 2024, 07:12:50) [Clang 13.0.0 (clang-1300.0.29.30)]
+[32m[INFO][0m ComfyUI version: 0.29.0
+[32m[INFO][0m comfy-aimdo version: 0.4.10
+[32m[INFO][0m comfy-kitchen version: 0.2.25
+[1m[33m[WARNING][0m ****** User settings have been changed to be stored on the server instead of browser storage. ******
+[1m[33m[WARNING][0m ****** For multi-user setups add the --multi-user CLI argument to enable multiple user profiles. ******
+[32m[INFO][0m comfyui-frontend-package version: 1.47.11
+[32m[INFO][0m comfyui-workflow-templates version: 0.11.20
+[32m[INFO][0m comfyui-embedded-docs version: 0.5.9
+[32m[INFO][0m comfy-kitchen version: 0.2.25
+[32m[INFO][0m comfy-aimdo version: 0.4.10
+[32m[INFO][0m [Prompt Server] web root: /Users/runner/work/ComfyUI-CADabra/ComfyUI-CADabra/.venv/lib/python3.11/site-packages/comfyui_frontend_package/static
+[32m[INFO][0m Asset seeder disabled
+[32m[INFO][0m No OpenGL_accelerate module loaded: No module named 'OpenGL_accelerate'
+[comfy-env] Version: 0.4.7
+[comfy-env] register_nodes: ComfyUI-CADabra
+[comfy-env] ComfyUI source dir: /Users/runner/work/ComfyUI-CADabra/ComfyUI-CADabra/ComfyUI
+[comfy-env] isolation env not found at /Users/runner/.ce/envs/cadabra-nodes/.pixi/envs/default: pixi has not materialized `cadabra-nodes`; using in-process import. Run `comfy-env install` to create it, or set COMFY_ENV_AUTO_INSTALL=1 to materialize missing envs at startup.
+[comfy-env] Found 0 isolation env(s)
+[comfy-env] Importing nodes (root)...
+[comfy-env] Failed to import nodes root: No module named 'sklearn'
+[comfy-env] Importing utils...
+[comfy-env] Imported utils: 0 nodes
+[comfy-env] isolation env not found at /Users/runner/.ce/envs/cadabra-nodes/.pixi/envs/default: pixi has not materialized `cadabra-nodes`; using in-process import. Run `comfy-env install` to create it, or set COMFY_ENV_AUTO_INSTALL=1 to materialize missing envs at startup.
+[comfy-env] No env for nodes -- run 'comfy-env install'
+[comfy-env] Registered 0 total nodes
+[32m[INFO][0m loading...
+[32m[INFO][0m calling register_nodes
+[comfy-env] Version: 0.4.7
+[comfy-env] register_nodes: ComfyUI-GeometryPack
+[comfy-env] ComfyUI source dir: /Users/runner/work/ComfyUI-CADabra/ComfyUI-CADabra/ComfyUI
+[comfy-env] isolation env not found at /Users/runner/.ce/envs/geometrypack-nodes/.pixi/envs/default: pixi has not materialized `geometrypack-nodes`; using in-process import. Run `comfy-env install` to create it, or set COMFY_ENV_AUTO_INSTALL=1 to materialize missing envs at startup.
+[comfy-env] Found 0 isolation env(s)
+[comfy-env] Importing nodes (root)...
+[comfy-env] Failed to import nodes root: No module named 'CGAL'
+[comfy-env] Importing analysis...
+[comfy-env] Imported analysis: 7 nodes
+[comfy-env] Importing blender_boolean...
+[comfy-env] Imported blender_boolean: 1 nodes
+[comfy-env] Importing blender_io...
+[comfy-env] Imported blender_io: 2 nodes
+[comfy-env] Importing blender_remeshing...
+[comfy-env] Imported blender_remeshing: 4 nodes
+[comfy-env] Importing blender_texture_remeshing...
+[comfy-env] Imported blender_texture_remeshing: 1 nodes
+[comfy-env] Importing blender_uv...
+[comfy-env] Imported blender_uv: 4 nodes
+[comfy-env] Importing boolean...
+[comfy-env] Failed to import .nodes.boolean: No module named 'CGAL'
+[comfy-env] Importing combine...
+[comfy-env] Imported combine: 3 nodes
+[comfy-env] Importing conversion...
+[comfy-env] Imported conversion: 2 nodes
+[comfy-env] Importing decimation...
+[comfy-env] Imported decimation: 5 nodes
+[comfy-env] Importing decimation_cgal...
+[comfy-env] Failed to import .nodes.decimation_cgal: No module named 'CGAL'
+[comfy-env] Importing distance...
+[comfy-env] Imported distance: 2 nodes
+[comfy-env] Importing fill_holes_gpu...
+[comfy-env] Imported fill_holes_gpu: 1 nodes
+[comfy-env] Importing io...
+[comfy-env] Imported io: 7 nodes
+[comfy-env] Importing paraview...
+[comfy-env] Imported paraview: 1 nodes
+[comfy-env] Importing primitives...
+[comfy-env] Imported primitives: 1 nodes
+[comfy-env] Importing reconstruction...
+[comfy-env] Imported reconstruction: 5 nodes
+[comfy-env] Importing reconstruction_cgal...
+[comfy-env] Failed to import .nodes.reconstruction_cgal: No module named 'CGAL'
+[comfy-env] Importing remeshing...
+[comfy-env] Imported remeshing: 11 nodes
+[comfy-env] Importing remeshing_cgal...
+[comfy-env] Failed to import .nodes.remeshing_cgal: No module named 'CGAL'
+[comfy-env] Importing remeshing_gpu...
+[comfy-env] Imported remeshing_gpu: 1 nodes
+[comfy-env] Importing repair...
+[comfy-env] Imported repair: 19 nodes
+[comfy-env] Importing repair_cgal...
+[comfy-env] Failed to import .nodes.repair_cgal: No module named 'CGAL'
+[comfy-env] Importing skeleton...
+[comfy-env] Imported skeleton: 6 nodes
+[comfy-env] Importing smoothing...
+[comfy-env] Imported smoothing: 14 nodes
+[comfy-env] Importing texture_remeshing...
+[comfy-env] Imported texture_remeshing: 2 nodes
+[comfy-env] Importing transforms...
+[comfy-env] Imported transforms: 2 nodes
+[comfy-env] Importing uv...
+[comfy-env] Imported uv: 5 nodes
+[comfy-env] Importing uv_gpu...
+[comfy-env] Imported uv_gpu: 1 nodes
+[comfy-env] Importing visualization...
+[comfy-env] Imported visualization: 9 nodes
+[comfy-env] isolation env not found at /Users/runner/.ce/envs/geometrypack-nodes/.pixi/envs/default: pixi has not materialized `geometrypack-nodes`; using in-process import. Run `comfy-env install` to create it, or set COMFY_ENV_AUTO_INSTALL=1 to materialize missing envs at startup.
+[comfy-env] No env for nodes -- run 'comfy-env install'
+[comfy-env] Registered 116 total nodes
+ComfyUI-Multiband loaded: 15 nodes registered
+[32m[INFO][0m 
+Import times for custom nodes:
+[32m[INFO][0m    0.0 seconds: /Users/runner/work/ComfyUI-CADabra/ComfyUI-CADabra/ComfyUI/custom_nodes/websocket_image_save.py
+[32m[INFO][0m    0.0 seconds: /Users/runner/work/ComfyUI-CADabra/ComfyUI-CADabra/ComfyUI/custom_nodes/ComfyUI-validate-endpoint
+[32m[INFO][0m    0.0 seconds: /Users/runner/work/ComfyUI-CADabra/ComfyUI-CADabra/ComfyUI/custom_nodes/ComfyUI-Multiband
+[32m[INFO][0m    0.2 seconds: /Users/runner/work/ComfyUI-CADabra/ComfyUI-CADabra/ComfyUI/custom_nodes/ComfyUI-GeometryPack
+[32m[INFO][0m    1.3 seconds: /Users/runner/work/ComfyUI-CADabra/ComfyUI-CADabra/ComfyUI/custom_nodes/ComfyUI-CADabra
+[32m[INFO][0m 
+[32m[INFO][0m Context impl SQLiteImpl.
+[32m[INFO][0m Will assume non-transactional DDL.
+[32m[INFO][0m Context impl SQLiteImpl.
+[32m[INFO][0m Will assume non-transactional DDL.
+[32m[INFO][0m Running upgrade  -> 0001_assets, Initial assets schema
+Revision ID: 0001_assets
+Revises: None
+Create Date: 2025-12-10 00:00:00
+[32m[INFO][0m Running upgrade 0001_assets -> 0002_merge_to_asset_references, Merge AssetInfo and AssetCacheState into unified asset_references table.
+[32m[INFO][0m Running upgrade 0002_merge_to_asset_references -> 0003_add_metadata_job_id, Add system_metadata and job_id columns to asset_references.
+Change preview_id FK from assets.id to asset_references.id.
+[32m[INFO][0m Running upgrade 0003_add_metadata_job_id -> 0004_drop_tag_type, Drop the vestigial tags.tag_type column.
+[32m[INFO][0m Running upgrade 0004_drop_tag_type -> 0005_allow_case_sensitive_tags, Allow case-sensitive tag names.
+[32m[INFO][0m Running upgrade 0005_allow_case_sensitive_tags -> 0006_add_loader_path, Add loader_path column to asset_references.
+[32m[INFO][0m Database upgraded from None to 0006_add_loader_path
+[32m[INFO][0m Using RAM pressure cache.
+[32m[INFO][0m Starting server
+
+[32m[INFO][0m To see the GUI go to: http://127.0.0.1:8188

@@ -1,0 +1,139 @@
+Capturing execution frames: cad_fix_degenerate_faces.json
+[32m[INFO][0m Using RAM pressure cache.
+[32m[INFO][0m Using RAM pressure cache.
+[32m[INFO][0m Using RAM pressure cache.
+  Frame 1 saved (frame_000.jpg, t=0.0s)
+  Validating workflow...
+  Queuing workflow for execution...
+[32m[INFO][0m === /validate endpoint called ===
+[32m[INFO][0m Received JSON with keys: ['prompt']
+[32m[INFO][0m Prompt has 7 nodes
+[32m[INFO][0m   Node 2: CADFixDegenerateFaces
+[32m[INFO][0m     Inputs: {"iterations": 5, "max_degree": 8, "sew_tolerance": 0.001, "execution_mode": "single_core", "report_panel": "false", "cad_model": ["5", 0]}
+[32m[INFO][0m   Node 3: CADDetectFreeEdges
+[32m[INFO][0m     Inputs: {"cad_model": ["5", 0]}
+[32m[INFO][0m   Node 5: CAD_Load
+[32m[INFO][0m     Inputs: {"filename": "cad/S23_phone.STEP", "upload_progress": "", "\u2b06 upload / drop CAD": null}
+[32m[INFO][0m   Node 6: PreviewAny
+[32m[INFO][0m     Inputs: {"source": ["3", 2]}
+[32m[INFO][0m   Node 7: PreviewAny
+[32m[INFO][0m     Inputs: {"source": ["9", 2]}
+[32m[INFO][0m   Node 8: PreviewCADOCC
+[32m[INFO][0m     Inputs: {"linear_deflection": 0.1, "angular_deflection": 0.5, "preview_occ": "", "cad_model": ["2", 0]}
+[32m[INFO][0m   Node 9: CADDetectDegenerateFaces
+[32m[INFO][0m     Inputs: {"cad_model": ["5", 0]}
+[32m[INFO][0m Generated prompt_id: 8382ba48-3656-4643-92c8-3969955a0fa6
+[32m[INFO][0m Calling execution.validate_prompt()...
+[32m[INFO][0m Validation result: valid=True
+[32m[INFO][0m === Validation PASSED ===
+[32m[INFO][0m got prompt
+[comfy-env] Running CAD_Load: filename: 'cad/S23_phone.STEP'
+[SubprocessWorker] call_method: nodes.cad_nodes.CAD_Load.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=9 sending call_method
+[15:38:46] [CADabra]  Loading CAD file: S23_phone.STEP
+[worker:ComfyUI-CADabra] INFO:  Loading CAD file: S23_phone.STEP
+[15:38:46] [CADabra] Starting: STEP ReadFile(file=S23_phone.STEP)
+[worker:ComfyUI-CADabra] INFO: Starting: STEP ReadFile(file=S23_phone.STEP)
+[15:38:46] [CADabra] Completed: STEP ReadFile(file=S23_phone.STEP) in 0.06s
+[worker:ComfyUI-CADabra] INFO: Completed: STEP ReadFile(file=S23_phone.STEP) in 0.06s
+[15:38:46] [CADabra] Starting: STEP TransferRoots(file=S23_phone.STEP)
+[worker:ComfyUI-CADabra] INFO: Starting: STEP TransferRoots(file=S23_phone.STEP)
+[15:38:47] [CADabra] Completed: STEP TransferRoots(file=S23_phone.STEP) in 0.80s
+[worker:ComfyUI-CADabra] INFO: Completed: STEP TransferRoots(file=S23_phone.STEP) in 0.80s
+[15:38:47] [CADabra]  Cached to BREP: S23_phone.STEP
+[worker:ComfyUI-CADabra] INFO:  Cached to BREP: S23_phone.STEP
+[15:38:47] [CADabra]  Ready: S23_phone.STEP
+[worker:ComfyUI-CADabra] INFO:  Ready: S23_phone.STEP
+[SubprocessWorker] got response: ok
+[comfy-env] CAD_Load done (1.36s): result: NodeOutput
+[comfy-env] Running CADDetectFreeEdges: cad_model: dict
+[SubprocessWorker] call_method: nodes.cad_inspect_nodes.CADDetectFreeEdges.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=10 sending call_method
+[15:38:47] [CADabra] [CADDetectFreeEdges] S23_phone.STEP: 24 free edges
+[worker:ComfyUI-CADabra] INFO: [CADDetectFreeEdges] S23_phone.STEP: 24 free edges
+  Node executed (2 total), capturing...
+  Frame 2 saved (frame_001.jpg, t=2.2s)
+  [capture-node] freeze=6ms shot=144ms unfreeze=7ms saved=True
+[SubprocessWorker] got response: ok
+[comfy-env] CADDetectFreeEdges done (0.46s): result: NodeOutput
+[comfy-env] Running CADFixDegenerateFaces: iterations: list[1], max_degree: list[1], sew_tolerance: list[1], cad_model: list[1], execution_mode: dict
+[SubprocessWorker] call_method: nodes.cad_utility_nodes.CADFixDegenerateFaces.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=11 sending call_method
+[SubprocessWorker] got response: ok
+[comfy-env] CADFixDegenerateFaces done (0.09s): result: NodeOutput
+[comfy-env] Running PreviewCADOCC: linear_deflection: 0.1, angular_deflection: 0.5, cad_model: dict
+[SubprocessWorker] call_method: nodes.cad_nodes.PreviewCADOCC.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=12 sending call_method
+[15:38:48] [CADabra]  Tessellating (linear: 0.1, angular: 0.5)
+[worker:ComfyUI-CADabra] INFO:  Tessellating (linear: 0.1, angular: 0.5)
+[15:38:48] [CADabra] Starting: BRepMesh(linear_deflection=0.1, angular_deflection=0.5)
+[worker:ComfyUI-CADabra] INFO: Starting: BRepMesh(linear_deflection=0.1, angular_deflection=0.5)
+[15:38:48] [CADabra] Completed: BRepMesh(linear_deflection=0.1, angular_deflection=0.5) in 0.14s
+[worker:ComfyUI-CADabra] INFO: Completed: BRepMesh(linear_deflection=0.1, angular_deflection=0.5) in 0.14s
+[15:38:48] [CADabra]  Mesh: 6298 vertices, 7802 triangles
+[worker:ComfyUI-CADabra] INFO:  Mesh: 6298 vertices, 7802 triangles
+  Node executed (3 total), capturing...
+[15:38:48] [CADabra]  Exported VTP: preview_aab3872a.vtp (447,379 bytes)
+[worker:ComfyUI-CADabra] INFO:  Exported VTP: preview_aab3872a.vtp (447,379 bytes)
+[15:38:48] [CADabra]  Entities: 0 volumes, 176 faces, 822 edges
+[worker:ComfyUI-CADabra] INFO:  Entities: 0 volumes, 176 faces, 822 edges
+[15:38:48] [CADabra]  Face types: {'Cylinder': 84, 'Torus': 24, 'Plane': 68}
+[worker:ComfyUI-CADabra] INFO:  Face types: {'Cylinder': 84, 'Torus': 24, 'Plane': 68}
+[15:38:48] [CADabra]  Edge types: {'Line': 366, 'Circle': 416, 'BSpline': 40}
+[worker:ComfyUI-CADabra] INFO:  Edge types: {'Line': 366, 'Circle': 416, 'BSpline': 40}
+[SubprocessWorker] got response: ok
+[comfy-env] PreviewCADOCC done (0.49s): result: NodeOutput
+[comfy-env] Running CADDetectDegenerateFaces: cad_model: list[1]
+[SubprocessWorker] call_method: nodes.cad_utility_nodes.CADDetectDegenerateFaces.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=13 sending call_method
+  Frame 3 saved (frame_002.jpg, t=3.0s)
+  [capture-node] freeze=62ms shot=131ms unfreeze=8ms saved=True
+[SubprocessWorker] got response: ok
+[comfy-env] CADDetectDegenerateFaces done (0.54s): result: NodeOutput
+[32m[INFO][0m [32mPrompt executed in 2.97 seconds[0m
+  Node executed (5 total), capturing...
+  Frame 4 saved (frame_003.jpg, t=4.2s)
+  [capture-node] freeze=105ms shot=125ms unfreeze=0ms saved=True
+  Execution complete (t=4.2s)
+  Captured 4 unique frames over 4.45s
+  [debug] iframes: 1
+  [debug]   iframe[0]: src=http://127.0.0.1:8188/extensions/ComfyUI-CADabra/viewer_cad_analysis.html?v=1785, canvas=244x498, rafFrozen=True
+  [timing] trigger_3d_previews: 0.0s
+  Saved high-quality screenshot: cad_fix_degenerate_faces_executed.png
+  [timing] final_screenshot: 0.2s
+    Captured 5 video frames

@@ -1,0 +1,30 @@
+Loading workflow from /Users/runner/work/comfy-gpu-ci/comfy-gpu-ci/ComfyUI/custom_nodes/ComfyUI-CADabra/workflows/cad_quality_metrics.json...
+Converting litegraph workflow to prompt format...
+Queuing workflow: /Users/runner/work/comfy-gpu-ci/comfy-gpu-ci/ComfyUI/custom_nodes/ComfyUI-CADabra/workflows/cad_quality_metrics.json...
+[DEBUG] Connecting WebSocket to ws://127.0.0.1:8188/ws?clientId=efbfca41-51a6-4e88-8f16-5c4fcb80feaf
+[DEBUG] WebSocket connected successfully
+Queued with ID: ce704826-2337-4815-827d-c76d0ef6a180
+[DEBUG] WS msg: type=status prompt_id=None (waiting for ce704826-2337-4815-827d-c76d0ef6a180)
+[DEBUG] WS msg: type=status prompt_id=None (waiting for ce704826-2337-4815-827d-c76d0ef6a180)
+[DEBUG] WS msg: type=status prompt_id=None (waiting for ce704826-2337-4815-827d-c76d0ef6a180)
+[DEBUG] WS msg: type=progress_state prompt_id=ce704826-2337-4815-827d-c76d0ef6a180 (waiting for ce704826-2337-4815-827d-c76d0ef6a180)
+[DEBUG] Unhandled msg_type: progress_state
+[DEBUG] WS msg: type=progress_state prompt_id=ce704826-2337-4815-827d-c76d0ef6a180 (waiting for ce704826-2337-4815-827d-c76d0ef6a180)
+[DEBUG] Unhandled msg_type: progress_state
+[DEBUG] WS msg: type=progress_state prompt_id=ce704826-2337-4815-827d-c76d0ef6a180 (waiting for ce704826-2337-4815-827d-c76d0ef6a180)
+[DEBUG] Unhandled msg_type: progress_state
+[DEBUG] WS recv timeout at 0.0s, checking history fallback...
+[DEBUG] WS msg: type=progress_state prompt_id=ce704826-2337-4815-827d-c76d0ef6a180 (waiting for ce704826-2337-4815-827d-c76d0ef6a180)
+[DEBUG] Unhandled msg_type: progress_state
+[DEBUG] WS msg: type=progress_state prompt_id=ce704826-2337-4815-827d-c76d0ef6a180 (waiting for ce704826-2337-4815-827d-c76d0ef6a180)
+[DEBUG] Unhandled msg_type: progress_state
+[DEBUG] WS msg: type=progress_state prompt_id=ce704826-2337-4815-827d-c76d0ef6a180 (waiting for ce704826-2337-4815-827d-c76d0ef6a180)
+[DEBUG] Unhandled msg_type: progress_state
+[DEBUG] WS msg: type=progress_state prompt_id=ce704826-2337-4815-827d-c76d0ef6a180 (waiting for ce704826-2337-4815-827d-c76d0ef6a180)
+[DEBUG] Unhandled msg_type: progress_state
+[DEBUG] WS msg: type=progress_state prompt_id=ce704826-2337-4815-827d-c76d0ef6a180 (waiting for ce704826-2337-4815-827d-c76d0ef6a180)
+[DEBUG] Unhandled msg_type: progress_state
+[DEBUG] WS msg: type=status prompt_id=None (waiting for ce704826-2337-4815-827d-c76d0ef6a180)
+Execution complete (queue empty)
+Workflow completed successfully!
+    Saved screenshot: cad_quality_metrics_executed.png

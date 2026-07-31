@@ -1,0 +1,74 @@
+Capturing execution frames: hierarchy_tree.json
+  [ComfyUI] [32m[INFO][0m Using RAM pressure cache.
+  [ComfyUI] [32m[INFO][0m Using RAM pressure cache.
+  Frame 1 saved (frame_000.jpg, t=0.0s)
+  Validating workflow...
+  [ComfyUI] [32m[INFO][0m === /validate endpoint called ===
+  [ComfyUI] [32m[INFO][0m Received JSON with keys: ['prompt']
+  [ComfyUI] [32m[INFO][0m Prompt has 2 nodes
+  [ComfyUI] [32m[INFO][0m   Node 1: CAD_Load
+  [ComfyUI] [32m[INFO][0m     Inputs: {"filename": "cad/as1-ac-214.stp", "upload_progress": "", "\u2b06 upload / drop CAD": null}
+  [ComfyUI] [32m[INFO][0m   Node 3: CADHierarchyTree
+  Queuing workflow for execution...
+  [ComfyUI] [32m[INFO][0m     Inputs: {"max_depth": -1, "include_properties": true, "collapse_vertices": true, "linear_deflection": 0.1, "angular_deflection": 0.5, "hierarchy_viewer": "", "cad_model": ["1", 0]}
+  [ComfyUI] [32m[INFO][0m Generated prompt_id: 5b1467fa-2b28-4f7f-8733-dddf0948b2c7
+  [ComfyUI] [32m[INFO][0m Calling execution.validate_prompt()...
+  [ComfyUI] [32m[INFO][0m Validation result: valid=True
+  [ComfyUI] [32m[INFO][0m === Validation PASSED ===
+  [ComfyUI] [32m[INFO][0m got prompt
+  [ComfyUI] [comfy-env] Running CAD_Load: filename: 'cad/as1-ac-214.stp'
+  [ComfyUI] [SubprocessWorker] call_method: nodes.cad_nodes.CAD_Load.EXECUTE_NORMALIZED
+  [ComfyUI] [SubprocessWorker] acquired lock, ensuring started...
+  [ComfyUI] [ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+  [ComfyUI] [ComfyUI-CADabra] Health check: ok
+  [ComfyUI] [SubprocessWorker] worker started/confirmed
+  [ComfyUI] [SubprocessWorker] serializing kwargs to shm...
+  [ComfyUI] [SubprocessWorker] created 0 shm blocks
+  [ComfyUI] [SubprocessWorker] sending request via socket...
+  [ComfyUI] [SubprocessWorker] call_id=50 sending call_method
+  [ComfyUI] [14:18:05] [CADabra]  Loading CAD file: as1-ac-214.stp
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO:  Loading CAD file: as1-ac-214.stp
+  [ComfyUI] [14:18:05] [CADabra] Starting: STEP ReadFile(file=as1-ac-214.stp)
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO: Starting: STEP ReadFile(file=as1-ac-214.stp)
+  [ComfyUI] [14:18:05] [CADabra] Completed: STEP ReadFile(file=as1-ac-214.stp) in 0.01s
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO: Completed: STEP ReadFile(file=as1-ac-214.stp) in 0.01s
+  [ComfyUI] [14:18:05] [CADabra] Starting: STEP TransferRoots(file=as1-ac-214.stp)
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO: Starting: STEP TransferRoots(file=as1-ac-214.stp)
+  [ComfyUI] [14:18:05] [CADabra] Completed: STEP TransferRoots(file=as1-ac-214.stp) in 0.03s
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO: Completed: STEP TransferRoots(file=as1-ac-214.stp) in 0.03s
+  [ComfyUI] [14:18:05] [CADabra]  Cached to BREP: as1-ac-214.stp
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO:  Cached to BREP: as1-ac-214.stp
+  [ComfyUI] [14:18:05] [CADabra]  Ready: as1-ac-214.stp
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO:  Ready: as1-ac-214.stp
+  [ComfyUI] [SubprocessWorker] got response: ok
+  [ComfyUI] [comfy-env] CAD_Load done (0.41s): result: NodeOutput
+  [ComfyUI] [comfy-env] Running CADHierarchyTree: max_depth: -1, include_properties: True, collapse_vertices: True, linear_deflection: 0.1, angular_deflection: 0.5, cad_model: dict
+  [ComfyUI] [SubprocessWorker] call_method: nodes.cad_hierarchy_node.CADHierarchyTree.EXECUTE_NORMALIZED
+  [ComfyUI] [SubprocessWorker] acquired lock, ensuring started...
+  [ComfyUI] [ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+  [ComfyUI] [ComfyUI-CADabra] Health check: ok
+  [ComfyUI] [SubprocessWorker] worker started/confirmed
+  [ComfyUI] [SubprocessWorker] serializing kwargs to shm...
+  [ComfyUI] [SubprocessWorker] created 0 shm blocks
+  [ComfyUI] [SubprocessWorker] sending request via socket...
+  [ComfyUI] [SubprocessWorker] call_id=51 sending call_method
+  [ComfyUI] [14:18:05] [CADabra] [CADHierarchyTree] Mesh exported: cad_hierarchy_1785507485703_mesh.vtp (4116 verts, 3896 tris)
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO: [CADHierarchyTree] Mesh exported: cad_hierarchy_1785507485703_mesh.vtp (4116 verts, 3896 tris)
+  [ComfyUI] [14:18:05] [CADabra] [CADHierarchyTree] Edges exported: cad_hierarchy_1785507485703_edges.vtp (708 edges)
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO: [CADHierarchyTree] Edges exported: cad_hierarchy_1785507485703_edges.vtp (708 edges)
+  [ComfyUI] [14:18:05] [CADabra] [CADHierarchyTree] Built hierarchy with 160 faces, 708 edges
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO: [CADHierarchyTree] Built hierarchy with 160 faces, 708 edges
+  [ComfyUI] [SubprocessWorker] got response: ok
+  [ComfyUI] [comfy-env] CADHierarchyTree done (0.17s): result: NodeOutput
+  [ComfyUI] [32m[INFO][0m [32mPrompt executed in 0.58 seconds[0m
+  Node executed (1 total), capturing...
+  Frame 2 saved (frame_001.jpg, t=1.2s)
+  [capture-node] freeze=4ms shot=143ms unfreeze=0ms saved=True
+  Execution complete (t=1.2s)
+  Captured 2 unique frames over 1.38s
+  [debug] iframes: 1
+  [debug]   iframe[0]: src=http://127.0.0.1:41885/extensions/ComfyUI-CADabra/viewer_cad_hierarchy.html?v=17, canvas=756x195, rafFrozen=True
+  [timing] trigger_3d_previews: 0.0s
+  Saved high-quality screenshot: hierarchy_tree_executed.png
+  [timing] final_screenshot: 0.3s
+    Captured 3 video frames

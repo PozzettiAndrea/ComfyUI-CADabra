@@ -1,0 +1,31 @@
+Capturing execution frames: view_cads.json
+  Frame 1 saved (frame_000.jpg, t=0.0s)
+  Validating workflow...
+  Queuing workflow for execution...
+  Node executed (1 total), capturing...
+  Frame 2 saved (frame_001.jpg, t=1.1s)
+  [capture-node] freeze=14ms shot=147ms unfreeze=10ms saved=True
+  Node executed (2 total), capturing...
+  Frame 3 saved (frame_002.jpg, t=1.7s)
+  [capture-node] freeze=23ms shot=148ms unfreeze=4ms saved=True
+  Frame 4 saved (frame_003.jpg, t=6.5s)
+  [capture-periodic] freeze=100ms shot=208ms unfreeze=5ms saved=True
+  [capture-loop] iter=50 t=13.0s state={'complete': False, 'error': None, 'executedCount': 2, 'wsState': 1} eval_ms=8 ram=6.3/16.0GB (39%) swap=0.8/2.9GB (29%) cpu=71% browser_rss=0.65GB
+  [capture-loop] iter=100 t=20.9s state={'complete': False, 'error': None, 'executedCount': 2, 'wsState': 1} eval_ms=26 ram=6.4/16.0GB (40%) swap=0.8/2.9GB (29%) cpu=95% browser_rss=0.64GB
+  [capture-loop] iter=150 t=28.6s state={'complete': False, 'error': None, 'executedCount': 2, 'wsState': 1} eval_ms=21 ram=6.4/16.0GB (40%) swap=0.8/2.9GB (29%) cpu=94% browser_rss=0.64GB
+  Node executed (3 total), capturing...
+  Frame 5 saved (frame_004.jpg, t=34.0s)
+  [capture-node] freeze=38ms shot=998ms unfreeze=26ms saved=True
+  Node executed (5 total), capturing...
+  Frame 6 saved (frame_005.jpg, t=35.6s)
+  [capture-node] freeze=147ms shot=404ms unfreeze=0ms saved=True
+  Execution complete (t=35.6s)
+  Captured 6 unique frames over 36.22s
+  [debug] iframes: 3
+  [debug]   iframe[0]: src=http://127.0.0.1:8188/extensions/ComfyUI-CADabra/viewer_cad_edge_detail.html?v=1, canvas=244x381, rafFrozen=True
+  [debug]   iframe[1]: src=http://127.0.0.1:8188/extensions/ComfyUI-CADabra/viewer_cad_edge.html?v=17782399, canvas=244x260, rafFrozen=True
+  [debug]   iframe[2]: src=http://127.0.0.1:8188/extensions/ComfyUI-CADabra/viewer_cad_analysis.html?v=1778, canvas=244x257, rafFrozen=True
+  [timing] trigger_3d_previews: 0.0s
+  Saved high-quality screenshot: view_cads_executed.png
+  [timing] final_screenshot: 0.2s
+    Captured 7 video frames

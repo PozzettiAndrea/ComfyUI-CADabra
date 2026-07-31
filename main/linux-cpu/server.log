@@ -1,0 +1,984 @@
+setup plugin alembic.autogenerate.schemas
+setup plugin alembic.autogenerate.tables
+setup plugin alembic.autogenerate.types
+setup plugin alembic.autogenerate.constraints
+setup plugin alembic.autogenerate.defaults
+setup plugin alembic.autogenerate.comments
+[comfy-env] ComfyUI-GeometryPack: 3 isolation env(s):
+[comfy-env]   blender -> /home/runner/work/comfy-gpu-ci/comfy-gpu-ci/ComfyUI/custom_nodes/ComfyUI-GeometryPack/nodes/blender
+[comfy-env]   gpu -> /home/runner/work/comfy-gpu-ci/comfy-gpu-ci/ComfyUI/custom_nodes/ComfyUI-GeometryPack/nodes/gpu
+[comfy-env]   main -> /home/runner/work/comfy-gpu-ci/comfy-gpu-ci/ComfyUI/custom_nodes/ComfyUI-GeometryPack/nodes/main
+[comfy-env] prestartup complete
+[comfy-env] ComfyUI-CADabra: 1 isolation env(s):
+[comfy-env]   nodes -> /home/runner/work/comfy-gpu-ci/comfy-gpu-ci/ComfyUI/custom_nodes/ComfyUI-CADabra/nodes
+[comfy-env] prestartup complete
+
+Prestartup times for custom nodes:
+   0.0 seconds: /home/runner/work/comfy-gpu-ci/comfy-gpu-ci/ComfyUI/custom_nodes/ComfyUI-CADabra
+   0.3 seconds: /home/runner/work/comfy-gpu-ci/comfy-gpu-ci/ComfyUI/custom_nodes/ComfyUI-GeometryPack
+
+Found comfy_kitchen backend cuda: {'available': False, 'disabled': False, 'unavailable_reason': 'CUDA not available on this system', 'capabilities': []}
+Found comfy_kitchen backend eager: {'available': True, 'disabled': False, 'unavailable_reason': None, 'capabilities': ['apply_rope', 'apply_rope1', 'dequantize_mxfp8', 'dequantize_nvfp4', 'dequantize_per_tensor_fp8', 'quantize_mxfp8', 'quantize_nvfp4', 'quantize_per_tensor_fp8', 'scaled_mm_mxfp8', 'scaled_mm_nvfp4']}
+Found comfy_kitchen backend triton: {'available': False, 'disabled': True, 'unavailable_reason': 'Neither CUDA nor XPU available on this system', 'capabilities': []}
+Checkpoint files will always be loaded safely.
+Total VRAM 15990 MB, total RAM 15990 MB
+pytorch version: 2.11.0+cu130
+Set vram state to: DISABLED
+Device: cpu
+Using sub quadratic optimization for attention, if you have memory or speed issues try using: --use-split-cross-attention
+Python version: 3.12.13 (main, Mar  4 2026, 02:26:36) [GCC 13.3.0]
+ComfyUI version: 0.20.1
+comfy-aimdo version: 0.3.0
+comfy-kitchen version: 0.2.8
+****** User settings have been changed to be stored on the server instead of browser storage. ******
+****** For multi-user setups add the --multi-user CLI argument to enable multiple user profiles. ******
+ComfyUI frontend version: 1.43.17
+[Prompt Server] web root: /home/runner/work/comfy-gpu-ci/comfy-gpu-ci/.venv/lib/python3.12/site-packages/comfyui_frontend_package/static
+Asset seeder disabled
+ComfyUI-Multiband loaded: 15 nodes registered
+loading...
+calling register_nodes
+[comfy-env] Version: 0.3.75
+[comfy-env] register_nodes: ComfyUI-GeometryPack
+[comfy-env] ComfyUI source dir: /home/runner/work/comfy-gpu-ci/comfy-gpu-ci/ComfyUI
+[comfy-env] Found 3 isolation env(s)
+[comfy-env] Importing nodes (root)...
+[comfy-env] Imported nodes root: 0 nodes
+[comfy-env] Scanning blender metadata...
+[comfy-env] Scanning main metadata...
+[comfy-env] Scanning gpu metadata...
+[comfy-env] Metadata scan: /home/runner/.pixi/bin/pixi run --as-is --manifest-path /home/runner/work/comfy-gpu-ci/comfy-gpu-ci/ComfyUI/.ce/pixi.toml -e geometrypack-gpu python /tmp/comfy_meta_cgv4hox1.py /home/runner/work/comfy-gpu-ci/comfy-gpu-ci/ComfyUI/custom_nodes/ComfyUI-GeometryPack nodes.gpu
+[comfy-env] Scan env PATH for nodes.gpu:
+[comfy-env]   [0] /opt/hostedtoolcache/Python/3.12.13/x64/bin
+[comfy-env]   [1] /opt/hostedtoolcache/Python/3.12.13/x64
+[comfy-env]   [2] /snap/bin
+[comfy-env]   [3] /home/runner/.local/bin
+[comfy-env]   [4] /opt/pipx_bin
+[comfy-env]   [5] /home/runner/.cargo/bin
+[comfy-env]   [6] /home/runner/.config/composer/vendor/bin
+[comfy-env]   [7] /usr/local/.ghcup/bin
+[comfy-env]   [8] /home/runner/.dotnet/tools
+[comfy-env]   [9] /usr/local/sbin
+[comfy-env]   [10] /usr/local/bin
+[comfy-env]   [11] /usr/sbin
+[comfy-env]   [12] /usr/bin
+[comfy-env]   [13] /sbin
+[comfy-env]   [14] /bin
+[comfy-env]   [15] /usr/games
+[comfy-env]   [16] /usr/local/games
+[comfy-env]   [17] /snap/bin
+[comfy-env] Metadata scan: /home/runner/.pixi/bin/pixi run --as-is --manifest-path /home/runner/work/comfy-gpu-ci/comfy-gpu-ci/ComfyUI/.ce/pixi.toml -e geometrypack-blender python /tmp/comfy_meta_wat2y3zi.py /home/runner/work/comfy-gpu-ci/comfy-gpu-ci/ComfyUI/custom_nodes/ComfyUI-GeometryPack nodes.blender
+[comfy-env] Scan env PATH for nodes.blender:
+[comfy-env]   [0] /opt/hostedtoolcache/Python/3.12.13/x64/bin
+[comfy-env]   [1] /opt/hostedtoolcache/Python/3.12.13/x64
+[comfy-env]   [2] /snap/bin
+[comfy-env]   [3] /home/runner/.local/bin
+[comfy-env]   [4] /opt/pipx_bin
+[comfy-env]   [5] /home/runner/.cargo/bin
+[comfy-env]   [6] /home/runner/.config/composer/vendor/bin
+[comfy-env]   [7] /usr/local/.ghcup/bin
+[comfy-env]   [8] /home/runner/.dotnet/tools
+[comfy-env]   [9] /usr/local/sbin
+[comfy-env]   [10] /usr/local/bin
+[comfy-env]   [11] /usr/sbin
+[comfy-env]   [12] /usr/bin
+[comfy-env]   [13] /sbin
+[comfy-env]   [14] /bin
+[comfy-env]   [15] /usr/games
+[comfy-env]   [16] /usr/local/games
+[comfy-env]   [17] /snap/bin
+[comfy-env] Metadata scan: /home/runner/.pixi/bin/pixi run --as-is --manifest-path /home/runner/work/comfy-gpu-ci/comfy-gpu-ci/ComfyUI/.ce/pixi.toml -e geometrypack-main python /tmp/comfy_meta_osm3yc9d.py /home/runner/work/comfy-gpu-ci/comfy-gpu-ci/ComfyUI/custom_nodes/ComfyUI-GeometryPack nodes.main
+[comfy-env] Scan env PATH for nodes.main:
+[comfy-env]   [0] /opt/hostedtoolcache/Python/3.12.13/x64/bin
+[comfy-env]   [1] /opt/hostedtoolcache/Python/3.12.13/x64
+[comfy-env]   [2] /snap/bin
+[comfy-env]   [3] /home/runner/.local/bin
+[comfy-env]   [4] /opt/pipx_bin
+[comfy-env]   [5] /home/runner/.cargo/bin
+[comfy-env]   [6] /home/runner/.config/composer/vendor/bin
+[comfy-env]   [7] /usr/local/.ghcup/bin
+[comfy-env]   [8] /home/runner/.dotnet/tools
+[comfy-env]   [9] /usr/local/sbin
+[comfy-env]   [10] /usr/local/bin
+[comfy-env]   [11] /usr/sbin
+[comfy-env]   [12] /usr/bin
+[comfy-env]   [13] /sbin
+[comfy-env]   [14] /bin
+[comfy-env]   [15] /usr/games
+[comfy-env]   [16] /usr/local/games
+[comfy-env]   [17] /snap/bin
+[comfy-env] Metadata scan stderr for nodes.gpu:
+[comfy-env]   [meta-scan] importing nodes.gpu from /home/runner/work/comfy-gpu-ci/comfy-gpu-ci/ComfyUI/custom_nodes/ComfyUI-GeometryPack
+[comfy-env]   [meta-scan] import OK
+[comfy-env] Scanned nodes.gpu: 3 nodes (8.3s)
+[comfy-env] Scanned gpu: 3 nodes (8.3s)
+[comfy-env] Registered 3 isolation nodes from gpu
+[comfy-env] Metadata scan stderr for nodes.blender:
+[comfy-env]   [meta-scan] importing nodes.blender from /home/runner/work/comfy-gpu-ci/comfy-gpu-ci/ComfyUI/custom_nodes/ComfyUI-GeometryPack
+[comfy-env]   [meta-scan] import OK
+[comfy-env] Scanned nodes.blender: 12 nodes (9.9s)
+[comfy-env] Scanned blender: 12 nodes (9.9s)
+[comfy-env] Registered 12 isolation nodes from blender
+[comfy-env] Metadata scan stderr for nodes.main:
+[comfy-env]   [meta-scan] importing nodes.main from /home/runner/work/comfy-gpu-ci/comfy-gpu-ci/ComfyUI/custom_nodes/ComfyUI-GeometryPack
+[comfy-env]   [meta-scan] import OK
+[comfy-env] Scanned nodes.main: 110 nodes (12.0s)
+[comfy-env] Scanned main: 110 nodes (12.1s)
+[comfy-env] Registered 110 isolation nodes from main
+[comfy-env] Registered 125 total nodes
+[comfy-env] Version: 0.3.75
+[comfy-env] register_nodes: ComfyUI-CADabra
+[comfy-env] ComfyUI source dir: /home/runner/work/comfy-gpu-ci/comfy-gpu-ci/ComfyUI
+[comfy-env] Found 1 isolation env(s)
+[comfy-env] Scanning nodes metadata (isolation root)...
+[comfy-env] Metadata scan: /home/runner/.pixi/bin/pixi run --as-is --manifest-path /home/runner/work/comfy-gpu-ci/comfy-gpu-ci/ComfyUI/.ce/pixi.toml -e cadabra-nodes python /tmp/comfy_meta_3odpmpd9.py /home/runner/work/comfy-gpu-ci/comfy-gpu-ci/ComfyUI/custom_nodes/ComfyUI-CADabra nodes
+[comfy-env] Scan env PATH for nodes:
+[comfy-env]   [0] /opt/hostedtoolcache/Python/3.12.13/x64/bin
+[comfy-env]   [1] /opt/hostedtoolcache/Python/3.12.13/x64
+[comfy-env]   [2] /snap/bin
+[comfy-env]   [3] /home/runner/.local/bin
+[comfy-env]   [4] /opt/pipx_bin
+[comfy-env]   [5] /home/runner/.cargo/bin
+[comfy-env]   [6] /home/runner/.config/composer/vendor/bin
+[comfy-env]   [7] /usr/local/.ghcup/bin
+[comfy-env]   [8] /home/runner/.dotnet/tools
+[comfy-env]   [9] /usr/local/sbin
+[comfy-env]   [10] /usr/local/bin
+[comfy-env]   [11] /usr/sbin
+[comfy-env]   [12] /usr/bin
+[comfy-env]   [13] /sbin
+[comfy-env]   [14] /bin
+[comfy-env]   [15] /usr/games
+[comfy-env]   [16] /usr/local/games
+[comfy-env]   [17] /snap/bin
+[comfy-env] Metadata scan stderr for nodes:
+[comfy-env]   [meta-scan] importing nodes from /home/runner/work/comfy-gpu-ci/comfy-gpu-ci/ComfyUI/custom_nodes/ComfyUI-CADabra
+[comfy-env]   [meta-scan] import OK
+[comfy-env] Scanned nodes: 39 nodes (8.3s)
+[comfy-env] Scanned nodes root: 39 nodes (8.3s)
+[comfy-env] Imported nodes root: 39 nodes (isolation)
+[comfy-env] Registered 39 total nodes
+
+Import times for custom nodes:
+   0.0 seconds: /home/runner/work/comfy-gpu-ci/comfy-gpu-ci/ComfyUI/custom_nodes/websocket_image_save.py
+   0.0 seconds: /home/runner/work/comfy-gpu-ci/comfy-gpu-ci/ComfyUI/custom_nodes/ComfyUI-validate-endpoint
+   0.0 seconds: /home/runner/work/comfy-gpu-ci/comfy-gpu-ci/ComfyUI/custom_nodes/ComfyUI-Multiband
+   8.4 seconds: /home/runner/work/comfy-gpu-ci/comfy-gpu-ci/ComfyUI/custom_nodes/ComfyUI-CADabra
+  12.3 seconds: /home/runner/work/comfy-gpu-ci/comfy-gpu-ci/ComfyUI/custom_nodes/ComfyUI-GeometryPack
+
+Context impl SQLiteImpl.
+Will assume non-transactional DDL.
+Context impl SQLiteImpl.
+Will assume non-transactional DDL.
+Running upgrade  -> 0001_assets, Initial assets schema
+Revision ID: 0001_assets
+Revises: None
+Create Date: 2025-12-10 00:00:00
+Running upgrade 0001_assets -> 0002_merge_to_asset_references, Merge AssetInfo and AssetCacheState into unified asset_references table.
+Running upgrade 0002_merge_to_asset_references -> 0003_add_metadata_job_id, Add system_metadata and job_id columns to asset_references.
+Change preview_id FK from assets.id to asset_references.id.
+Database upgraded from None to 0003_add_metadata_job_id
+Starting server
+
+To see the GUI go to: http://127.0.0.1:8188
+=== /validate endpoint called ===
+Received JSON with keys: ['prompt']
+Prompt has 6 nodes
+  Node 1: CAD_Load
+    Inputs: {"filename": "bellow_pipe.igs"}
+  Node 4: CADFaceAnalysis
+    Inputs: {"linear_deflection": 0.1, "angular_deflection": 0.5, "tolerance": 1, "extract_control_points": true, "report_panel": "false", "cad_model": ["1", 0]}
+  Node 5: CADEdgeAnalysis
+    Inputs: {"linear_deflection": 0.1, "report_panel": "false", "cad_model": ["1", 0]}
+  Node 6: CADEdgeDetailAnalyzer
+    Inputs: {"edge_json_filepath": ["7", 0], "edge_id": 0, "projection_plane": "auto", "edge_detail_viewer": ""}
+  Node 7: CADEdgeViewer
+    Inputs: {"edge_json_filepath": ["5", 1], "visualization_mode": "normal", "selected_edge_id": 0, "edge_viewer": ""}
+  Node 9: CADAnalysisViewer
+    Inputs: {"index": 0, "vtp_filepath": ["4", 1], "json_filepath": ["4", 2], "visualization_mode": "normal", "analysis_viewer": "{\"camera_state\":\"{\\\"position\\\":[-202.9004079405335,74.93720698529373,471.77
+Generated prompt_id: aac24151-6ea3-449c-afe7-e3addd321e41
+Calling execution.validate_prompt()...
+Validation result: valid=True
+=== Validation PASSED ===
+got prompt
+[comfy-env] Running CAD_Load: filename: 'bellow_pipe.igs'
+[comfy-env] SubprocessWorker: /home/runner/work/comfy-gpu-ci/comfy-gpu-ci/ComfyUI/.ce/.pixi/envs/cadabra-nodes/bin/python
+[comfy-env] env_vars: {'COMFYUI_BASE': '/home/runner/work/comfy-gpu-ci/comfy-gpu-ci/ComfyUI'}
+[SubprocessWorker] call_method: nodes.cad_nodes.CAD_Load.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] python: /home/runner/work/comfy-gpu-ci/comfy-gpu-ci/ComfyUI/.ce/.pixi/envs/cadabra-nodes/bin/python
+[ComfyUI-CADabra] sys_path sent to worker: ['/home/runner/work/comfy-gpu-ci/comfy-gpu-ci/ComfyUI', '/home/runner/work/comfy-gpu-ci/comfy-gpu-ci/ComfyUI/custom_nodes/ComfyUI-CADabra', '/home/runner/work/comfy-gpu-ci/comfy-gpu-ci/ComfyUI/.ce/.pixi/envs/cadabra-nodes/lib/python3.12/site-packages', '/home/runner/work/comfy-gpu-ci/comfy-gpu-ci/ComfyUI/custom_nodes/ComfyUI-CADabra']
+[SubprocessWorker] is_pixi=True, python=/home/runner/work/comfy-gpu-ci/comfy-gpu-ci/ComfyUI/.ce/.pixi/envs/cadabra-nodes/bin/python
+[SubprocessWorker] launching cmd=['/home/runner/.pixi/bin/pixi', 'run', '--as-is', '--manifest-path', '/home/runner/work/comfy-gpu-ci/comfy-gpu-ci/ComfyUI/.ce/pixi.toml', '-e', 'cadabra-nodes', 'python', '/tmp/comfyui_pvenv_fcvqa_6g/persistent_worker.py', 'abstract://comfy_worker_993874002388']...
+[SubprocessWorker] socket_addr=abstract://comfy_worker_993874002388 (abstract, no filesystem path)
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=1 sending call_method
+[11:19:45] [CADabra] Starting: IGES ReadFile(file=bellow_pipe.igs)
+[worker:ComfyUI-CADabra] INFO: Starting: IGES ReadFile(file=bellow_pipe.igs)
+[11:19:45] [CADabra] Completed: IGES ReadFile(file=bellow_pipe.igs) in 0.02s
+[worker:ComfyUI-CADabra] INFO: Completed: IGES ReadFile(file=bellow_pipe.igs) in 0.02s
+[11:19:45] [CADabra] Starting: IGES TransferRoots(file=bellow_pipe.igs)
+[worker:ComfyUI-CADabra] INFO: Starting: IGES TransferRoots(file=bellow_pipe.igs)
+[11:19:46] [CADabra] Completed: IGES TransferRoots(file=bellow_pipe.igs) in 0.74s
+[worker:ComfyUI-CADabra] INFO: Completed: IGES TransferRoots(file=bellow_pipe.igs) in 0.74s
+[SubprocessWorker] got response: ok
+[comfy-env] CAD_Load done (9.36s): result: NodeOutput
+[comfy-env] Running CADFaceAnalysis: linear_deflection: list[1], angular_deflection: list[1], tolerance: list[1], extract_control_points: list[1], cad_model: list[1]
+[SubprocessWorker] call_method: nodes.cad_analysis_nodes.CADFaceAnalysis.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=2 sending call_method
+[11:19:46] [CADabra] Starting: CAD Face Analysis(faces=236)
+[worker:ComfyUI-CADabra] INFO: Starting: CAD Face Analysis(faces=236)
+[11:19:46] [CADabra] Completed: CAD Face Analysis(faces=236) in 0.21s
+[worker:ComfyUI-CADabra] INFO: Completed: CAD Face Analysis(faces=236) in 0.21s
+[11:19:46] [CADabra] Starting: CAD Adjacency Graph(faces=236)
+[worker:ComfyUI-CADabra] INFO: Starting: CAD Adjacency Graph(faces=236)
+[11:19:46] [CADabra] Completed: CAD Adjacency Graph(faces=236) in 0.00s
+[worker:ComfyUI-CADabra] INFO: Completed: CAD Adjacency Graph(faces=236) in 0.00s
+[SubprocessWorker] got response: ok
+[comfy-env] CADFaceAnalysis done (5.22s): result: NodeOutput
+[comfy-env] Running CADAnalysisViewer: index: list[1], vtp_filepath: list[1], json_filepath: list[1], visualization_mode: list[1]
+[SubprocessWorker] call_method: nodes.cad_analysis_nodes.CADAnalysisViewer.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=3 sending call_method
+[SubprocessWorker] got response: ok
+[comfy-env] CADAnalysisViewer done (0.02s): result: NodeOutput
+[comfy-env] Running CADEdgeAnalysis: linear_deflection: 0.1, cad_model: dict
+[SubprocessWorker] call_method: nodes.cad_edge_analysis_nodes.CADEdgeAnalysis.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=4 sending call_method
+[11:19:51] [CADabra] Starting: CAD Edge Analysis(edges=1122)
+[worker:ComfyUI-CADabra] INFO: Starting: CAD Edge Analysis(edges=1122)
+[11:19:51] [CADabra] Completed: CAD Edge Analysis(edges=1122) in 0.14s
+[worker:ComfyUI-CADabra] INFO: Completed: CAD Edge Analysis(edges=1122) in 0.14s
+[SubprocessWorker] got response: ok
+[comfy-env] CADEdgeAnalysis done (0.27s): result: NodeOutput
+[comfy-env] Running CADEdgeViewer: edge_json_filepath: '/home/runner/work/comfy-gpu-ci/comfy-gpu-ci/ComfyUI/outp..., visualization_mode: 'normal', selected_edge_id: 0
+[SubprocessWorker] call_method: nodes.cad_edge_analysis_nodes.CADEdgeViewer.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=5 sending call_method
+[SubprocessWorker] got response: ok
+[comfy-env] CADEdgeViewer done (0.03s): result: NodeOutput
+[comfy-env] Running CADEdgeDetailAnalyzer: edge_json_filepath: '/home/runner/work/comfy-gpu-ci/comfy-gpu-ci/ComfyUI/outp..., edge_id: 0, projection_plane: 'auto'
+[SubprocessWorker] call_method: nodes.cad_edge_analysis_nodes.CADEdgeDetailAnalyzer.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=6 sending call_method
+[SubprocessWorker] got response: ok
+[comfy-env] CADEdgeDetailAnalyzer done (0.03s): result: NodeOutput
+Prompt executed in 14.93 seconds
+=== /validate endpoint called ===
+Received JSON with keys: ['prompt']
+Prompt has 7 nodes
+  Node 1: CAD_Load
+    Inputs: {"filename": "spiral_wind_turbine.stp"}
+  Node 2: CADSplitComponents
+    Inputs: {"report_panel": "false", "cad_model": ["1", 0]}
+  Node 3: CADExtractFaces
+    Inputs: {"cad_model": ["2", 0]}
+  Node 5: PreviewCADOCC
+    Inputs: {"linear_deflection": 0.1, "angular_deflection": 0.5, "preview_occ": "", "cad_model": ["9", 0]}
+  Node 6: PreviewAny
+    Inputs: {"preview_markdown": "", "preview_text": "", "previewMode": null, "source": ["2", 3]}
+  Node 7: PreviewCADOCC
+    Inputs: {"linear_deflection": 0.1, "angular_deflection": 0.5, "preview_occ": "", "cad_model": ["1", 0]}
+  Node 9: CADProjectFaces2D
+    Inputs: {"plane": "XY", "plane_origin_x": 0, "plane_origin_y": 0, "plane_origin_z": 0, "plane_normal_x": 0, "plane_normal_y": 0, "plane_normal_z": 1, "cad_model": ["3", 0]}
+Generated prompt_id: 1a9f34b9-7ac8-4c75-9911-3373e1280387
+Calling execution.validate_prompt()...
+Validation result: valid=True
+=== Validation PASSED ===
+got prompt
+[comfy-env] Running CAD_Load: filename: 'spiral_wind_turbine.stp'
+[SubprocessWorker] call_method: nodes.cad_nodes.CAD_Load.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=7 sending call_method
+[11:20:03] [CADabra] Starting: STEP ReadFile(file=spiral_wind_turbine.stp)
+[worker:ComfyUI-CADabra] INFO: Starting: STEP ReadFile(file=spiral_wind_turbine.stp)
+[11:20:03] [CADabra] Completed: STEP ReadFile(file=spiral_wind_turbine.stp) in 0.02s
+[worker:ComfyUI-CADabra] INFO: Completed: STEP ReadFile(file=spiral_wind_turbine.stp) in 0.02s
+[11:20:03] [CADabra] Starting: STEP TransferRoots(file=spiral_wind_turbine.stp)
+[worker:ComfyUI-CADabra] INFO: Starting: STEP TransferRoots(file=spiral_wind_turbine.stp)
+[11:20:03] [CADabra] Completed: STEP TransferRoots(file=spiral_wind_turbine.stp) in 0.06s
+[worker:ComfyUI-CADabra] INFO: Completed: STEP TransferRoots(file=spiral_wind_turbine.stp) in 0.06s
+[SubprocessWorker] got response: ok
+[comfy-env] CAD_Load done (0.10s): result: NodeOutput
+[comfy-env] Running PreviewCADOCC: linear_deflection: 0.1, angular_deflection: 0.5, cad_model: dict
+[SubprocessWorker] call_method: nodes.cad_nodes.PreviewCADOCC.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=8 sending call_method
+[11:20:03] [CADabra] Starting: BRepMesh(linear_deflection=0.1, angular_deflection=0.5)
+[worker:ComfyUI-CADabra] INFO: Starting: BRepMesh(linear_deflection=0.1, angular_deflection=0.5)
+[11:20:03] [CADabra] Completed: BRepMesh(linear_deflection=0.1, angular_deflection=0.5) in 0.08s
+[worker:ComfyUI-CADabra] INFO: Completed: BRepMesh(linear_deflection=0.1, angular_deflection=0.5) in 0.08s
+[SubprocessWorker] got response: ok
+[comfy-env] PreviewCADOCC done (0.16s): result: NodeOutput
+[comfy-env] Running CADSplitComponents: cad_model: dict
+[SubprocessWorker] call_method: nodes.cad_utility_nodes.CADSplitComponents.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=9 sending call_method
+[SubprocessWorker] got response: ok
+[comfy-env] CADSplitComponents done (0.02s): result: NodeOutput
+[comfy-env] Running CADExtractFaces: cad_model: dict
+[SubprocessWorker] call_method: nodes.cad_utility_nodes.CADExtractFaces.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=10 sending call_method
+[SubprocessWorker] got response: ok
+[comfy-env] CADExtractFaces done (0.02s): result: NodeOutput
+[comfy-env] Running CADProjectFaces2D: plane: 'XY', plane_origin_x: 0.0, plane_origin_y: 0.0, plane_origin_z: 0.0, plane_normal_x: 0.0, plane_normal_y: 0.0, plane_normal_z: 1.0, cad_model: dict
+[SubprocessWorker] call_method: nodes.cad_project_faces.CADProjectFaces2D.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=11 sending call_method
+[SubprocessWorker] got response: ok
+[comfy-env] CADProjectFaces2D done (1.76s): result: NodeOutput
+[comfy-env] Running PreviewCADOCC: linear_deflection: 0.1, angular_deflection: 0.5, cad_model: dict
+[SubprocessWorker] call_method: nodes.cad_nodes.PreviewCADOCC.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=12 sending call_method
+[11:20:05] [CADabra] Starting: BRepMesh(linear_deflection=0.1, angular_deflection=0.5)
+[worker:ComfyUI-CADabra] INFO: Starting: BRepMesh(linear_deflection=0.1, angular_deflection=0.5)
+[11:20:05] [CADabra] Completed: BRepMesh(linear_deflection=0.1, angular_deflection=0.5) in 0.03s
+[worker:ComfyUI-CADabra] INFO: Completed: BRepMesh(linear_deflection=0.1, angular_deflection=0.5) in 0.03s
+[SubprocessWorker] got response: ok
+[comfy-env] PreviewCADOCC done (0.07s): result: NodeOutput
+Prompt executed in 2.14 seconds
+=== /validate endpoint called ===
+Received JSON with keys: ['prompt']
+Prompt has 4 nodes
+  Node 1: CAD_Load
+    Inputs: {"filename": "bellow_pipe.igs"}
+  Node 2: CAD_Quality_Metrics
+    Inputs: {"check_watertightness": true, "check_degeneracy": true, "check_boundaries": true, "area_tolerance": 1e-06, "report_panel": "false", "cad_model": ["1", 0]}
+  Node 4: PreviewCADOCC
+    Inputs: {"linear_deflection": 0.1, "angular_deflection": 0.5, "preview_occ": "", "cad_model": ["1", 0]}
+  Node 5: PreviewAny
+    Inputs: {"preview_markdown": "", "preview_text": "", "previewMode": null, "source": ["2", 1]}
+Generated prompt_id: c350140a-202e-4d73-9ff6-eec0d6269356
+Calling execution.validate_prompt()...
+Validation result: valid=True
+=== Validation PASSED ===
+got prompt
+[comfy-env] Running CAD_Load: filename: 'bellow_pipe.igs'
+[SubprocessWorker] call_method: nodes.cad_nodes.CAD_Load.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=13 sending call_method
+[SubprocessWorker] got response: ok
+[comfy-env] CAD_Load done (0.01s): result: NodeOutput
+[comfy-env] Running PreviewCADOCC: linear_deflection: 0.1, angular_deflection: 0.5, cad_model: dict
+[SubprocessWorker] call_method: nodes.cad_nodes.PreviewCADOCC.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=14 sending call_method
+[11:20:14] [CADabra] Starting: BRepMesh(linear_deflection=0.1, angular_deflection=0.5)
+[worker:ComfyUI-CADabra] INFO: Starting: BRepMesh(linear_deflection=0.1, angular_deflection=0.5)
+[11:20:17] [CADabra] Completed: BRepMesh(linear_deflection=0.1, angular_deflection=0.5) in 3.03s
+[worker:ComfyUI-CADabra] INFO: Completed: BRepMesh(linear_deflection=0.1, angular_deflection=0.5) in 3.03s
+[SubprocessWorker] got response: ok
+[comfy-env] PreviewCADOCC done (6.16s): result: NodeOutput
+[comfy-env] Running CAD_Quality_Metrics: check_watertightness: True, check_degeneracy: True, check_boundaries: True, area_tolerance: 1e-06, cad_model: dict
+[SubprocessWorker] call_method: nodes.cad_nodes.CAD_Quality_Metrics.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=15 sending call_method
+Error   : Gmsh has not been initialized
+Error   : Gmsh has not been initialized
+[SubprocessWorker] got response: ok
+[comfy-env] CAD_Quality_Metrics done (0.09s): result: NodeOutput
+Prompt executed in 6.26 seconds
+=== /validate endpoint called ===
+Received JSON with keys: ['prompt']
+Prompt has 4 nodes
+  Node 1: CAD_Load
+    Inputs: {"filename": "spiral_wind_turbine.stp"}
+  Node 2: CADEdgeViewer
+    Inputs: {"edge_json_filepath": ["3", 1], "visualization_mode": "normal", "selected_edge_id": 0, "edge_viewer": ""}
+  Node 3: CADEdgeAnalysis
+    Inputs: {"linear_deflection": 0.1, "report_panel": "false", "cad_model": ["1", 0]}
+  Node 5: CADEdgeDetailAnalyzer
+    Inputs: {"edge_json_filepath": ["2", 0], "edge_id": ["2", 1], "projection_plane": "auto", "edge_detail_viewer": ""}
+Generated prompt_id: 5a59a1ed-3738-4834-93aa-2804ef954e6a
+Calling execution.validate_prompt()...
+Validation result: valid=True
+=== Validation PASSED ===
+got prompt
+[comfy-env] Running CAD_Load: filename: 'spiral_wind_turbine.stp'
+[SubprocessWorker] call_method: nodes.cad_nodes.CAD_Load.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=16 sending call_method
+[SubprocessWorker] got response: ok
+[comfy-env] CAD_Load done (0.01s): result: NodeOutput
+[comfy-env] Running CADEdgeAnalysis: linear_deflection: 0.1, cad_model: dict
+[SubprocessWorker] call_method: nodes.cad_edge_analysis_nodes.CADEdgeAnalysis.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=17 sending call_method
+[11:20:32] [CADabra] Starting: CAD Edge Analysis(edges=158)
+[worker:ComfyUI-CADabra] INFO: Starting: CAD Edge Analysis(edges=158)
+[11:20:32] [CADabra] Completed: CAD Edge Analysis(edges=158) in 0.01s
+[worker:ComfyUI-CADabra] INFO: Completed: CAD Edge Analysis(edges=158) in 0.01s
+[SubprocessWorker] got response: ok
+[comfy-env] CADEdgeAnalysis done (0.03s): result: NodeOutput
+[comfy-env] Running CADEdgeViewer: edge_json_filepath: '/home/runner/work/comfy-gpu-ci/comfy-gpu-ci/ComfyUI/outp..., visualization_mode: 'normal', selected_edge_id: 0
+[SubprocessWorker] call_method: nodes.cad_edge_analysis_nodes.CADEdgeViewer.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=18 sending call_method
+[SubprocessWorker] got response: ok
+[comfy-env] CADEdgeViewer done (0.01s): result: NodeOutput
+[comfy-env] Running CADEdgeDetailAnalyzer: edge_json_filepath: '/home/runner/work/comfy-gpu-ci/comfy-gpu-ci/ComfyUI/outp..., edge_id: 0, projection_plane: 'auto'
+[SubprocessWorker] call_method: nodes.cad_edge_analysis_nodes.CADEdgeDetailAnalyzer.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=19 sending call_method
+[SubprocessWorker] got response: ok
+[comfy-env] CADEdgeDetailAnalyzer done (0.01s): result: NodeOutput
+Prompt executed in 0.06 seconds
+=== /validate endpoint called ===
+Received JSON with keys: ['prompt']
+Prompt has 5 nodes
+  Node 1: CAD_Load
+    Inputs: {"filename": "spiral_wind_turbine.stp"}
+  Node 13: PreviewCADOCC
+    Inputs: {"linear_deflection": 0.1, "angular_deflection": 0.5, "preview_occ": "", "cad_model": ["1", 0]}
+  Node 18: GeomPackPreviewMeshDual
+    Inputs: {"layout": "side_by_side", "mode": "fields", "opacity_1": 1, "opacity_2": 1, "preview_dual": "{\"show_edges\":true,\"camera_state\":\"{\\\"position\\\":[-471.89641369846686,190.09798306808523,92.60360
+  Node 19: CAD_Mesh
+    Inputs: {"backend": "BRepIncremental", "backend.linear_deflection": 0.1, "backend.angular_deflection": 0.5, "backend.merge_vertices": true, "backend.relative": false, "backend.parallel": false, "backend.min_s
+  Node 20: CAD_Mesh
+    Inputs: {"backend": "BRepIncremental", "backend.linear_deflection": 0.1, "backend.angular_deflection": 0.5, "backend.merge_vertices": true, "backend.relative": false, "backend.parallel": false, "backend.min_s
+Generated prompt_id: c33d49f4-6a2f-42ac-8cc0-c718ecd058ac
+Calling execution.validate_prompt()...
+Validation result: valid=True
+=== Validation PASSED ===
+got prompt
+[comfy-env] Running CAD_Load: filename: 'spiral_wind_turbine.stp'
+[SubprocessWorker] call_method: nodes.cad_nodes.CAD_Load.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: failed
+[ComfyUI-CADabra] Socket unhealthy, restarting worker...
+[ComfyUI-CADabra] python: /home/runner/work/comfy-gpu-ci/comfy-gpu-ci/ComfyUI/.ce/.pixi/envs/cadabra-nodes/bin/python
+[ComfyUI-CADabra] sys_path sent to worker: ['/home/runner/work/comfy-gpu-ci/comfy-gpu-ci/ComfyUI', '/home/runner/work/comfy-gpu-ci/comfy-gpu-ci/ComfyUI/custom_nodes/ComfyUI-CADabra', '/home/runner/work/comfy-gpu-ci/comfy-gpu-ci/ComfyUI/.ce/.pixi/envs/cadabra-nodes/lib/python3.12/site-packages', '/home/runner/work/comfy-gpu-ci/comfy-gpu-ci/ComfyUI/custom_nodes/ComfyUI-CADabra']
+[SubprocessWorker] is_pixi=True, python=/home/runner/work/comfy-gpu-ci/comfy-gpu-ci/ComfyUI/.ce/.pixi/envs/cadabra-nodes/bin/python
+[SubprocessWorker] launching cmd=['/home/runner/.pixi/bin/pixi', 'run', '--as-is', '--manifest-path', '/home/runner/work/comfy-gpu-ci/comfy-gpu-ci/ComfyUI/.ce/pixi.toml', '-e', 'cadabra-nodes', 'python', '/tmp/comfyui_pvenv_fcvqa_6g/persistent_worker.py', 'abstract://comfy_worker_6e1922bcdcaa']...
+[SubprocessWorker] socket_addr=abstract://comfy_worker_6e1922bcdcaa (abstract, no filesystem path)
+free(): invalid pointer
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=20 sending call_method
+[SubprocessWorker] got response: ok
+[comfy-env] CAD_Load done (6.95s): result: NodeOutput
+[comfy-env] Running PreviewCADOCC: linear_deflection: 0.1, angular_deflection: 0.5, cad_model: dict
+[SubprocessWorker] call_method: nodes.cad_nodes.PreviewCADOCC.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=21 sending call_method
+[11:20:48] [CADabra] Starting: BRepMesh(linear_deflection=0.1, angular_deflection=0.5)
+[worker:ComfyUI-CADabra] INFO: Starting: BRepMesh(linear_deflection=0.1, angular_deflection=0.5)
+[11:20:48] [CADabra] Completed: BRepMesh(linear_deflection=0.1, angular_deflection=0.5) in 0.06s
+[worker:ComfyUI-CADabra] INFO: Completed: BRepMesh(linear_deflection=0.1, angular_deflection=0.5) in 0.06s
+[SubprocessWorker] got response: ok
+[comfy-env] PreviewCADOCC done (0.14s): result: NodeOutput
+[comfy-env] Running CAD_Mesh: backend: dict, extract_face_ids: True, cad_model: dict
+[SubprocessWorker] call_method: nodes.cad_nodes.CAD_Mesh.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=22 sending call_method
+[11:20:48] [CADabra] Starting: BRepMesh(linear_deflection=0.1, angular_deflection=0.5, relative=False, parallel=False, min_size=0.0)
+[worker:ComfyUI-CADabra] INFO: Starting: BRepMesh(linear_deflection=0.1, angular_deflection=0.5, relative=False, parallel=False, min_size=0.0)
+[11:20:49] [CADabra] Completed: BRepMesh(linear_deflection=0.1, angular_deflection=0.5, relative=False, parallel=False, min_size=0.0) in 0.10s
+[worker:ComfyUI-CADabra] INFO: Completed: BRepMesh(linear_deflection=0.1, angular_deflection=0.5, relative=False, parallel=False, min_size=0.0) in 0.10s
+[SubprocessWorker] got response: ok
+[comfy-env] CAD_Mesh done (1.87s): result: NodeOutput
+[comfy-env] Running GeomPackPreviewMeshDual: layout: 'side_by_side', mode: 'fields', opacity_1: 1.0, opacity_2: 1.0, mesh_1: Trimesh, mesh_2: Trimesh
+[comfy-env] SubprocessWorker: /home/runner/work/comfy-gpu-ci/comfy-gpu-ci/ComfyUI/.ce/.pixi/envs/geometrypack-main/bin/python
+[comfy-env] env_vars: {'KMP_DUPLICATE_LIB_OK': 'TRUE', 'COMFYUI_BASE': '/home/runner/work/comfy-gpu-ci/comfy-gpu-ci/ComfyUI'}
+[SubprocessWorker] call_method: nodes.main.visualization.preview_mesh_dual.PreviewMeshDualNode.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-GeometryPack] python: /home/runner/work/comfy-gpu-ci/comfy-gpu-ci/ComfyUI/.ce/.pixi/envs/geometrypack-main/bin/python
+[ComfyUI-GeometryPack] sys_path sent to worker: ['/home/runner/work/comfy-gpu-ci/comfy-gpu-ci/ComfyUI', '/home/runner/work/comfy-gpu-ci/comfy-gpu-ci/ComfyUI/custom_nodes/ComfyUI-GeometryPack', '/home/runner/work/comfy-gpu-ci/comfy-gpu-ci/ComfyUI/.ce/.pixi/envs/geometrypack-main/lib/python3.12/site-packages', '/home/runner/work/comfy-gpu-ci/comfy-gpu-ci/ComfyUI/custom_nodes/ComfyUI-GeometryPack']
+[SubprocessWorker] is_pixi=True, python=/home/runner/work/comfy-gpu-ci/comfy-gpu-ci/ComfyUI/.ce/.pixi/envs/geometrypack-main/bin/python
+[SubprocessWorker] launching cmd=['/home/runner/.pixi/bin/pixi', 'run', '--as-is', '--manifest-path', '/home/runner/work/comfy-gpu-ci/comfy-gpu-ci/ComfyUI/.ce/pixi.toml', '-e', 'geometrypack-main', 'python', '/tmp/comfyui_pvenv_nrinjgrf/persistent_worker.py', 'abstract://comfy_worker_1c3de1fd8779']...
+[SubprocessWorker] socket_addr=abstract://comfy_worker_1c3de1fd8779 (abstract, no filesystem path)
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 1 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=1 sending call_method
+[worker:ComfyUI-GeometryPack] INFO: Layout: side_by_side, Mode: fields
+[worker:ComfyUI-GeometryPack] INFO: Mesh 1: Mesh - 2754 vertices, 5508 faces
+[worker:ComfyUI-GeometryPack] INFO: Mesh 2: Mesh - 2754 vertices, 5508 faces
+[worker:ComfyUI-GeometryPack] INFO: Mesh 1 fields: ['face.cad_face_id']
+[worker:ComfyUI-GeometryPack] INFO: Mesh 2 fields: ['face.cad_face_id']
+[worker:ComfyUI-GeometryPack] INFO: Common fields: ['face.cad_face_id']
+[worker:ComfyUI-GeometryPack] INFO: Mesh 1 visual: kind=None, texture=False, vertex_colors=False
+[worker:ComfyUI-GeometryPack] INFO: Mesh 2 visual: kind=None, texture=False, vertex_colors=False
+[worker:ComfyUI-GeometryPack] INFO: Exporting mesh to VTP: /home/runner/work/comfy-gpu-ci/comfy-gpu-ci/ComfyUI/output/preview_dual_1_1c580345.vtp
+[worker:ComfyUI-GeometryPack] INFO: Adding normals field (2754 vertices)
+[worker:ComfyUI-GeometryPack] INFO: Adding face field: cad_face_id
+[worker:ComfyUI-GeometryPack] INFO: Export complete: 2754 vertices, 5508 faces
+[worker:ComfyUI-GeometryPack] INFO: Exported VTP with fields: /home/runner/work/comfy-gpu-ci/comfy-gpu-ci/ComfyUI/output/preview_dual_1_1c580345.vtp
+[worker:ComfyUI-GeometryPack] INFO: Exporting mesh to VTP: /home/runner/work/comfy-gpu-ci/comfy-gpu-ci/ComfyUI/output/preview_dual_2_1c580345.vtp
+[worker:ComfyUI-GeometryPack] INFO: Adding normals field (2754 vertices)
+[worker:ComfyUI-GeometryPack] INFO: Adding face field: cad_face_id
+[worker:ComfyUI-GeometryPack] INFO: Export complete: 2754 vertices, 5508 faces
+[worker:ComfyUI-GeometryPack] INFO: Exported VTP with fields: /home/runner/work/comfy-gpu-ci/comfy-gpu-ci/ComfyUI/output/preview_dual_2_1c580345.vtp
+[worker:ComfyUI-GeometryPack] INFO: Preview ready
+[SubprocessWorker] got response: ok
+[comfy-env] GeomPackPreviewMeshDual done (4.07s): result: NodeOutput
+Prompt executed in 13.02 seconds
+=== /validate endpoint called ===
+Received JSON with keys: ['prompt']
+Prompt has 8 nodes
+  Node 1: CAD_Load
+    Inputs: {"filename": "wc.STEP"}
+  Node 12: CADTransform
+    Inputs: {"translate_x": 0.12109375, "translate_y": 0, "translate_z": ["14", 0], "rotate_x": 0, "rotate_y": 0, "rotate_z": 0, "scale": 1, "cad_model": ["1", 0]}
+  Node 13: CADBoundingBox
+    Inputs: {"cad_model": ["1", 0]}
+  Node 14: FloatMath
+    Inputs: {"operation": "negate", "operand": 1, "value": ["13", 4]}
+  Node 17: PreviewCADOCC
+    Inputs: {"linear_deflection": 0.1, "angular_deflection": 0.5, "preview_occ": "", "cad_model": ["1", 0]}
+  Node 18: CADRaytracerBVH
+    Inputs: {"resolution": 522, "deflection": 0.02, "backend": "embree", "output_mode": "full", "roi": "", "cad_model": ["12", 0]}
+  Node 19: MultibandPreview
+    Inputs: {"channel_index": 0, "multiband": ["21", 0]}
+  Node 21: MultibandLoadFromPath
+    Inputs: {"file_path": ["18", 0], "normalize": false}
+Generated prompt_id: c6bae046-45bc-4772-860e-dcc57ab58733
+Calling execution.validate_prompt()...
+Validation result: valid=True
+=== Validation PASSED ===
+got prompt
+WARNING: stat: path should be string, bytes, os.PathLike or integer, not NoneType
+[comfy-env] Running CAD_Load: filename: 'wc.STEP'
+[SubprocessWorker] call_method: nodes.cad_nodes.CAD_Load.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=23 sending call_method
+[11:21:04] [CADabra] Starting: STEP ReadFile(file=wc.STEP)
+[worker:ComfyUI-CADabra] INFO: Starting: STEP ReadFile(file=wc.STEP)
+[11:21:04] [CADabra] Completed: STEP ReadFile(file=wc.STEP) in 0.04s
+[worker:ComfyUI-CADabra] INFO: Completed: STEP ReadFile(file=wc.STEP) in 0.04s
+[11:21:04] [CADabra] Starting: STEP TransferRoots(file=wc.STEP)
+[worker:ComfyUI-CADabra] INFO: Starting: STEP TransferRoots(file=wc.STEP)
+[11:21:04] [CADabra] Completed: STEP TransferRoots(file=wc.STEP) in 0.39s
+[worker:ComfyUI-CADabra] INFO: Completed: STEP TransferRoots(file=wc.STEP) in 0.39s
+[SubprocessWorker] got response: ok
+[comfy-env] CAD_Load done (0.51s): result: NodeOutput
+[comfy-env] Running PreviewCADOCC: linear_deflection: 0.1, angular_deflection: 0.5, cad_model: dict
+[SubprocessWorker] call_method: nodes.cad_nodes.PreviewCADOCC.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=24 sending call_method
+[11:21:04] [CADabra] Starting: BRepMesh(linear_deflection=0.1, angular_deflection=0.5)
+[worker:ComfyUI-CADabra] INFO: Starting: BRepMesh(linear_deflection=0.1, angular_deflection=0.5)
+[11:21:05] [CADabra] Completed: BRepMesh(linear_deflection=0.1, angular_deflection=0.5) in 0.50s
+[worker:ComfyUI-CADabra] INFO: Completed: BRepMesh(linear_deflection=0.1, angular_deflection=0.5) in 0.50s
+[SubprocessWorker] got response: ok
+[comfy-env] PreviewCADOCC done (1.02s): result: NodeOutput
+[comfy-env] Running CADBoundingBox: cad_model: dict
+[SubprocessWorker] call_method: nodes.cad_transform_nodes.CADBoundingBox.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=25 sending call_method
+[SubprocessWorker] got response: ok
+[comfy-env] CADBoundingBox done (0.03s): result: NodeOutput
+[comfy-env] Running FloatMath: operation: 'negate', operand: 1.0, value: -152.39288241063343
+[SubprocessWorker] call_method: nodes.cad_transform_nodes.FloatMath.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=26 sending call_method
+[SubprocessWorker] got response: ok
+[comfy-env] FloatMath done (0.01s): result: NodeOutput
+[comfy-env] Running CADTransform: translate_x: 0.12109375, translate_y: 0.0, translate_z: 152.39288241063343, rotate_x: 0.0, rotate_y: 0.0, rotate_z: 0.0, scale: 1.0, cad_model: dict
+[SubprocessWorker] call_method: nodes.cad_transform_nodes.CADTransform.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=27 sending call_method
+[SubprocessWorker] got response: ok
+[comfy-env] CADTransform done (0.04s): result: NodeOutput
+[comfy-env] Running CADRaytracerBVH: resolution: 522, deflection: 0.02, backend: 'embree', output_mode: 'full', roi: '', cad_model: dict
+[SubprocessWorker] call_method: nodes.raytracer_node.CADRaytracerBVH.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=28 sending call_method
+[SubprocessWorker] got response: ok
+[comfy-env] CADRaytracerBVH done (5.84s): result: NodeOutput
+PreviewMultibandImage: Batch=1, Channels=13, Names=['height', 'normal_x', 'normal_y', 'normal_z', 'position_x', 'position_y', 'position_z', 'face_id', 'curv_gauss', 'curv_mean', 'curv_min', 'curv_max', 'hit_mask']
+Prompt executed in 7.68 seconds
+=== /validate endpoint called ===
+Received JSON with keys: ['prompt']
+Prompt has 10 nodes
+  Node 1: CAD_Load
+    Inputs: {"filename": "spiral_wind_turbine.stp"}
+  Node 5: PreviewImage
+    Inputs: {"images": ["23", 0]}
+  Node 12: CADTransform
+    Inputs: {"translate_x": 0.12109375, "translate_y": 0, "translate_z": ["14", 0], "rotate_x": 0, "rotate_y": 0, "rotate_z": 0, "scale": 1, "cad_model": ["1", 0]}
+  Node 13: CADBoundingBox
+    Inputs: {"cad_model": ["1", 0]}
+  Node 14: FloatMath
+    Inputs: {"operation": "negate", "operand": 1, "value": ["13", 4]}
+  Node 17: PreviewCADOCC
+    Inputs: {"linear_deflection": 0.1, "angular_deflection": 0.5, "preview_occ": "", "cad_model": ["1", 0]}
+  Node 18: CADROISelector
+    Inputs: {"linear_deflection": 0.1, "angular_deflection": 0.5, "roi_value": "-223.3452,-35.7267,-154.3834,71.2399", "roi_viewer": "", "cad_model": ["1", 0]}
+  Node 22: CADRaytracerBVH
+    Inputs: {"resolution": 500, "deflection": 0.02, "backend": "embree", "output_mode": "full", "roi": ["18", 0], "cad_model": ["12", 0]}
+  Node 23: MultibandToImage
+    Inputs: {"channels": "0,1,2", "multiband": ["24", 0]}
+  Node 24: MultibandLoadFromPath
+    Inputs: {"file_path": ["22", 0], "normalize": false}
+Generated prompt_id: 4877c2b3-e76b-4f17-b47e-5b66ba7cfbf2
+Calling execution.validate_prompt()...
+Validation result: valid=True
+=== Validation PASSED ===
+got prompt
+WARNING: stat: path should be string, bytes, os.PathLike or integer, not NoneType
+[comfy-env] Running CAD_Load: filename: 'spiral_wind_turbine.stp'
+[SubprocessWorker] call_method: nodes.cad_nodes.CAD_Load.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=29 sending call_method
+[SubprocessWorker] got response: ok
+[comfy-env] CAD_Load done (0.01s): result: NodeOutput
+[comfy-env] Running PreviewCADOCC: linear_deflection: 0.1, angular_deflection: 0.5, cad_model: dict
+[SubprocessWorker] call_method: nodes.cad_nodes.PreviewCADOCC.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=30 sending call_method
+[11:21:21] [CADabra] Starting: BRepMesh(linear_deflection=0.1, angular_deflection=0.5)
+[worker:ComfyUI-CADabra] INFO: Starting: BRepMesh(linear_deflection=0.1, angular_deflection=0.5)
+[11:21:21] [CADabra] Completed: BRepMesh(linear_deflection=0.1, angular_deflection=0.5) in 0.07s
+[worker:ComfyUI-CADabra] INFO: Completed: BRepMesh(linear_deflection=0.1, angular_deflection=0.5) in 0.07s
+[SubprocessWorker] got response: ok
+[comfy-env] PreviewCADOCC done (0.14s): result: NodeOutput
+[comfy-env] Running CADROISelector: linear_deflection: 0.1, angular_deflection: 0.5, roi_value: '-223.3452,-35.7267,-154.3834,71.2399', cad_model: dict
+[SubprocessWorker] call_method: nodes.cad_roi_selector_node.CADROISelector.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=31 sending call_method
+[11:21:21] [CADabra] Starting: BRepMesh ROI Selector(linear_deflection=0.1, angular_deflection=0.5)
+[worker:ComfyUI-CADabra] INFO: Starting: BRepMesh ROI Selector(linear_deflection=0.1, angular_deflection=0.5)
+[11:21:21] [CADabra] Completed: BRepMesh ROI Selector(linear_deflection=0.1, angular_deflection=0.5) in 0.07s
+[worker:ComfyUI-CADabra] INFO: Completed: BRepMesh ROI Selector(linear_deflection=0.1, angular_deflection=0.5) in 0.07s
+[SubprocessWorker] got response: ok
+[comfy-env] CADROISelector done (0.21s): result: NodeOutput
+[comfy-env] Running CADBoundingBox: cad_model: dict
+[SubprocessWorker] call_method: nodes.cad_transform_nodes.CADBoundingBox.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=32 sending call_method
+[SubprocessWorker] got response: ok
+[comfy-env] CADBoundingBox done (0.01s): result: NodeOutput
+[comfy-env] Running FloatMath: operation: 'negate', operand: 1.0, value: -7.627119192354975
+[SubprocessWorker] call_method: nodes.cad_transform_nodes.FloatMath.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=33 sending call_method
+[SubprocessWorker] got response: ok
+[comfy-env] FloatMath done (0.01s): result: NodeOutput
+[comfy-env] Running CADTransform: translate_x: 0.12109375, translate_y: 0.0, translate_z: 7.627119192354975, rotate_x: 0.0, rotate_y: 0.0, rotate_z: 0.0, scale: 1.0, cad_model: dict
+[SubprocessWorker] call_method: nodes.cad_transform_nodes.CADTransform.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=34 sending call_method
+[SubprocessWorker] got response: ok
+[comfy-env] CADTransform done (0.02s): result: NodeOutput
+[comfy-env] Running CADRaytracerBVH: resolution: 500, deflection: 0.02, backend: 'embree', output_mode: 'full', roi: '-223.3452,-35.7267,-154.3834,71.2399', cad_model: dict
+[SubprocessWorker] call_method: nodes.raytracer_node.CADRaytracerBVH.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=35 sending call_method
+[SubprocessWorker] got response: ok
+[comfy-env] CADRaytracerBVH done (0.90s): result: NodeOutput
+Prompt executed in 1.38 seconds
+=== /validate endpoint called ===
+Received JSON with keys: ['prompt']
+Prompt has 6 nodes
+  Node 1: CAD_Load
+    Inputs: {"filename": "bellow_pipe.igs"}
+  Node 4: CADFaceAnalysis
+    Inputs: {"linear_deflection": 0.1, "angular_deflection": 0.5, "tolerance": 1, "extract_control_points": true, "report_panel": "false", "cad_model": ["1", 0]}
+  Node 5: CADEdgeAnalysis
+    Inputs: {"linear_deflection": 0.1, "report_panel": "false", "cad_model": ["1", 0]}
+  Node 6: CADEdgeDetailAnalyzer
+    Inputs: {"edge_json_filepath": ["7", 0], "edge_id": 0, "projection_plane": "auto", "edge_detail_viewer": ""}
+  Node 7: CADEdgeViewer
+    Inputs: {"edge_json_filepath": ["5", 1], "visualization_mode": "normal", "selected_edge_id": 0, "edge_viewer": ""}
+  Node 9: CADAnalysisViewer
+    Inputs: {"index": 0, "vtp_filepath": ["4", 1], "json_filepath": ["4", 2], "visualization_mode": "normal", "analysis_viewer": "{\"camera_state\":\"\",\"selected_face_id\":null}"}
+Generated prompt_id: 8dcca52e-efd4-4fdb-af5d-95f88bd65bca
+Calling execution.validate_prompt()...
+Validation result: valid=True
+=== Validation PASSED ===
+got prompt
+[comfy-env] Running CAD_Load: filename: 'bellow_pipe.igs'
+[SubprocessWorker] call_method: nodes.cad_nodes.CAD_Load.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=36 sending call_method
+[SubprocessWorker] got response: ok
+[comfy-env] CAD_Load done (0.01s): result: NodeOutput
+[comfy-env] Running CADFaceAnalysis: linear_deflection: list[1], angular_deflection: list[1], tolerance: list[1], extract_control_points: list[1], cad_model: list[1]
+[SubprocessWorker] call_method: nodes.cad_analysis_nodes.CADFaceAnalysis.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=37 sending call_method
+[11:21:31] [CADabra] Starting: CAD Face Analysis(faces=236)
+[worker:ComfyUI-CADabra] INFO: Starting: CAD Face Analysis(faces=236)
+[11:21:31] [CADabra] Completed: CAD Face Analysis(faces=236) in 0.21s
+[worker:ComfyUI-CADabra] INFO: Completed: CAD Face Analysis(faces=236) in 0.21s
+[11:21:31] [CADabra] Starting: CAD Adjacency Graph(faces=236)
+[worker:ComfyUI-CADabra] INFO: Starting: CAD Adjacency Graph(faces=236)
+[11:21:31] [CADabra] Completed: CAD Adjacency Graph(faces=236) in 0.01s
+[worker:ComfyUI-CADabra] INFO: Completed: CAD Adjacency Graph(faces=236) in 0.01s
+[SubprocessWorker] got response: ok
+[comfy-env] CADFaceAnalysis done (5.03s): result: NodeOutput
+[comfy-env] Running CADAnalysisViewer: index: list[1], vtp_filepath: list[1], json_filepath: list[1], visualization_mode: list[1]
+[SubprocessWorker] call_method: nodes.cad_analysis_nodes.CADAnalysisViewer.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=38 sending call_method
+[SubprocessWorker] got response: ok
+[comfy-env] CADAnalysisViewer done (0.03s): result: NodeOutput
+[comfy-env] Running CADEdgeAnalysis: linear_deflection: 0.1, cad_model: dict
+[SubprocessWorker] call_method: nodes.cad_edge_analysis_nodes.CADEdgeAnalysis.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=39 sending call_method
+[11:21:36] [CADabra] Starting: CAD Edge Analysis(edges=1122)
+[worker:ComfyUI-CADabra] INFO: Starting: CAD Edge Analysis(edges=1122)
+[11:21:36] [CADabra] Completed: CAD Edge Analysis(edges=1122) in 0.14s
+[worker:ComfyUI-CADabra] INFO: Completed: CAD Edge Analysis(edges=1122) in 0.14s
+[SubprocessWorker] got response: ok
+[comfy-env] CADEdgeAnalysis done (0.32s): result: NodeOutput
+[comfy-env] Running CADEdgeViewer: edge_json_filepath: '/home/runner/work/comfy-gpu-ci/comfy-gpu-ci/ComfyUI/outp..., visualization_mode: 'normal', selected_edge_id: 0
+[SubprocessWorker] call_method: nodes.cad_edge_analysis_nodes.CADEdgeViewer.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=40 sending call_method
+[SubprocessWorker] got response: ok
+[comfy-env] CADEdgeViewer done (0.02s): result: NodeOutput
+[comfy-env] Running CADEdgeDetailAnalyzer: edge_json_filepath: '/home/runner/work/comfy-gpu-ci/comfy-gpu-ci/ComfyUI/outp..., edge_id: 0, projection_plane: 'auto'
+[SubprocessWorker] call_method: nodes.cad_edge_analysis_nodes.CADEdgeDetailAnalyzer.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=41 sending call_method
+[SubprocessWorker] got response: ok
+[comfy-env] CADEdgeDetailAnalyzer done (0.02s): result: NodeOutput
+Prompt executed in 5.43 seconds

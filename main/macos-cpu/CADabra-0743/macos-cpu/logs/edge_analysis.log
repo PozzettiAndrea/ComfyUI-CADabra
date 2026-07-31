@@ -1,0 +1,29 @@
+Loading workflow from /Users/runner/work/comfy-gpu-ci/comfy-gpu-ci/ComfyUI/custom_nodes/ComfyUI-CADabra/workflows/edge_analysis.json...
+Converting litegraph workflow to prompt format...
+Queuing workflow: /Users/runner/work/comfy-gpu-ci/comfy-gpu-ci/ComfyUI/custom_nodes/ComfyUI-CADabra/workflows/edge_analysis.json...
+[DEBUG] Connecting WebSocket to ws://127.0.0.1:8188/ws?clientId=06b1b267-6eeb-452a-a36a-052438e924cd
+[DEBUG] WebSocket connected successfully
+Queued with ID: 2c324e37-8492-41b6-9b9e-d3499b0ca062
+[DEBUG] WS msg: type=status prompt_id=None (waiting for 2c324e37-8492-41b6-9b9e-d3499b0ca062)
+[DEBUG] WS msg: type=status prompt_id=None (waiting for 2c324e37-8492-41b6-9b9e-d3499b0ca062)
+[DEBUG] WS msg: type=status prompt_id=None (waiting for 2c324e37-8492-41b6-9b9e-d3499b0ca062)
+[DEBUG] WS msg: type=progress_state prompt_id=2c324e37-8492-41b6-9b9e-d3499b0ca062 (waiting for 2c324e37-8492-41b6-9b9e-d3499b0ca062)
+[DEBUG] Unhandled msg_type: progress_state
+[DEBUG] WS msg: type=progress_state prompt_id=2c324e37-8492-41b6-9b9e-d3499b0ca062 (waiting for 2c324e37-8492-41b6-9b9e-d3499b0ca062)
+[DEBUG] Unhandled msg_type: progress_state
+[DEBUG] WS msg: type=progress_state prompt_id=2c324e37-8492-41b6-9b9e-d3499b0ca062 (waiting for 2c324e37-8492-41b6-9b9e-d3499b0ca062)
+[DEBUG] Unhandled msg_type: progress_state
+[DEBUG] WS msg: type=progress_state prompt_id=2c324e37-8492-41b6-9b9e-d3499b0ca062 (waiting for 2c324e37-8492-41b6-9b9e-d3499b0ca062)
+[DEBUG] Unhandled msg_type: progress_state
+[DEBUG] WS msg: type=progress_state prompt_id=2c324e37-8492-41b6-9b9e-d3499b0ca062 (waiting for 2c324e37-8492-41b6-9b9e-d3499b0ca062)
+[DEBUG] Unhandled msg_type: progress_state
+[DEBUG] WS msg: type=progress_state prompt_id=2c324e37-8492-41b6-9b9e-d3499b0ca062 (waiting for 2c324e37-8492-41b6-9b9e-d3499b0ca062)
+[DEBUG] Unhandled msg_type: progress_state
+[DEBUG] WS msg: type=progress_state prompt_id=2c324e37-8492-41b6-9b9e-d3499b0ca062 (waiting for 2c324e37-8492-41b6-9b9e-d3499b0ca062)
+[DEBUG] Unhandled msg_type: progress_state
+[DEBUG] WS msg: type=progress_state prompt_id=2c324e37-8492-41b6-9b9e-d3499b0ca062 (waiting for 2c324e37-8492-41b6-9b9e-d3499b0ca062)
+[DEBUG] Unhandled msg_type: progress_state
+[DEBUG] WS msg: type=status prompt_id=None (waiting for 2c324e37-8492-41b6-9b9e-d3499b0ca062)
+Execution complete (queue empty)
+Workflow completed successfully!
+    Saved screenshot: edge_analysis_executed.png

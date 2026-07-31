@@ -1,0 +1,158 @@
+Capturing execution frames: overlapping_faces.json
+[32m[INFO][0m Using RAM pressure cache.
+[32m[INFO][0m Using RAM pressure cache.
+  Frame 1 saved (frame_000.jpg, t=0.0s)
+  Validating workflow...
+  Queuing workflow for execution...
+[32m[INFO][0m === /validate endpoint called ===
+[32m[INFO][0m Received JSON with keys: ['prompt']
+[32m[INFO][0m Prompt has 7 nodes
+[32m[INFO][0m   Node 1: CAD_Load
+[32m[INFO][0m     Inputs: {"filename": "cad/fan_enclosure.stp", "upload_progress": "", "\u2b06 upload / drop CAD": null}
+[32m[INFO][0m   Node 7: PreviewAny
+[32m[INFO][0m     Inputs: {"source": ["14", 2]}
+[32m[INFO][0m   Node 10: CADAnalysisViewer
+[32m[INFO][0m     Inputs: {"index": 0, "vtp_filepath": ["11", 1], "json_filepath": ["11", 2], "visualization_mode": "normal", "analysis_viewer": "{\"camera_state\":\"{\\\"position\\\":[-13.34947988181263,58.88419272094807,-20.
+[32m[INFO][0m   Node 11: CADFaceAnalysis
+[32m[INFO][0m     Inputs: {"linear_deflection": 0.1, "angular_deflection": 0.5, "tolerance": 1, "extract_control_points": true, "report_panel": "true", "cad_model": ["14", 0]}
+[32m[INFO][0m   Node 12: CADExtractFaces
+[32m[INFO][0m     Inputs: {"face_numbers": "11,557", "cad_model": ["11", 0]}
+[32m[INFO][0m   Node 13: PreviewCADOCC
+[32m[INFO][0m     Inputs: {"linear_deflection": 0.1, "angular_deflection": 0.5, "preview_occ": "", "cad_model": ["12", 0]}
+[32m[INFO][0m   Node 14: CADCheckOverlappingFaces
+[32m[INFO][0m     Inputs: {"method": "boolean_common", "tolerance": 0.01, "area_fraction_threshold": 0.3, "ignore_opposite_normals": false, "time_budget_seconds": 60, "report_panel": "false", "cad_model": ["1", 0]}
+[32m[INFO][0m Generated prompt_id: ec9ad7b9-fabc-454e-87bb-27884886c223
+[32m[INFO][0m Calling execution.validate_prompt()...
+[32m[INFO][0m Validation result: valid=True
+[32m[INFO][0m === Validation PASSED ===
+[32m[INFO][0m got prompt
+[comfy-env] Running CAD_Load: filename: 'cad/fan_enclosure.stp'
+[SubprocessWorker] call_method: nodes.cad_nodes.CAD_Load.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=61 sending call_method
+[15:43:09] [CADabra]  Using cache: fan_enclosure.stp
+[worker:ComfyUI-CADabra] INFO:  Using cache: fan_enclosure.stp
+[15:43:09] [CADabra]  Ready: fan_enclosure.stp
+[worker:ComfyUI-CADabra] INFO:  Ready: fan_enclosure.stp
+[SubprocessWorker] got response: ok
+[comfy-env] CAD_Load done (0.07s): result: NodeOutput
+[comfy-env] Running CADCheckOverlappingFaces: method: 'boolean_common', tolerance: 0.01, area_fraction_threshold: 0.3, ignore_opposite_normals: False, time_budget_seconds: 60.0, cad_model: dict
+[SubprocessWorker] call_method: nodes.cad_utility_nodes.CADCheckOverlappingFaces.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=62 sending call_method
+  Frame 2 saved (frame_001.jpg, t=2.2s)
+  [capture-periodic] freeze=4ms shot=121ms unfreeze=5ms saved=True
+  Frame 3 saved (frame_002.jpg, t=4.5s)
+  [capture-periodic] freeze=5ms shot=108ms unfreeze=4ms saved=True
+  [capture-loop] iter=50 t=6.1s state={'complete': False, 'error': None, 'executedCount': 0, 'wsState': 1} eval_ms=5 ram=5.5/16.0GB (34%) swap=0.3/2.9GB (12%) cpu=44% browser_rss=0.65GB
+  Frame 4 saved (frame_003.jpg, t=6.6s)
+  [capture-periodic] freeze=5ms shot=105ms unfreeze=5ms saved=True
+  [capture-loop] iter=100 t=12.1s state={'complete': False, 'error': None, 'executedCount': 0, 'wsState': 1} eval_ms=4 ram=5.3/16.0GB (33%) swap=0.5/2.9GB (18%) cpu=60% browser_rss=0.64GB
+  [capture-loop] iter=150 t=18.4s state={'complete': False, 'error': None, 'executedCount': 0, 'wsState': 1} eval_ms=6 ram=5.4/16.0GB (34%) swap=0.5/2.9GB (18%) cpu=79% browser_rss=0.64GB
+  [capture-loop] iter=200 t=24.4s state={'complete': False, 'error': None, 'executedCount': 0, 'wsState': 1} eval_ms=5 ram=5.4/16.0GB (34%) swap=0.5/2.9GB (18%) cpu=58% browser_rss=0.63GB
+  [capture-loop] iter=250 t=30.2s state={'complete': False, 'error': None, 'executedCount': 0, 'wsState': 1} eval_ms=7 ram=5.4/16.0GB (34%) swap=0.5/2.9GB (18%) cpu=59% browser_rss=0.63GB
+  Node executed (1 total), capturing...
+  Frame 5 saved (frame_004.jpg, t=33.9s)
+  [capture-node] freeze=5ms shot=127ms unfreeze=4ms saved=True
+[SubprocessWorker] got response: ok
+[comfy-env] CADCheckOverlappingFaces done (33.37s): result: NodeOutput
+[comfy-env] Running CADFaceAnalysis: linear_deflection: list[1], angular_deflection: list[1], tolerance: list[1], extract_control_points: list[1], cad_model: list[1]
+[SubprocessWorker] call_method: nodes.cad_analysis_nodes.CADFaceAnalysis.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=63 sending call_method
+[15:43:43] [CADabra] Starting: CAD Face Analysis(faces=718)
+[worker:ComfyUI-CADabra] INFO: Starting: CAD Face Analysis(faces=718)
+[15:43:43] [CADabra] Completed: CAD Face Analysis(faces=718) in 0.28s
+[worker:ComfyUI-CADabra] INFO: Completed: CAD Face Analysis(faces=718) in 0.28s
+[15:43:43] [CADabra] Starting: CAD Adjacency Graph(faces=718)
+[worker:ComfyUI-CADabra] INFO: Starting: CAD Adjacency Graph(faces=718)
+[15:43:43] [CADabra] Completed: CAD Adjacency Graph(faces=718) in 0.02s
+[worker:ComfyUI-CADabra] INFO: Completed: CAD Adjacency Graph(faces=718) in 0.02s
+  Node executed (2 total), capturing...
+[SubprocessWorker] got response: ok
+[comfy-env] CADFaceAnalysis done (1.83s): result: NodeOutput
+[comfy-env] Running CADAnalysisViewer: index: list[1], vtp_filepath: list[1], json_filepath: list[1], visualization_mode: list[1]
+[SubprocessWorker] call_method: nodes.cad_analysis_nodes.CADAnalysisViewer.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=64 sending call_method
+[SubprocessWorker] got response: ok
+[comfy-env] CADAnalysisViewer done (0.09s): result: NodeOutput
+[comfy-env] Running CADExtractFaces: face_numbers: '11,557', cad_model: dict
+[SubprocessWorker] call_method: nodes.cad_utility_nodes.CADExtractFaces.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=65 sending call_method
+[SubprocessWorker] got response: ok
+[comfy-env] CADExtractFaces done (0.19s): result: NodeOutput
+[comfy-env] Running PreviewCADOCC: linear_deflection: 0.1, angular_deflection: 0.5, cad_model: dict
+[SubprocessWorker] call_method: nodes.cad_nodes.PreviewCADOCC.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=66 sending call_method
+[15:43:45] [CADabra]  Tessellating (linear: 0.1, angular: 0.5)
+[worker:ComfyUI-CADabra] INFO:  Tessellating (linear: 0.1, angular: 0.5)
+[15:43:45] [CADabra] Starting: BRepMesh(linear_deflection=0.1, angular_deflection=0.5)
+[worker:ComfyUI-CADabra] INFO: Starting: BRepMesh(linear_deflection=0.1, angular_deflection=0.5)
+[15:43:45] [CADabra] Completed: BRepMesh(linear_deflection=0.1, angular_deflection=0.5) in 0.01s
+[worker:ComfyUI-CADabra] INFO: Completed: BRepMesh(linear_deflection=0.1, angular_deflection=0.5) in 0.01s
+[15:43:45] [CADabra]  Mesh: 134 vertices, 138 triangles
+[worker:ComfyUI-CADabra] INFO:  Mesh: 134 vertices, 138 triangles
+[15:43:45] [CADabra]  Exported VTP: preview_17012886.vtp (8,957 bytes)
+[worker:ComfyUI-CADabra] INFO:  Exported VTP: preview_17012886.vtp (8,957 bytes)
+[15:43:45] [CADabra]  Entities: 0 volumes, 2 faces, 28 edges
+[worker:ComfyUI-CADabra] INFO:  Entities: 0 volumes, 2 faces, 28 edges
+[15:43:45] [CADabra]  Face types: {'Plane': 2}
+[worker:ComfyUI-CADabra] INFO:  Face types: {'Plane': 2}
+[15:43:45] [CADabra]  Edge types: {'BSpline': 4, 'Line': 16, 'Circle': 8}
+[worker:ComfyUI-CADabra] INFO:  Edge types: {'BSpline': 4, 'Line': 16, 'Circle': 8}
+[SubprocessWorker] got response: ok
+[comfy-env] PreviewCADOCC done (0.11s): result: NodeOutput
+[32m[INFO][0m [32mPrompt executed in 35.67 seconds[0m
+  Frame 6 saved (frame_005.jpg, t=35.6s)
+  [capture-node] freeze=424ms shot=278ms unfreeze=4ms saved=True
+  Node executed (4 total), capturing...
+  Frame 7 saved (frame_006.jpg, t=37.1s)
+  [capture-node] freeze=62ms shot=233ms unfreeze=0ms saved=True
+  Execution complete (t=37.1s)
+  Captured 7 unique frames over 37.39s
+  [debug] iframes: 2
+  [debug]   iframe[0]: src=http://127.0.0.1:8188/extensions/ComfyUI-CADabra/viewer_cad_analysis.html?v=1785, canvas=467x290, rafFrozen=True
+  [debug]   iframe[1]: src=http://127.0.0.1:8188/extensions/ComfyUI-CADabra/viewer_cad_analysis.html?v=1785, canvas=244x498, rafFrozen=True
+  [timing] trigger_3d_previews: 0.0s
+  Saved high-quality screenshot: overlapping_faces_executed.png
+  [timing] final_screenshot: 0.2s
+    Captured 8 video frames

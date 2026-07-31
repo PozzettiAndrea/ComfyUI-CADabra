@@ -1,0 +1,219 @@
+Capturing execution frames: extract_largest_component.json
+[32m[INFO][0m Using RAM pressure cache.
+[32m[INFO][0m Using RAM pressure cache.
+  Frame 1 saved (frame_000.jpg, t=0.0s)
+  Validating workflow...
+  Queuing workflow for execution...
+[32m[INFO][0m === /validate endpoint called ===
+[32m[INFO][0m Received JSON with keys: ['prompt']
+[32m[INFO][0m Prompt has 5 nodes
+[32m[INFO][0m   Node 1: CADExtractLargestComponent
+[32m[INFO][0m     Inputs: {"criterion": "face_count", "cad_model": ["2", 0]}
+[32m[INFO][0m   Node 2: CAD_Load
+[32m[INFO][0m     Inputs: {"filename": "cad/S23_phone.STEP", "upload_progress": "", "\u2b06 upload / drop CAD": null}
+[32m[INFO][0m   Node 3: CADUltimateInspection
+[32m[INFO][0m     Inputs: {"report_panel": "true", "cad_model": ["1", 0]}
+[32m[INFO][0m   Node 4: PreviewCADOCC
+[32m[INFO][0m     Inputs: {"linear_deflection": 0.1, "angular_deflection": 0.5, "preview_occ": "", "cad_model": ["3", 0]}
+[32m[INFO][0m   Node 5: CADUltimateInspection
+[32m[INFO][0m     Inputs: {"report_panel": "true", "cad_model": ["2", 0]}
+[32m[INFO][0m Generated prompt_id: 577de33e-2446-4ef2-9cf0-3198f4dcdb7e
+[32m[INFO][0m Calling execution.validate_prompt()...
+[32m[INFO][0m Validation result: valid=True
+[32m[INFO][0m === Validation PASSED ===
+[32m[INFO][0m got prompt
+[comfy-env] Running CAD_Load: filename: 'cad/S23_phone.STEP'
+[SubprocessWorker] call_method: nodes.cad_nodes.CAD_Load.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: failed
+[ComfyUI-CADabra] Socket unhealthy, restarting worker...
+[ComfyUI-CADabra] python: /home/runner/.ce/envs/cadabra-nodes/.pixi/envs/default/bin/python
+[ComfyUI-CADabra] sys_path sent to worker: ['/home/runner/work/ComfyUI-CADabra/ComfyUI-CADabra/ComfyUI', '/home/runner/work/ComfyUI-CADabra/ComfyUI-CADabra/ComfyUI/custom_nodes/ComfyUI-CADabra', '/home/runner/.ce/envs/cadabra-nodes/.pixi/envs/default/lib/python3.1/site-packages', '/home/runner/work/ComfyUI-CADabra/ComfyUI-CADabra/ComfyUI/custom_nodes/ComfyUI-CADabra']
+[SubprocessWorker] is_pixi=True, python=/home/runner/.ce/envs/cadabra-nodes/.pixi/envs/default/bin/python
+[SubprocessWorker] launching cmd=['/home/runner/.pixi/bin/pixi', 'run', '--as-is', '--manifest-path', '/home/runner/.ce/envs/cadabra-nodes/pixi.toml', '-e', 'default', 'python', '/tmp/comfyui_pvenv_cfeb7gr3/persistent_worker.py', 'abstract://comfy_worker_b7eb05b05d24']...
+[SubprocessWorker] socket_addr=abstract://comfy_worker_b7eb05b05d24 (abstract, no filesystem path)
+ WARN Encountered 1 warning while parsing the manifest:
+  ⚠ the `[system-requirements]` table is deprecated in favor of virtual packages on `platforms`
+    ╭─[/home/runner/.ce/envs/cadabra-nodes/pixi.toml:46:1]
+ 45 │     
+ 46 │ ╭─▶ [feature.node.system-requirements.libc]
+ 47 │ │   family = "glibc"
+ 48 │ ├─▶ version = "2.39"
+    · ╰──── declare these on the `platforms` entries instead
+ 49 │     
+    ╰────
+  help: e.g. platforms = [{ platform = "linux-64", cuda = "12" }]
+
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=45 sending call_method
+  Frame 2 saved (frame_001.jpg, t=2.3s)
+  [capture-periodic] freeze=3ms shot=115ms unfreeze=7ms saved=True
+  Node executed (1 total), capturing...
+[15:37:53] [CADabra]  Using cache: S23_phone.STEP
+[worker:ComfyUI-CADabra] INFO:  Using cache: S23_phone.STEP
+[15:37:53] [CADabra]  Ready: S23_phone.STEP
+[worker:ComfyUI-CADabra] INFO:  Ready: S23_phone.STEP
+[SubprocessWorker] got response: ok
+[comfy-env] CAD_Load done (4.13s): result: NodeOutput
+[comfy-env] Running CADUltimateInspection: cad_model: dict
+[SubprocessWorker] call_method: nodes.cad_inspect_nodes.CADUltimateInspection.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=46 sending call_method
+[15:37:54] [CADabra] [UltimateInspection]
+=== Ultimate CAD Inspection ===
+Valid B-rep:         OK Yes   (BRepCheck_Analyzer)
+Watertight (closed): X No   (24 free edges)
+Manifold:            OK Yes   (0 non-manifold edges)
+Solid:               X No   (0 solids)
+
+Topology:
+  Solids:   0
+  Shells:   7
+  Faces:    176
+  Edges:    423   (free: 24, non-manifold: 0, degenerate: 0)
+  Vertices: 276
+
+Geometry:
+  Surface area:  43,486.610
+  Face area:     min 0.4066   max 11,151.6   (176 faces)
+  Bounding box:  [-0.000, -0.250, -163.300] to [77.900, 10.400, 0.000]
+  Extents:       77.900 x 10.650 x 163.300
+  Diagonal:      181.242
+[worker:ComfyUI-CADabra] INFO: [UltimateInspection]
+=== Ultimate CAD Inspection ===
+Valid B-rep:         OK Yes   (BRepCheck_Analyzer)
+Watertight (closed): X No   (24 free edges)
+Manifold:            OK Yes   (0 non-manifold edges)
+Solid:               X No   (0 solids)
+
+Topology:
+  Solids:   0
+  Shells:   7
+  Faces:    176
+  Edges:    423   (free: 24, non-manifold: 0, degenerate: 0)
+  Vertices: 276
+
+Geometry:
+  Surface area:  43,486.610
+  Face area:     min 0.4066   max 11,151.6   (176 faces)
+  Bounding box:  [-0.000, -0.250, -163.300] to [77.900, 10.400, 0.000]
+  Extents:       77.900 x 10.650 x 163.300
+  Diagonal:      181.242
+[SubprocessWorker] got response: ok
+[comfy-env] CADUltimateInspection done (0.13s): result: NodeOutput
+[comfy-env] Running CADExtractLargestComponent: criterion: 'face_count', cad_model: dict
+[SubprocessWorker] call_method: nodes.cad_utility_nodes.CADExtractLargestComponent.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=47 sending call_method
+[SubprocessWorker] got response: ok
+[comfy-env] CADExtractLargestComponent done (0.05s): result: NodeOutput
+[comfy-env] Running CADUltimateInspection: cad_model: dict
+[SubprocessWorker] call_method: nodes.cad_inspect_nodes.CADUltimateInspection.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=48 sending call_method
+[15:37:54] [CADabra] [UltimateInspection]
+=== Ultimate CAD Inspection ===
+Valid B-rep:         OK Yes   (BRepCheck_Analyzer)
+Watertight (closed): X No   (0 free edges)
+Manifold:            OK Yes   (0 non-manifold edges)
+Solid:               X No   (0 solids)
+
+Topology:
+  Solids:   0
+  Shells:   0
+  Faces:    168
+  Edges:    397   (free: 0, non-manifold: 0, degenerate: 0)
+  Vertices: 252
+
+Geometry:
+  Surface area:  30,445.076
+  Face area:     min 0.4066   max 11,151.6   (168 faces)
+  Bounding box:  [-0.000, -0.000, -163.300] to [77.900, 10.400, 0.000]
+  Extents:       77.900 x 10.400 x 163.300
+  Diagonal:      181.228
+[worker:ComfyUI-CADabra] INFO: [UltimateInspection]
+=== Ultimate CAD Inspection ===
+Valid B-rep:         OK Yes   (BRepCheck_Analyzer)
+Watertight (closed): X No   (0 free edges)
+Manifold:            OK Yes   (0 non-manifold edges)
+Solid:               X No   (0 solids)
+
+Topology:
+  Solids:   0
+  Shells:   0
+  Faces:    168
+  Edges:    397   (free: 0, non-manifold: 0, degenerate: 0)
+  Vertices: 252
+
+Geometry:
+  Surface area:  30,445.076
+  Face area:     min 0.4066   max 11,151.6   (168 faces)
+  Bounding box:  [-0.000, -0.000, -163.300] to [77.900, 10.400, 0.000]
+  Extents:       77.900 x 10.400 x 163.300
+  Diagonal:      181.228
+[SubprocessWorker] got response: ok
+[comfy-env] CADUltimateInspection done (0.14s): result: NodeOutput
+[comfy-env] Running PreviewCADOCC: linear_deflection: 0.1, angular_deflection: 0.5, cad_model: dict
+[SubprocessWorker] call_method: nodes.cad_nodes.PreviewCADOCC.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=49 sending call_method
+[15:37:54] [CADabra]  Tessellating (linear: 0.1, angular: 0.5)
+[worker:ComfyUI-CADabra] INFO:  Tessellating (linear: 0.1, angular: 0.5)
+[15:37:54] [CADabra] Starting: BRepMesh(linear_deflection=0.1, angular_deflection=0.5)
+[worker:ComfyUI-CADabra] INFO: Starting: BRepMesh(linear_deflection=0.1, angular_deflection=0.5)
+[15:37:54] [CADabra] Completed: BRepMesh(linear_deflection=0.1, angular_deflection=0.5) in 0.08s
+[worker:ComfyUI-CADabra] INFO: Completed: BRepMesh(linear_deflection=0.1, angular_deflection=0.5) in 0.08s
+[15:37:54] [CADabra]  Mesh: 6086 vertices, 7604 triangles
+[worker:ComfyUI-CADabra] INFO:  Mesh: 6086 vertices, 7604 triangles
+  Frame 3 saved (frame_002.jpg, t=4.7s)
+  [capture-node] freeze=14ms shot=121ms unfreeze=4ms saved=True
+  Node executed (3 total), capturing...
+[15:37:54] [CADabra]  Exported VTP: preview_b49c15cf.vtp (431,463 bytes)
+[worker:ComfyUI-CADabra] INFO:  Exported VTP: preview_b49c15cf.vtp (431,463 bytes)
+[15:37:54] [CADabra]  Entities: 0 volumes, 168 faces, 794 edges
+[worker:ComfyUI-CADabra] INFO:  Entities: 0 volumes, 168 faces, 794 edges
+[15:37:54] [CADabra]  Face types: {'Cylinder': 82, 'Plane': 62, 'Torus': 24}
+[worker:ComfyUI-CADabra] INFO:  Face types: {'Cylinder': 82, 'Plane': 62, 'Torus': 24}
+[15:37:54] [CADabra]  Edge types: {'Line': 358, 'Circle': 400, 'BSpline': 36}
+[worker:ComfyUI-CADabra] INFO:  Edge types: {'Line': 358, 'Circle': 400, 'BSpline': 36}
+[SubprocessWorker] got response: ok
+[comfy-env] PreviewCADOCC done (0.18s): result: NodeOutput
+[32m[INFO][0m [32mPrompt executed in 4.65 seconds[0m
+  Frame 4 saved (frame_003.jpg, t=5.1s)
+  [capture-node] freeze=3ms shot=125ms unfreeze=89ms saved=True
+  Execution complete (t=5.5s)
+  Captured 4 unique frames over 5.52s
+  [debug] iframes: 1
+  [debug]   iframe[0]: src=http://127.0.0.1:8188/extensions/ComfyUI-CADabra/viewer_cad_analysis.html?v=1785, canvas=379x498, rafFrozen=False
+  [timing] trigger_3d_previews: 0.0s
+  Saved high-quality screenshot: extract_largest_component_executed.png
+  [timing] final_screenshot: 0.2s
+    Captured 5 video frames

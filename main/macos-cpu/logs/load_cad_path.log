@@ -1,0 +1,74 @@
+  [ComfyUI] [32m[INFO][0m Using RAM pressure cache.
+Capturing execution frames: load_cad_path.json
+  [ComfyUI] [32m[INFO][0m Using RAM pressure cache.
+  Frame 1 saved (frame_000.jpg, t=0.0s)
+  Validating workflow...
+  [ComfyUI] [32m[INFO][0m === /validate endpoint called ===
+  [ComfyUI] [32m[INFO][0m Received JSON with keys: ['prompt']
+  [ComfyUI] [32m[INFO][0m Prompt has 2 nodes
+  [ComfyUI] [32m[INFO][0m   Node 1: CAD_Load_Path
+  [ComfyUI] [32m[INFO][0m     Inputs: {"file_path": "/input/cad/spiral_wind_turbine.stp"}
+  [ComfyUI] [32m[INFO][0m   Node 2: PreviewCADOCC
+  [ComfyUI] [32m[INFO][0m     Inputs: {"linear_deflection": 0.1, "angular_deflection": 0.5, "preview_occ": "", "cad_model": ["1", 0]}
+  Queuing workflow for execution...
+  [ComfyUI] [32m[INFO][0m Generated prompt_id: f7866bb8-4adf-4442-875a-3b96d316faee
+  [ComfyUI] [32m[INFO][0m Calling execution.validate_prompt()...
+  [ComfyUI] [32m[INFO][0m Validation result: valid=True
+  [ComfyUI] [32m[INFO][0m === Validation PASSED ===
+  [ComfyUI] [32m[INFO][0m got prompt
+  [ComfyUI] [comfy-env] Running CAD_Load_Path: file_path: '/input/cad/spiral_wind_turbine.stp'
+  [ComfyUI] [SubprocessWorker] call_method: nodes.cad_nodes.CAD_Load_Path.EXECUTE_NORMALIZED
+  [ComfyUI] [SubprocessWorker] acquired lock, ensuring started...
+  [ComfyUI] [ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+  [ComfyUI] [ComfyUI-CADabra] Health check: ok
+  [ComfyUI] [SubprocessWorker] worker started/confirmed
+  [ComfyUI] [SubprocessWorker] serializing kwargs to shm...
+  [ComfyUI] [SubprocessWorker] created 0 shm blocks
+  [ComfyUI] [SubprocessWorker] sending request via socket...
+  [ComfyUI] [SubprocessWorker] call_id=52 sending call_method
+  [ComfyUI] [14:22:15] [CADabra]  Using cache: spiral_wind_turbine.stp
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO:  Using cache: spiral_wind_turbine.stp
+  [ComfyUI] [14:22:15] [CADabra]  Ready: spiral_wind_turbine.stp
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO:  Ready: spiral_wind_turbine.stp
+  [ComfyUI] [SubprocessWorker] got response: ok
+  [ComfyUI] [comfy-env] CAD_Load_Path done (0.05s): result: NodeOutput
+  [ComfyUI] [comfy-env] Running PreviewCADOCC: linear_deflection: 0.1, angular_deflection: 0.5, cad_model: dict
+  [ComfyUI] [SubprocessWorker] call_method: nodes.cad_nodes.PreviewCADOCC.EXECUTE_NORMALIZED
+  [ComfyUI] [SubprocessWorker] acquired lock, ensuring started...
+  [ComfyUI] [ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+  [ComfyUI] [ComfyUI-CADabra] Health check: ok
+  [ComfyUI] [SubprocessWorker] worker started/confirmed
+  [ComfyUI] [SubprocessWorker] serializing kwargs to shm...
+  [ComfyUI] [SubprocessWorker] created 0 shm blocks
+  [ComfyUI] [SubprocessWorker] sending request via socket...
+  [ComfyUI] [SubprocessWorker] call_id=53 sending call_method
+  [ComfyUI] [14:22:16] [CADabra]  Tessellating (linear: 0.1, angular: 0.5)
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO:  Tessellating (linear: 0.1, angular: 0.5)
+  [ComfyUI] [14:22:16] [CADabra] Starting: BRepMesh(linear_deflection=0.1, angular_deflection=0.5)
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO: Starting: BRepMesh(linear_deflection=0.1, angular_deflection=0.5)
+  [ComfyUI] [14:22:16] [CADabra] Completed: BRepMesh(linear_deflection=0.1, angular_deflection=0.5) in 0.12s
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO: Completed: BRepMesh(linear_deflection=0.1, angular_deflection=0.5) in 0.12s
+  [ComfyUI] [14:22:16] [CADabra]  Mesh: 3369 vertices, 5474 triangles
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO:  Mesh: 3369 vertices, 5474 triangles
+  [ComfyUI] [14:22:16] [CADabra]  Exported VTP: preview_e13a455c.vtp (281,575 bytes)
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO:  Exported VTP: preview_e13a455c.vtp (281,575 bytes)
+  [ComfyUI] [14:22:16] [CADabra]  Entities: 1 volumes, 29 faces, 158 edges
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO:  Entities: 1 volumes, 29 faces, 158 edges
+  [ComfyUI] [14:22:16] [CADabra]  Face types: {'BSpline': 15, 'Cylinder': 8, 'Plane': 3, 'Cone': 3}
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO:  Face types: {'BSpline': 15, 'Cylinder': 8, 'Plane': 3, 'Cone': 3}
+  [ComfyUI] [14:22:16] [CADabra]  Edge types: {'BSpline': 124, 'Circle': 34}
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO:  Edge types: {'BSpline': 124, 'Circle': 34}
+  [ComfyUI] [SubprocessWorker] got response: ok
+  [ComfyUI] [comfy-env] PreviewCADOCC done (0.37s): result: NodeOutput
+  [ComfyUI] [32m[INFO][0m [32mPrompt executed in 0.44 seconds[0m
+  Node executed (1 total), capturing...
+  Frame 2 saved (frame_001.jpg, t=0.9s)
+  [capture-node] freeze=7ms shot=178ms unfreeze=0ms saved=True
+  Execution complete (t=0.9s)
+  Captured 2 unique frames over 1.16s
+  [debug] iframes: 1
+  [debug]   iframe[0]: src=http://127.0.0.1:41883/extensions/ComfyUI-CADabra/viewer_cad_analysis.html?v=178, canvas=244x498, rafFrozen=True
+  [timing] trigger_3d_previews: 0.0s
+  Saved high-quality screenshot: load_cad_path_executed.png
+  [timing] final_screenshot: 0.3s
+    Captured 3 video frames

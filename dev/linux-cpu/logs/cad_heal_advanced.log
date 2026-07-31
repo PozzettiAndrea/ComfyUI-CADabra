@@ -1,0 +1,100 @@
+Capturing execution frames: cad_heal_advanced.json
+[32m[INFO][0m Using RAM pressure cache.
+  Frame 1 saved (frame_000.jpg, t=0.0s)
+  Validating workflow...
+  Queuing workflow for execution...
+[32m[INFO][0m === /validate endpoint called ===
+[32m[INFO][0m Received JSON with keys: ['prompt']
+[32m[INFO][0m Prompt has 3 nodes
+[32m[INFO][0m   Node 1: CAD_Load
+[32m[INFO][0m     Inputs: {"filename": "cad/fan_enclosure.stp", "upload_progress": "", "\u2b06 upload / drop CAD": null}
+[32m[INFO][0m   Node 3: PreviewCADOCC
+[32m[INFO][0m     Inputs: {"linear_deflection": 0.1, "angular_deflection": 0.5, "preview_occ": "", "cad_model": ["4", 0]}
+[32m[INFO][0m   Node 4: CADHealShapeAdvanced
+[32m[INFO][0m     Inputs: {"precision": 0.01, "min_tolerance": 0, "max_tolerance": 1, "fix_solid": true, "fix_free_shell": true, "fix_free_face": true, "fix_free_wire": true, "fix_same_parameter": true, "fix_vertex_position": 
+[32m[INFO][0m Generated prompt_id: 21316e30-06cd-4e31-ac48-9701392fe1d3
+[32m[INFO][0m Calling execution.validate_prompt()...
+[32m[INFO][0m Validation result: valid=True
+[32m[INFO][0m === Validation PASSED ===
+[32m[INFO][0m got prompt
+[comfy-env] Running CAD_Load: filename: 'cad/fan_enclosure.stp'
+[SubprocessWorker] call_method: nodes.cad_nodes.CAD_Load.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=14 sending call_method
+[15:36:31] [CADabra]  Loading CAD file: fan_enclosure.stp
+[worker:ComfyUI-CADabra] INFO:  Loading CAD file: fan_enclosure.stp
+[15:36:31] [CADabra] Starting: STEP ReadFile(file=fan_enclosure.stp)
+[worker:ComfyUI-CADabra] INFO: Starting: STEP ReadFile(file=fan_enclosure.stp)
+[15:36:31] [CADabra] Completed: STEP ReadFile(file=fan_enclosure.stp) in 0.16s
+[worker:ComfyUI-CADabra] INFO: Completed: STEP ReadFile(file=fan_enclosure.stp) in 0.16s
+[15:36:31] [CADabra] Starting: STEP TransferRoots(file=fan_enclosure.stp)
+[worker:ComfyUI-CADabra] INFO: Starting: STEP TransferRoots(file=fan_enclosure.stp)
+[15:36:32] [CADabra] Completed: STEP TransferRoots(file=fan_enclosure.stp) in 0.56s
+[worker:ComfyUI-CADabra] INFO: Completed: STEP TransferRoots(file=fan_enclosure.stp) in 0.56s
+[15:36:32] [CADabra]  Cached to BREP: fan_enclosure.stp
+[worker:ComfyUI-CADabra] INFO:  Cached to BREP: fan_enclosure.stp
+[15:36:32] [CADabra]  Ready: fan_enclosure.stp
+[worker:ComfyUI-CADabra] INFO:  Ready: fan_enclosure.stp
+[SubprocessWorker] got response: ok
+[comfy-env] CAD_Load done (0.80s): result: NodeOutput
+[comfy-env] Running CADHealShapeAdvanced: precision: 0.01, min_tolerance: 0.0, max_tolerance: 1.0, fix_solid: True, fix_free_shell: True, fix_free_face: True, fix_free_wire: True, fix_same_parameter: True, fix_vertex_position: False, fix_vertex_tolerance: True, create_open_solid: False, fix_shell: True, fix_shell_orientation_solid: True, fix_face_in_shell: True, fix_face_orientation_in_shell: True, allow_non_manifold: False, fix_wire_in_face: True, fix_orientation: True, fix_add_natural_bound: True, fix_missing_seam: True, fix_small_area_wire: False, remove_small_area_face: False, fix_intersecting_wires: True, fix_loop_wires: True, fix_split_face: True, fix_periodic_degenerated: True, auto_correct_precision: True, modify_topology: False, modify_geometry: True, modify_remove_loop: False, closed_wire: True, preference_pcurve: True, fix_reorder: True, fix_small: False, fix_connected: True, fix_edge_curves: True, fix_degenerated: True, fix_self_intersection: True, fix_self_intersecting_edge: True, fix_intersecting_edges: True, fix_non_adjacent_intersecting_edges: True, fix_lacking: True, fix_gaps_3d: False, fix_gaps_2d: False, fix_gaps_by_ranges: False, fix_notched_edges: True, fix_tails: False, fix_seam: False, fix_shifted: True, fix_reversed_2d: True, fix_same_parameter_wire: True, fix_vertex_tolerance_wire: True, fix_add_curve_3d: True, fix_add_pcurve: True, fix_remove_curve_3d: False, fix_remove_pcurve: False, max_tail_angle: 0.0, max_tail_width: 0.0, cad_model: dict
+[SubprocessWorker] call_method: nodes.cad_utility_nodes.CADHealShapeAdvanced.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=15 sending call_method
+  Node executed (1 total), capturing...
+[SubprocessWorker] got response: ok
+[comfy-env] CADHealShapeAdvanced done (0.72s): result: NodeOutput
+[comfy-env] Running PreviewCADOCC: linear_deflection: 0.1, angular_deflection: 0.5, cad_model: dict
+[SubprocessWorker] call_method: nodes.cad_nodes.PreviewCADOCC.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=16 sending call_method
+[15:36:33] [CADabra]  Tessellating (linear: 0.1, angular: 0.5)
+[worker:ComfyUI-CADabra] INFO:  Tessellating (linear: 0.1, angular: 0.5)
+[15:36:33] [CADabra] Starting: BRepMesh(linear_deflection=0.1, angular_deflection=0.5)
+[worker:ComfyUI-CADabra] INFO: Starting: BRepMesh(linear_deflection=0.1, angular_deflection=0.5)
+  Frame 2 saved (frame_001.jpg, t=1.9s)
+  [capture-node] freeze=5ms shot=136ms unfreeze=4ms saved=True
+[15:36:33] [CADabra] Completed: BRepMesh(linear_deflection=0.1, angular_deflection=0.5) in 0.50s
+[worker:ComfyUI-CADabra] INFO: Completed: BRepMesh(linear_deflection=0.1, angular_deflection=0.5) in 0.50s
+[15:36:33] [CADabra]  Mesh: 26343 vertices, 35120 triangles
+[worker:ComfyUI-CADabra] INFO:  Mesh: 26343 vertices, 35120 triangles
+  Node executed (2 total), capturing...
+[15:36:33] [CADabra]  Exported VTP: preview_21258983.vtp (2,029,655 bytes)
+[worker:ComfyUI-CADabra] INFO:  Exported VTP: preview_21258983.vtp (2,029,655 bytes)
+[15:36:33] [CADabra]  Entities: 15 volumes, 718 faces, 3982 edges
+[worker:ComfyUI-CADabra] INFO:  Entities: 15 volumes, 718 faces, 3982 edges
+[15:36:33] [CADabra]  Face types: {'Cylinder': 255, 'Plane': 343, 'Cone': 22, 'BSpline': 82, 'Torus': 16}
+[worker:ComfyUI-CADabra] INFO:  Face types: {'Cylinder': 255, 'Plane': 343, 'Cone': 22, 'BSpline': 82, 'Torus': 16}
+[15:36:33] [CADabra]  Edge types: {'Circle': 1100, 'Line': 2432, 'BSpline': 450}
+[worker:ComfyUI-CADabra] INFO:  Edge types: {'Circle': 1100, 'Line': 2432, 'BSpline': 450}
+[SubprocessWorker] got response: ok
+[comfy-env] PreviewCADOCC done (0.93s): result: NodeOutput
+[32m[INFO][0m [32mPrompt executed in 2.47 seconds[0m
+  Frame 3 saved (frame_002.jpg, t=3.2s)
+  [capture-node] freeze=29ms shot=159ms unfreeze=0ms saved=True
+  Execution complete (t=3.2s)
+  Captured 3 unique frames over 3.39s
+  [debug] iframes: 1
+  [debug]   iframe[0]: src=http://127.0.0.1:8188/extensions/ComfyUI-CADabra/viewer_cad_analysis.html?v=1785, canvas=379x498, rafFrozen=True
+  [timing] trigger_3d_previews: 0.0s
+  Saved high-quality screenshot: cad_heal_advanced_executed.png
+  [timing] final_screenshot: 0.3s
+    Captured 4 video frames

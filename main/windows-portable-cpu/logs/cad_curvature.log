@@ -1,0 +1,112 @@
+  [ComfyUI] [32m[INFO][0m Using RAM pressure cache.
+Capturing execution frames: cad_curvature.json
+  [ComfyUI] [32m[INFO][0m Using RAM pressure cache.
+  Frame 1 saved (frame_000.jpg, t=0.0s)
+  Validating workflow...
+  Queuing workflow for execution...
+  [ComfyUI] [32m[INFO][0m === /validate endpoint called ===
+  [ComfyUI] [32m[INFO][0m Received JSON with keys: ['prompt']
+  [ComfyUI] [32m[INFO][0m Prompt has 3 nodes
+  [ComfyUI] [32m[INFO][0m   Node 1: CADCurvature
+  [ComfyUI] [32m[INFO][0m     Inputs: {"linear_deflection": 0.1, "angular_deflection": 0.5, "clamp_percentile": 1, "report_panel": "false", "cad_model": ["2", 0]}
+  [ComfyUI] [32m[INFO][0m   Node 2: CAD_Load
+  [ComfyUI] [32m[INFO][0m     Inputs: {"filename": "cad/bellow_pipe.igs", "upload_progress": "", "\u2b06 upload / drop CAD": null}
+  [ComfyUI] [32m[INFO][0m   Node 3: GeomPackPreviewMeshVTK
+  [ComfyUI] [32m[INFO][0m     Inputs: {"mode": "fields", "preview_vtk": "{\"show_edges\":false,\"camera_state\":\"{\\\"position\\\":[267.26856544618295,617.9505428937902,405.1677269875274],\\\"focalPoint\\\":[0,0,125],\\\"viewUp\\\":[0.03
+  [ComfyUI] [32m[INFO][0m Generated prompt_id: 63dd1205-3937-4c27-a5cd-f147364218d8
+  [ComfyUI] [32m[INFO][0m Calling execution.validate_prompt()...
+  [ComfyUI] [32m[INFO][0m Validation result: valid=True
+  [ComfyUI] [32m[INFO][0m === Validation PASSED ===
+  [ComfyUI] [32m[INFO][0m got prompt
+  [ComfyUI] [comfy-env] Running CAD_Load: filename: 'cad/bellow_pipe.igs'
+  [ComfyUI] [SubprocessWorker] call_method: nodes.cad_nodes.CAD_Load.EXECUTE_NORMALIZED
+  [ComfyUI] [SubprocessWorker] acquired lock, ensuring started...
+  [ComfyUI] [ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+  [ComfyUI] [ComfyUI-CADabra] Health check: ok
+  [ComfyUI] [SubprocessWorker] worker started/confirmed
+  [ComfyUI] [SubprocessWorker] serializing kwargs to shm...
+  [ComfyUI] [SubprocessWorker] created 0 shm blocks
+  [ComfyUI] [SubprocessWorker] sending request via socket...
+  [ComfyUI] [SubprocessWorker] call_id=7 sending call_method
+  [ComfyUI] [14:28:35] [CADabra]  Using cache: bellow_pipe.igs
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO:  Using cache: bellow_pipe.igs
+  [ComfyUI] [14:28:35] [CADabra]  Ready: bellow_pipe.igs
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO:  Ready: bellow_pipe.igs
+  [ComfyUI] [SubprocessWorker] got response: ok
+  [ComfyUI] [comfy-env] CAD_Load done (0.26s): result: NodeOutput
+  [ComfyUI] [comfy-env] Running CADCurvature: linear_deflection: 0.1, angular_deflection: 0.5, clamp_percentile: 1.0, cad_model: dict
+  [ComfyUI] [SubprocessWorker] call_method: nodes.cad_curvature_viewer_node.CADCurvature.EXECUTE_NORMALIZED
+  [ComfyUI] [SubprocessWorker] acquired lock, ensuring started...
+  [ComfyUI] [ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+  [ComfyUI] [ComfyUI-CADabra] Health check: ok
+  [ComfyUI] [SubprocessWorker] worker started/confirmed
+  [ComfyUI] [SubprocessWorker] serializing kwargs to shm...
+  [ComfyUI] [SubprocessWorker] created 0 shm blocks
+  [ComfyUI] [SubprocessWorker] sending request via socket...
+  [ComfyUI] [SubprocessWorker] call_id=8 sending call_method
+  [ComfyUI] [14:28:35] [CADabra] [CADCurvature] Processing 236 faces
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO: [CADCurvature] Processing 236 faces
+  [ComfyUI] [14:28:35] [CADabra] [CADCurvature] Tessellating with deflection=0.1
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO: [CADCurvature] Tessellating with deflection=0.1
+  Frame 2 saved (frame_001.jpg, t=2.2s)
+  [capture-periodic] freeze=10ms shot=121ms unfreeze=6ms saved=True
+  Frame 3 saved (frame_002.jpg, t=4.4s)
+  [capture-periodic] freeze=4ms shot=105ms unfreeze=6ms saved=True
+  [capture-loop] iter=50 t=6.0s state={'complete': False, 'error': None, 'executedCount': 0, 'wsState': 1} eval_ms=7 ram=6.2/16.0GB (39%) swap=0.4/2.9GB (15%) cpu=50% browser_rss=0.82GB
+  [ComfyUI] [14:28:42] [CADabra] [CADCurvature] Processed 189600 vertices, 342166 triangles
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO: [CADCurvature] Processed 189600 vertices, 342166 triangles
+  [ComfyUI] [14:28:42] [CADabra] [CADCurvature] Undefined curvature at 0 vertices
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO: [CADCurvature] Undefined curvature at 0 vertices
+  [ComfyUI] [14:28:42] [CADabra] [CADCurvature] Output TRIMESH with vertex_attributes: ['gaussian', 'mean', 'min_curvature', 'max_curvature', 'face_id']
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO: [CADCurvature] Output TRIMESH with vertex_attributes: ['gaussian', 'mean', 'min_curvature', 'max_curvature', 'face_id']
+  [ComfyUI] [SubprocessWorker] got response: ok
+  [ComfyUI] [comfy-env] CADCurvature done (7.57s): result: NodeOutput
+  [ComfyUI] [comfy-env] Running GeomPackPreviewMeshVTK: mode: 'fields', trimesh: Trimesh
+  [ComfyUI] [comfy-env] SubprocessWorker: C:\Users\stduser\AppData\Local\Programs\comfy-env\envs\geometrypack-nodes\.pixi\envs\default\python.exe
+  [ComfyUI] [comfy-env] env_vars: {'KMP_DUPLICATE_LIB_OK': 'TRUE', 'OMP_NUM_THREADS': '1', 'COMFYUI_BASE': 'D:\\a\\comfy-ci\\comfy-ci\\test_workspaces\\CADabra-1414\\portable-comfyui\\ComfyUI_windows_portable\\ComfyUI'}
+  [ComfyUI] [SubprocessWorker] call_method: nodes.visualization.preview_mesh_vtk.PreviewMeshVTKNode.EXECUTE_NORMALIZED
+  [ComfyUI] [SubprocessWorker] acquired lock, ensuring started...
+  [ComfyUI] [comfy-env] default: Library/bin has 612 DLLs
+  [ComfyUI] [ComfyUI-GeometryPack] python: C:\Users\stduser\AppData\Local\Programs\comfy-env\envs\geometrypack-nodes\.pixi\envs\default\python.exe
+  [ComfyUI] [ComfyUI-GeometryPack] sys_path sent to worker: ['D:\\a\\comfy-ci\\comfy-ci\\test_workspaces\\CADabra-1414\\portable-comfyui\\ComfyUI_windows_portable\\ComfyUI', 'D:\\a\\comfy-ci\\comfy-ci\\test_workspaces\\CADabra-1414\\portable-comfyui\\ComfyUI_windows_portable\\ComfyUI\\custom_nodes\\ComfyUI-GeometryPack', 'C:\\Users\\stduser\\AppData\\Local\\Programs\\comfy-env\\envs\\geometrypack-nodes\\.pixi\\envs\\default\\Lib\\site-packages', 'D:\\a\\comfy-ci\\comfy-ci\\test_workspaces\\CADabra-1414\\portable-comfyui\\ComfyUI_windows_portable\\ComfyUI\\custom_nodes\\ComfyUI-GeometryPack']
+  [ComfyUI] [SubprocessWorker] is_pixi=True, python=C:\Users\stduser\AppData\Local\Programs\comfy-env\envs\geometrypack-nodes\.pixi\envs\default\python.exe
+  [ComfyUI] [SubprocessWorker] launching cmd=['C:\\Users\\stduser\\.pixi\\bin\\pixi.exe', 'run', '--as-is', '--manifest-path', 'C:\\Users\\stduser\\AppData\\Local\\Programs\\comfy-env\\envs\\geometrypack-nodes\\pixi.toml', '-e', 'default', 'python', 'C:\\Users\\stduser\\AppData\\Local\\Temp\\comfyui_pvenv_1cguann_\\persistent_worker.py', 'tcp://127.0.0.1:50622']...
+  Frame 4 saved (frame_003.jpg, t=8.8s)
+  [capture-periodic] freeze=6ms shot=106ms unfreeze=9ms saved=True
+  [ComfyUI] [worker:ComfyUI-GeometryPack] ERROR: Failed to import comfy_kitchen, Error: No module named 'comfy_kitchen', fp8 and fp4 support will not be available.
+  [ComfyUI] [worker:ComfyUI-GeometryPack] WARNING: comfy_kitchen does not support stochastic FP8 rounding, please update comfy_kitchen.
+  [ComfyUI] [SubprocessWorker] worker started/confirmed
+  [ComfyUI] [SubprocessWorker] serializing kwargs to shm...
+  [ComfyUI] [SubprocessWorker] created 1 shm blocks
+  [ComfyUI] [SubprocessWorker] sending request via socket...
+  [ComfyUI] [SubprocessWorker] call_id=1 sending call_method
+  [capture-loop] iter=100 t=11.9s state={'complete': False, 'error': None, 'executedCount': 0, 'wsState': 1} eval_ms=6 ram=6.6/16.0GB (42%) swap=0.4/2.9GB (15%) cpu=39% browser_rss=0.68GB
+  [ComfyUI] [worker:ComfyUI-GeometryPack] INFO: Preparing preview: Mesh - 189600 vertices, 342166 faces
+  [ComfyUI] [worker:ComfyUI-GeometryPack] INFO: Mode: fields
+  [ComfyUI] [worker:ComfyUI-GeometryPack] INFO: Visual data - has_visual: True, kind: None, texture: False, vertex_colors: False
+  [ComfyUI] [worker:ComfyUI-GeometryPack] INFO: Using fields mode - VTP export
+  [ComfyUI] [worker:ComfyUI-GeometryPack] INFO: Exporting mesh to VTP: D:\a\comfy-ci\comfy-ci\test_workspaces\CADabra-1414\portable-comfyui\ComfyUI_windows_portable\ComfyUI\output\preview_vtk_ff460e04.vtp
+  [ComfyUI] [worker:ComfyUI-GeometryPack] INFO: Adding normals field (189600 vertices)
+  [ComfyUI] [worker:ComfyUI-GeometryPack] INFO: Adding scalar field: gaussian (components: 1)
+  [ComfyUI] [worker:ComfyUI-GeometryPack] INFO: Adding scalar field: mean (components: 1)
+  [ComfyUI] [worker:ComfyUI-GeometryPack] INFO: Adding scalar field: min_curvature (components: 1)
+  [ComfyUI] [worker:ComfyUI-GeometryPack] INFO: Adding scalar field: max_curvature (components: 1)
+  [ComfyUI] [worker:ComfyUI-GeometryPack] INFO: Adding scalar field: face_id (components: 1)
+  [ComfyUI] [worker:ComfyUI-GeometryPack] INFO: Export complete: 189600 vertices, 342166 faces
+  [ComfyUI] [worker:ComfyUI-GeometryPack] INFO: Exported VTP to: D:\a\comfy-ci\comfy-ci\test_workspaces\CADabra-1414\portable-comfyui\ComfyUI_windows_portable\ComfyUI\output\preview_vtk_ff460e04.vtp
+  [ComfyUI] [worker:ComfyUI-GeometryPack] INFO: Vertex attributes: ['gaussian', 'mean', 'min_curvature', 'max_curvature', 'face_id']
+  [ComfyUI] [worker:ComfyUI-GeometryPack] INFO: Fields mode info: watertight=False, volume=None, area=550760.261278726, fields=['gaussian', 'mean', 'min_curvature', 'max_curvature', 'face_id']
+  [ComfyUI] [SubprocessWorker] got response: ok
+  [ComfyUI] [comfy-env] GeomPackPreviewMeshVTK done (7.15s): result: NodeOutput
+  [ComfyUI] [32m[INFO][0m [32mPrompt executed in 15.00 seconds[0m
+  Node executed (1 total), capturing...
+  Frame 5 saved (frame_004.jpg, t=15.3s)
+  [capture-node] freeze=6ms shot=102ms unfreeze=0ms saved=True
+  Execution complete (t=15.4s)
+  Captured 5 unique frames over 15.52s
+  [debug] iframes: 1
+  [debug]   iframe[0]: src=http://127.0.0.1:41887/extensions/ComfyUI-GeometryPack/viewer_vtk.html?v=1785508, canvas=0x0, rafFrozen=False
+  [timing] trigger_3d_previews: 0.0s
+  Saved high-quality screenshot: cad_curvature_executed.png
+  [timing] final_screenshot: 0.6s
+    Captured 6 video frames

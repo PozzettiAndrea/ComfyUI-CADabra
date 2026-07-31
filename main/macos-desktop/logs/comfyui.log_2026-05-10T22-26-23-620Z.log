@@ -1,0 +1,221 @@
+[2026-05-10 22:25:27.986] [info]  setup plugin alembic.autogenerate.schemas
+setup plugin alembic.autogenerate.tables
+
+[2026-05-10 22:25:27.988] [info]  setup plugin alembic.autogenerate.types
+setup plugin alembic.autogenerate.constraints
+setup plugin alembic.autogenerate.defaults
+setup plugin alembic.autogenerate.comments
+
+[2026-05-10 22:25:28.044] [info]  comfy-aimdo os not supported Darwin
+NOTE: comfy-aimdo is currently only support for Windows and Linux
+
+[2026-05-10 22:25:28.165] [info]  Adding extra search path custom_nodes /Users/runner/Documents/ComfyUI/custom_nodes
+Adding extra search path download_model_base /Users/runner/Documents/ComfyUI/models
+Adding extra search path custom_nodes /Users/runner/.comfy-test-cache/desktop/ComfyUI.app/Contents/Resources/ComfyUI/custom_nodes
+Setting output directory to: /Users/runner/Documents/ComfyUI/output
+Setting input directory to: /Users/runner/Documents/ComfyUI/input
+
+[2026-05-10 22:25:28.166] [info]  Setting user directory to: /Users/runner/Documents/ComfyUI/user
+
+[2026-05-10 22:25:28.431] [info]  [START] Security scan
+[ComfyUI-Manager] Using uv as Python module for pip operations.
+
+[2026-05-10 22:25:28.562] [info]  [DONE] Security scan
+** ComfyUI startup time: 2026-05-10 22:25:28.561
+
+[2026-05-10 22:25:28.563] [info]  ** Platform: Darwin
+** Python version: 3.12.11 (main, Aug 18 2025, 19:02:39) [Clang 20.1.4 ]
+** Python executable: /Users/runner/Documents/ComfyUI/.venv/bin/python
+** ComfyUI Path: /Users/runner/.comfy-test-cache/desktop/ComfyUI.app/Contents/Resources/ComfyUI
+** ComfyUI Base Folder Path: /Users/runner/.comfy-test-cache/desktop/ComfyUI.app/Contents/Resources/ComfyUI
+** User directory: /Users/runner/Documents/ComfyUI/user
+** ComfyUI-Manager config path: /Users/runner/Documents/ComfyUI/user/__manager/config.ini
+** Log path: /Users/runner/Documents/ComfyUI/user/comfyui.log
+
+[2026-05-10 22:25:28.653] [info]  [ComfyUI-Manager] Skipped fixing the 'comfyui-frontend-package' dependency because the ComfyUI is outdated.
+
+[2026-05-10 22:25:28.654] [info]  [PRE] ComfyUI-Manager
+
+[2026-05-10 22:25:28.841] [error] [comfy-env] comfyui-cadabra: 1 isolation env(s):
+[2026-05-10 22:25:28.842] [error] 
+[comfy-env]   nodes -> /Users/runner/Documents/ComfyUI/custom_nodes/comfyui-cadabra/nodes
+
+[2026-05-10 22:25:29.777] [error] [comfy-env] prestartup complete
+
+[2026-05-10 22:25:29.801] [error] [comfy-env] ComfyUI-GeometryPack: 1 isolation env(s):
+
+[2026-05-10 22:25:29.802] [error] [comfy-env]   nodes -> /Users/runner/Documents/ComfyUI/custom_nodes/ComfyUI-GeometryPack/nodes
+
+[2026-05-10 22:25:29.805] [error] [comfy-env] prestartup complete
+[2026-05-10 22:25:29.806] [error] 
+
+[2026-05-10 22:25:29.820] [info]  WARNING: Potential Error in code: Torch already imported, torch should never be imported before this point.
+
+[2026-05-10 22:25:31.005] [info]  Found comfy_kitchen backend eager: {'available': True, 'disabled': False, 'unavailable_reason': None, 'capabilities': ['apply_rope', 'apply_rope1', 'dequantize_mxfp8', 'dequantize_nvfp4', 'dequantize_per_tensor_fp8', 'quantize_mxfp8', 'quantize_nvfp4', 'quantize_per_tensor_fp8', 'scaled_mm_mxfp8', 'scaled_mm_nvfp4']}
+Found comfy_kitchen backend cuda: {'available': False, 'disabled': True, 'unavailable_reason': 'Extension file not found: /Users/runner/Documents/ComfyUI/.venv/lib/python3.12/site-packages/comfy_kitchen/backends/cuda/_C.abi3.so', 'capabilities': []}
+Found comfy_kitchen backend triton: {'available': False, 'disabled': True, 'unavailable_reason': "ImportError: No module named 'triton'", 'capabilities': []}
+
+[2026-05-10 22:25:31.019] [info]  Checkpoint files will always be loaded safely.
+
+[2026-05-10 22:25:31.059] [info]  Total VRAM 7168 MB, total RAM 7168 MB
+pytorch version: 2.10.0
+
+[2026-05-10 22:25:31.067] [info]  Mac Version (15, 7, 4)
+Set vram state to: SHARED
+Device: mps
+
+[2026-05-10 22:25:31.451] [info]  Using sub quadratic optimization for attention, if you have memory or speed issues try using: --use-split-cross-attention
+
+[2026-05-10 22:25:33.784] [info]  Python version: 3.12.11 (main, Aug 18 2025, 19:02:39) [Clang 20.1.4 ]
+
+[2026-05-10 22:25:33.785] [info]  ComfyUI version: 0.20.1
+comfy-aimdo version: 0.2.14
+comfy-kitchen version: 0.2.8
+
+[2026-05-10 22:25:33.786] [info]  [Prompt Server] web root: /Users/runner/.comfy-test-cache/desktop/ComfyUI.app/Contents/Resources/ComfyUI/web_custom_versions/desktop_app
+
+[2026-05-10 22:25:33.787] [info]  Asset seeder disabled
+
+[2026-05-10 22:25:33.787] [info]  [START] ComfyUI-Manager
+
+[2026-05-10 22:25:33.869] [info]  [ComfyUI-Manager] Using GitPython backend
+
+[2026-05-10 22:25:33.903] [info]  [ComfyUI-Manager] network_mode: public
+
+[2026-05-10 22:25:33.909] [info]  [ComfyUI-Manager] The matrix sharing feature has been disabled because the `matrix-nio` dependency is not installed.
+	To use this feature, please run the following command:
+	/Users/runner/Documents/ComfyUI/.venv/bin/python -m pip install matrix-nio
+
+
+[2026-05-10 22:25:34.802] [error] [comfy-env] Version: 0.3.82
+[2026-05-10 22:25:34.804] [error] 
+
+[2026-05-10 22:25:34.804] [info]  [comfy-env] Removed stale socket: /var/folders/tb/y368xp_x10s3ty1b_mtl5mxr0000gn/T/comfy_worker_54f670ef37dd.sock
+
+[2026-05-10 22:25:34.857] [info]  [comfy-env] Removed stale temp dir: /var/folders/tb/y368xp_x10s3ty1b_mtl5mxr0000gn/T/comfyui_pvenv_n7mhw813
+
+[2026-05-10 22:25:34.976] [error] [comfy-env] register_nodes: comfyui-cadabra
+[2026-05-10 22:25:34.978] [error] 
+
+[2026-05-10 22:25:34.978] [error] [comfy-env] ComfyUI source dir: /Users/runner/.comfy-test-cache/desktop/ComfyUI.app/Contents/Resources/ComfyUI
+
+[2026-05-10 22:25:34.998] [error] [comfy-env] Scanning nodes metadata (isolation root)...
+[2026-05-10 22:25:34.999] [error] 
+
+[2026-05-10 22:25:35.002] [error] [comfy-env] Cache hit for nodes: 39 nodes
+[2026-05-10 22:25:35.004] [error] 
+[comfy-env] Scanned nodes root: 39 nodes (0.0s)
+[comfy-env] Imported nodes root: 39 nodes (isolation)
+[2026-05-10 22:25:35.004] [error] 
+[comfy-env] Registered 39 total nodes
+
+[2026-05-10 22:25:35.007] [info]  loading...
+calling register_nodes
+
+[2026-05-10 22:25:35.008] [error] [comfy-env] Version: 0.3.82
+[2026-05-10 22:25:35.011] [error] 
+
+[2026-05-10 22:25:35.035] [error] [comfy-env] register_nodes: ComfyUI-GeometryPack
+
+[2026-05-10 22:25:35.043] [error] [comfy-env] ComfyUI source dir: /Users/runner/.comfy-test-cache/desktop/ComfyUI.app/Contents/Resources/ComfyUI
+
+[2026-05-10 22:25:35.079] [error] [comfy-env] Scanning nodes metadata (isolation root)...
+
+[2026-05-10 22:25:35.085] [error] [comfy-env] Cache hit for nodes: 125 nodes
+[2026-05-10 22:25:35.086] [error] 
+[comfy-env] Scanned nodes root: 125 nodes (0.0s)
+
+[2026-05-10 22:25:35.088] [error] [comfy-env] Imported nodes root: 125 nodes (isolation)
+[2026-05-10 22:25:35.089] [error] 
+[comfy-env] Registered 125 total nodes
+
+[2026-05-10 22:25:35.106] [info]  ComfyUI-Multiband loaded: 15 nodes registered
+
+[2026-05-10 22:25:35.108] [info]  
+Import times for custom nodes:
+
+[2026-05-10 22:25:35.110] [info]     0.0 seconds: /Users/runner/.comfy-test-cache/desktop/ComfyUI.app/Contents/Resources/ComfyUI/custom_nodes/websocket_image_save.py
+   0.0 seconds: /Users/runner/Documents/ComfyUI/custom_nodes/ComfyUI-Multiband
+   0.1 seconds: /Users/runner/Documents/ComfyUI/custom_nodes/ComfyUI-GeometryPack
+   0.2 seconds: /Users/runner/Documents/ComfyUI/custom_nodes/comfyui-cadabra
+
+
+[2026-05-10 22:25:35.114] [info]  Context impl SQLiteImpl.
+
+[2026-05-10 22:25:35.115] [info]  Will assume non-transactional DDL.
+
+[2026-05-10 22:25:35.153] [info]  Starting server
+
+
+[2026-05-10 22:25:35.154] [info]  To see the GUI go to: http://127.0.0.1:8000
+
+[2026-05-10 22:25:36.716] [info]  [ComfyUI-Manager] The ComfyRegistry cache update is still in progress, so an outdated cache is being used.
+
+[2026-05-10 22:25:36.804] [info]  FETCH DATA from: /Users/runner/Documents/ComfyUI/.venv/lib/python3.12/site-packages/comfyui_manager/custom-node-list.json
+[2026-05-10 22:25:36.833] [info]   [DONE]
+
+[2026-05-10 22:25:39.306] [info]  [ComfyUI-Manager] The ComfyRegistry cache update is still in progress, so an outdated cache is being used.
+
+[2026-05-10 22:25:39.409] [info]  FETCH DATA from: /Users/runner/Documents/ComfyUI/.venv/lib/python3.12/site-packages/comfyui_manager/custom-node-list.json
+[2026-05-10 22:25:39.425] [info]   [DONE]
+
+[2026-05-10 22:26:01.062] [info]  got prompt
+
+[2026-05-10 22:26:01.080] [info]  [comfyui-cadabra] python: /Users/runner/.ce/.pixi/envs/cadabra-nodes/bin/python
+[comfyui-cadabra] sys_path sent to worker: ['/Users/runner/.comfy-test-cache/desktop/ComfyUI.app/Contents/Resources/ComfyUI', '/Users/runner/Documents/ComfyUI/custom_nodes/comfyui-cadabra', '/Users/runner/.ce/.pixi/envs/cadabra-nodes/lib/python3.1/site-packages', '/Users/runner/Documents/ComfyUI/custom_nodes/comfyui-cadabra']
+
+[2026-05-10 22:26:02.686] [error] [worker:comfyui-cadabra] ERROR: Failed to import comfy_kitchen, Error: No module named 'comfy_kitchen', fp8 and fp4 support will not be available.
+
+[2026-05-10 22:26:09.901] [error] [22:26:09] [CADabra] Starting: STEP ReadFile(file=spiral_wind_turbine.stp)
+
+[2026-05-10 22:26:09.903] [error] [worker:comfyui-cadabra] INFO: Starting: STEP ReadFile(file=spiral_wind_turbine.stp)
+
+[2026-05-10 22:26:09.923] [error] [22:26:09] [CADabra] Completed: STEP ReadFile(file=spiral_wind_turbine.stp) in 0.02s
+
+[2026-05-10 22:26:09.924] [error] [worker:comfyui-cadabra] INFO: Completed: STEP ReadFile(file=spiral_wind_turbine.stp) in 0.02s
+[22:26:09] [CADabra] Starting: STEP TransferRoots(file=spiral_wind_turbine.stp)
+[worker:comfyui-cadabra] INFO: Starting: STEP TransferRoots(file=spiral_wind_turbine.stp)
+
+[2026-05-10 22:26:09.992] [error] [22:26:09] [CADabra] Completed: STEP TransferRoots(file=spiral_wind_turbine.stp) in 0.07s
+
+[2026-05-10 22:26:09.994] [error] [worker:comfyui-cadabra] INFO: Completed: STEP TransferRoots(file=spiral_wind_turbine.stp) in 0.07s
+
+[2026-05-10 22:26:10.004] [error] [comfyui-cadabra] Health check: ping (timeout=5.0s)...
+[2026-05-10 22:26:10.010] [error] 
+[comfyui-cadabra] Health check: ok
+
+[2026-05-10 22:26:10.018] [error] [22:26:10] [CADabra] Starting: BRepMesh(linear_deflection=0.1, angular_deflection=0.5)
+
+[2026-05-10 22:26:10.019] [error] [worker:comfyui-cadabra] INFO: Starting: BRepMesh(linear_deflection=0.1, angular_deflection=0.5)
+
+[2026-05-10 22:26:10.064] [error] [22:26:10] [CADabra] Completed: BRepMesh(linear_deflection=0.1, angular_deflection=0.5) in 0.05s
+
+[2026-05-10 22:26:10.065] [error] [worker:comfyui-cadabra] INFO: Completed: BRepMesh(linear_deflection=0.1, angular_deflection=0.5) in 0.05s
+
+[2026-05-10 22:26:10.123] [error] [comfyui-cadabra] Health check: ping (timeout=5.0s)...
+
+[2026-05-10 22:26:10.124] [error] [comfyui-cadabra] Health check: ok
+
+[2026-05-10 22:26:10.164] [error] [comfyui-cadabra] Health check: ping (timeout=5.0s)...
+[2026-05-10 22:26:10.168] [error] 
+
+[2026-05-10 22:26:10.179] [error] [comfyui-cadabra] Health check: ok
+
+[2026-05-10 22:26:10.201] [error] [comfyui-cadabra] Health check: ping (timeout=5.0s)...
+
+[2026-05-10 22:26:10.203] [error] [comfyui-cadabra] Health check: ok
+
+[2026-05-10 22:26:11.820] [error] [comfyui-cadabra] Health check: ping (timeout=5.0s)...
+[2026-05-10 22:26:11.823] [error] 
+[comfyui-cadabra] Health check: ok
+
+[2026-05-10 22:26:11.838] [error] [22:26:11] [CADabra] Starting: BRepMesh(linear_deflection=0.1, angular_deflection=0.5)
+
+[2026-05-10 22:26:11.839] [error] [worker:comfyui-cadabra] INFO: Starting: BRepMesh(linear_deflection=0.1, angular_deflection=0.5)
+
+[2026-05-10 22:26:11.863] [error] [22:26:11] [CADabra] Completed: BRepMesh(linear_deflection=0.1, angular_deflection=0.5) in 0.02s
+
+[2026-05-10 22:26:11.864] [error] [worker:comfyui-cadabra] INFO: Completed: BRepMesh(linear_deflection=0.1, angular_deflection=0.5) in 0.02s
+
+[2026-05-10 22:26:11.881] [info]  Prompt executed in 10.81 seconds
+

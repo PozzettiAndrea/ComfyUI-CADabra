@@ -1,0 +1,226 @@
+Capturing execution frames: mesh_CAD.json
+[32m[INFO][0m Using RAM pressure cache.
+[32m[INFO][0m Using RAM pressure cache.
+  Frame 1 saved (frame_000.jpg, t=0.0s)
+  Validating workflow...
+  Queuing workflow for execution...
+[32m[INFO][0m === /validate endpoint called ===
+[32m[INFO][0m Received JSON with keys: ['prompt']
+[32m[INFO][0m Prompt has 5 nodes
+[32m[INFO][0m   Node 1: CAD_Load
+[32m[INFO][0m     Inputs: {"filename": "cad/spiral_wind_turbine.stp", "upload_progress": "", "\u2b06 upload / drop CAD": null}
+[32m[INFO][0m   Node 13: PreviewCADOCC
+[32m[INFO][0m     Inputs: {"linear_deflection": 0.1, "angular_deflection": 0.5, "preview_occ": "", "cad_model": ["1", 0]}
+[32m[INFO][0m   Node 18: GeomPackPreviewMeshDual
+[32m[INFO][0m     Inputs: {"layout": "side_by_side", "mode": "fields", "opacity_1": 1, "opacity_2": 1, "preview_dual": "{\"show_edges\":true,\"camera_state\":\"{\\\"position\\\":[-143.14106240301487,-372.5928058017727,96.19150
+[32m[INFO][0m   Node 19: CAD_Mesh
+[32m[INFO][0m     Inputs: {"backend": "BRepIncremental", "backend.linear_deflection": 0.1, "backend.angular_deflection": 0.5, "backend.merge_vertices": true, "backend.relative": false, "backend.parallel": false, "backend.min_s
+[32m[INFO][0m   Node 20: CAD_Mesh
+[32m[INFO][0m     Inputs: {"backend": "GMSH", "backend.output_dim": "2D Surface", "backend.algorithm_2d": "Automatic", "backend.size_mode": "Absolute", "backend.size_mode.target_size": 1, "backend.size_mode.size_factor": 1, "b
+[32m[INFO][0m Generated prompt_id: dfdba97d-89f6-45bb-9302-ddb49ee26506
+[32m[INFO][0m Calling execution.validate_prompt()...
+[32m[INFO][0m Validation result: valid=True
+[32m[INFO][0m === Validation PASSED ===
+[32m[INFO][0m got prompt
+[comfy-env] Running CAD_Load: filename: 'cad/spiral_wind_turbine.stp'
+[SubprocessWorker] call_method: nodes.cad_nodes.CAD_Load.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=56 sending call_method
+[15:47:02] [CADabra]  Using cache: spiral_wind_turbine.stp
+[worker:ComfyUI-CADabra] INFO:  Using cache: spiral_wind_turbine.stp
+[15:47:02] [CADabra]  Ready: spiral_wind_turbine.stp
+[worker:ComfyUI-CADabra] INFO:  Ready: spiral_wind_turbine.stp
+[SubprocessWorker] got response: ok
+[comfy-env] CAD_Load done (0.10s): result: NodeOutput
+[comfy-env] Running PreviewCADOCC: linear_deflection: 0.1, angular_deflection: 0.5, cad_model: dict
+[SubprocessWorker] call_method: nodes.cad_nodes.PreviewCADOCC.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=57 sending call_method
+[15:47:02] [CADabra]  Tessellating (linear: 0.1, angular: 0.5)
+[worker:ComfyUI-CADabra] INFO:  Tessellating (linear: 0.1, angular: 0.5)
+[15:47:02] [CADabra] Starting: BRepMesh(linear_deflection=0.1, angular_deflection=0.5)
+[worker:ComfyUI-CADabra] INFO: Starting: BRepMesh(linear_deflection=0.1, angular_deflection=0.5)
+[15:47:02] [CADabra] Completed: BRepMesh(linear_deflection=0.1, angular_deflection=0.5) in 0.08s
+[worker:ComfyUI-CADabra] INFO: Completed: BRepMesh(linear_deflection=0.1, angular_deflection=0.5) in 0.08s
+[15:47:03] [CADabra]  Mesh: 3386 vertices, 5508 triangles
+[worker:ComfyUI-CADabra] INFO:  Mesh: 3386 vertices, 5508 triangles
+[15:47:03] [CADabra]  Exported VTP: preview_1317fc63.vtp (283,224 bytes)
+[worker:ComfyUI-CADabra] INFO:  Exported VTP: preview_1317fc63.vtp (283,224 bytes)
+[15:47:03] [CADabra]  Entities: 1 volumes, 29 faces, 158 edges
+[worker:ComfyUI-CADabra] INFO:  Entities: 1 volumes, 29 faces, 158 edges
+[15:47:03] [CADabra]  Face types: {'BSpline': 15, 'Cylinder': 8, 'Plane': 3, 'Cone': 3}
+[worker:ComfyUI-CADabra] INFO:  Face types: {'BSpline': 15, 'Cylinder': 8, 'Plane': 3, 'Cone': 3}
+[15:47:03] [CADabra]  Edge types: {'BSpline': 124, 'Circle': 34}
+[worker:ComfyUI-CADabra] INFO:  Edge types: {'BSpline': 124, 'Circle': 34}
+  Node executed (1 total), capturing...
+[SubprocessWorker] got response: ok
+[comfy-env] PreviewCADOCC done (0.33s): result: NodeOutput
+[comfy-env] Running CAD_Mesh: extract_face_ids: True, cad_model: dict, backend: dict
+[SubprocessWorker] call_method: nodes.cad_nodes.CAD_Mesh.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=58 sending call_method
+[15:47:03] [CADabra] [GMSH] launching meshing — mode=Absolute | 2D algo=Automatic | 3D algo=n/a (2D surface) | target_size=1.0 | order=1 | optimize=no (passes=1) | smoothing=0 | recombine=no | subdivision=None | threads=1 | face_ids=yes
+[worker:ComfyUI-CADabra] INFO: [GMSH] launching meshing � mode=Absolute | 2D algo=Automatic | 3D algo=n/a (2D surface) | target_size=1.0 | order=1 | optimize=no (passes=1) | smoothing=0 | recombine=no | subdivision=None | threads=1 | face_ids=yes
+[15:47:03] [CADabra] [GMSH] >>> _mesh_gmsh called
+[worker:ComfyUI-CADabra] INFO: [GMSH] >>> _mesh_gmsh called
+[15:47:03] [CADabra] [GMSH] size: size_mode='Absolute' target_size=1.0 size_factor=1.0 min_size_factor=1.0 max_size_factor=10.0
+[worker:ComfyUI-CADabra] INFO: [GMSH] size: size_mode='Absolute' target_size=1.0 size_factor=1.0 min_size_factor=1.0 max_size_factor=10.0
+[15:47:03] [CADabra] [GMSH] curv: elements_per_2pi=20 extend_from_boundary=True max_edge_length=0.0 min_edge_length=0.0
+[worker:ComfyUI-CADabra] INFO: [GMSH] curv: elements_per_2pi=20 extend_from_boundary=True max_edge_length=0.0 min_edge_length=0.0
+[15:47:03] [CADabra] [GMSH] algo: output_dim='2D Surface' algorithm_2d='Automatic' algorithm_3d='Delaunay' element_order='1'
+[worker:ComfyUI-CADabra] INFO: [GMSH] algo: output_dim='2D Surface' algorithm_2d='Automatic' algorithm_3d='Delaunay' element_order='1'
+[15:47:03] [CADabra] [GMSH] post: smoothing_steps=0 optimize=False optimization_passes=1 recombine=False subdivision='None' extract_face_ids=True
+[worker:ComfyUI-CADabra] INFO: [GMSH] post: smoothing_steps=0 optimize=False optimization_passes=1 recombine=False subdivision='None' extract_face_ids=True
+  Frame 2 saved (frame_001.jpg, t=1.0s)
+  [capture-node] freeze=98ms shot=157ms unfreeze=4ms saved=True
+[15:47:03] [CADabra]  Model diagonal: 213.47
+[worker:ComfyUI-CADabra] INFO:  Model diagonal: 213.47
+[15:47:03] [CADabra]  Absolute sizing: target=1.0
+[worker:ComfyUI-CADabra] INFO:  Absolute sizing: target=1.0
+[15:47:03] [CADabra] [GMSH] sizing branch='Absolute' diagonal=213.467529 -> actual_target=1.000000 actual_min=1.000000 actual_max=10.000000
+[worker:ComfyUI-CADabra] INFO: [GMSH] sizing branch='Absolute' diagonal=213.467529 -> actual_target=1.000000 actual_min=1.000000 actual_max=10.000000
+[15:47:03] [CADabra] [GMSH]   effective Mesh.MeshSizeFactor = 1.0
+[worker:ComfyUI-CADabra] INFO: [GMSH]   effective Mesh.MeshSizeFactor = 1.0
+[15:47:03] [CADabra] [GMSH]   effective Mesh.MeshSizeMin = 1.0
+[worker:ComfyUI-CADabra] INFO: [GMSH]   effective Mesh.MeshSizeMin = 1.0
+[15:47:03] [CADabra] [GMSH]   effective Mesh.MeshSizeMax = 10.0
+[worker:ComfyUI-CADabra] INFO: [GMSH]   effective Mesh.MeshSizeMax = 10.0
+[15:47:03] [CADabra] [GMSH]   effective Mesh.CharacteristicLengthMin = 1.0
+[worker:ComfyUI-CADabra] INFO: [GMSH]   effective Mesh.CharacteristicLengthMin = 1.0
+[15:47:03] [CADabra] [GMSH]   effective Mesh.CharacteristicLengthMax = 10.0
+[worker:ComfyUI-CADabra] INFO: [GMSH]   effective Mesh.CharacteristicLengthMax = 10.0
+[15:47:03] [CADabra] [GMSH]   effective Mesh.MeshSizeFromCurvature = 0.0
+[worker:ComfyUI-CADabra] INFO: [GMSH]   effective Mesh.MeshSizeFromCurvature = 0.0
+[15:47:03] [CADabra] [GMSH]   effective Mesh.MeshSizeFromPoints = 1.0
+[worker:ComfyUI-CADabra] INFO: [GMSH]   effective Mesh.MeshSizeFromPoints = 1.0
+[15:47:03] [CADabra] [GMSH]   effective Mesh.MeshSizeExtendFromBoundary = 1.0
+[worker:ComfyUI-CADabra] INFO: [GMSH]   effective Mesh.MeshSizeExtendFromBoundary = 1.0
+[15:47:03] [CADabra] [GMSH]   effective Mesh.MinimumCirclePoints = 7.0
+[worker:ComfyUI-CADabra] INFO: [GMSH]   effective Mesh.MinimumCirclePoints = 7.0
+[15:47:03] [CADabra] [GMSH] threads = 1 (num_threads input=1, cores=4)
+[worker:ComfyUI-CADabra] INFO: [GMSH] threads = 1 (num_threads input=1, cores=4)
+[15:47:03] [CADabra]  Starting mesh generation (log: D:\a\ComfyUI-CADabra\ComfyUI-CADabra\ComfyUI_windows_portable\ComfyUI\output\gmsh_mesh_spiral_wind_turbine.log)...
+[worker:ComfyUI-CADabra] INFO:  Starting mesh generation (log: D:\a\ComfyUI-CADabra\ComfyUI-CADabra\ComfyUI_windows_portable\ComfyUI\output\gmsh_mesh_spiral_wind_turbine.log)...
+[15:47:03] [CADabra] Starting: GMSH mesh.generate(dim=2, algorithm_2d=Automatic)
+[worker:ComfyUI-CADabra] INFO: Starting: GMSH mesh.generate(dim=2, algorithm_2d=Automatic)
+[15:47:05] [CADabra] Completed: GMSH mesh.generate(dim=2, algorithm_2d=Automatic) in 1.57s
+[worker:ComfyUI-CADabra] INFO: Completed: GMSH mesh.generate(dim=2, algorithm_2d=Automatic) in 1.57s
+[15:47:05] [CADabra] [GMSH] generated: 1342 surface elements, 672 nodes (dim=2)
+[worker:ComfyUI-CADabra] INFO: [GMSH] generated: 1342 surface elements, 672 nodes (dim=2)
+[15:47:05] [CADabra]  Mesh generation complete. Log saved to: D:\a\ComfyUI-CADabra\ComfyUI-CADabra\ComfyUI_windows_portable\ComfyUI\output\gmsh_mesh_spiral_wind_turbine.log
+[worker:ComfyUI-CADabra] INFO:  Mesh generation complete. Log saved to: D:\a\ComfyUI-CADabra\ComfyUI-CADabra\ComfyUI_windows_portable\ComfyUI\output\gmsh_mesh_spiral_wind_turbine.log
+[15:47:05] [CADabra]  Extracting face IDs from 29 CAD surfaces
+[worker:ComfyUI-CADabra] INFO:  Extracting face IDs from 29 CAD surfaces
+  Frame 3 saved (frame_002.jpg, t=3.4s)
+  [capture-periodic] freeze=25ms shot=180ms unfreeze=6ms saved=True
+[15:47:05] [CADabra]  Extracted 1342 triangles with CAD face IDs
+[worker:ComfyUI-CADabra] INFO:  Extracted 1342 triangles with CAD face IDs
+[15:47:05] [CADabra]  Stored cad_face_id attribute (29 CAD faces)
+[worker:ComfyUI-CADabra] INFO:  Stored cad_face_id attribute (29 CAD faces)
+[15:47:05] [CADabra]  CAD_Mesh [GMSH]: 2D mesh, 672 vertices, 1342 triangular faces, size: 1.0000 (Absolute), algo: Automatic
+[worker:ComfyUI-CADabra] INFO:  CAD_Mesh [GMSH]: 2D mesh, 672 vertices, 1342 triangular faces, size: 1.0000 (Absolute), algo: Automatic
+[15:47:05] [CADabra] [CAD_Mesh] CAD Mesh [GMSH] |   output: 672 verts, 1,342 faces |   CAD B-rep faces: 29 |   size_mode: Absolute  target: 1.0 |   watertight: False |   input B-rep free edges: 0   (closed solid) |   cad_face_id: stored per triangle
+[worker:ComfyUI-CADabra] INFO: [CAD_Mesh] CAD Mesh [GMSH] |   output: 672 verts, 1,342 faces |   CAD B-rep faces: 29 |   size_mode: Absolute  target: 1.0 |   watertight: False |   input B-rep free edges: 0   (closed solid) |   cad_face_id: stored per triangle
+[SubprocessWorker] got response: ok
+[comfy-env] CAD_Mesh done (2.86s): result: NodeOutput
+[comfy-env] Running CAD_Mesh: extract_face_ids: True, cad_model: dict, backend: dict
+[SubprocessWorker] call_method: nodes.cad_nodes.CAD_Mesh.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=59 sending call_method
+[15:47:06] [CADabra] CAD_Mesh [BRepIncremental]: linear_deflection=0.1, angular_deflection=0.5, relative=False, parallel=False, min_size=0.0
+[worker:ComfyUI-CADabra] INFO: CAD_Mesh [BRepIncremental]: linear_deflection=0.1, angular_deflection=0.5, relative=False, parallel=False, min_size=0.0
+[15:47:06] [CADabra] Starting: BRepMesh(linear_deflection=0.1, angular_deflection=0.5, relative=False, parallel=False, min_size=0.0)
+[worker:ComfyUI-CADabra] INFO: Starting: BRepMesh(linear_deflection=0.1, angular_deflection=0.5, relative=False, parallel=False, min_size=0.0)
+  Node executed (2 total), capturing...
+[15:47:06] [CADabra] Completed: BRepMesh(linear_deflection=0.1, angular_deflection=0.5, relative=False, parallel=False, min_size=0.0) in 0.32s
+[worker:ComfyUI-CADabra] INFO: Completed: BRepMesh(linear_deflection=0.1, angular_deflection=0.5, relative=False, parallel=False, min_size=0.0) in 0.32s
+[15:47:06] [CADabra] CAD_Mesh [BRepIncremental]: 2754 verts, 5508 faces from 29 CAD faces (merged=True, before=2754)
+[worker:ComfyUI-CADabra] INFO: CAD_Mesh [BRepIncremental]: 2754 verts, 5508 faces from 29 CAD faces (merged=True, before=2754)
+[15:47:06] [CADabra] [CAD_Mesh] CAD Mesh [BRepIncremental] |   output: 2,754 verts, 5,508 faces |   CAD B-rep faces: 29 |   linear_deflection: 0.1  angular: 0.5 |   watertight: True |   input B-rep free edges: 0   (closed solid) |   cad_face_id: stored per triangle
+[worker:ComfyUI-CADabra] INFO: [CAD_Mesh] CAD Mesh [BRepIncremental] |   output: 2,754 verts, 5,508 faces |   CAD B-rep faces: 29 |   linear_deflection: 0.1  angular: 0.5 |   watertight: True |   input B-rep free edges: 0   (closed solid) |   cad_face_id: stored per triangle
+[SubprocessWorker] got response: ok
+[comfy-env] CAD_Mesh done (0.63s): result: NodeOutput
+[comfy-env] Running GeomPackPreviewMeshDual: layout: 'side_by_side', mode: 'fields', opacity_1: 1.0, opacity_2: 1.0, mesh_1: Trimesh, mesh_2: Trimesh
+[SubprocessWorker] call_method: nodes.visualization.preview_mesh_dual.PreviewMeshDualNode.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-GeometryPack] Health check: ping (timeout=5.0s)...
+[ComfyUI-GeometryPack] Health check: failed
+[ComfyUI-GeometryPack] Socket unhealthy, restarting worker...
+[comfy-env] default: Library/bin has 612 DLLs
+[ComfyUI-GeometryPack] python: C:\Users\runneradmin\AppData\Local\Programs\comfy-env\envs\geometrypack-nodes\.pixi\envs\default\python.exe
+[ComfyUI-GeometryPack] sys_path sent to worker: ['D:\\a\\ComfyUI-CADabra\\ComfyUI-CADabra\\ComfyUI_windows_portable\\ComfyUI', 'D:\\a\\ComfyUI-CADabra\\ComfyUI-CADabra\\ComfyUI_windows_portable\\ComfyUI\\custom_nodes\\ComfyUI-GeometryPack', 'C:\\Users\\runneradmin\\AppData\\Local\\Programs\\comfy-env\\envs\\geometrypack-nodes\\.pixi\\envs\\default\\Lib\\site-packages', 'D:\\a\\ComfyUI-CADabra\\ComfyUI-CADabra\\ComfyUI_windows_portable\\ComfyUI\\custom_nodes\\ComfyUI-GeometryPack']
+[SubprocessWorker] is_pixi=True, python=C:\Users\runneradmin\AppData\Local\Programs\comfy-env\envs\geometrypack-nodes\.pixi\envs\default\python.exe
+[SubprocessWorker] launching cmd=['C:\\Users\\runneradmin\\.pixi\\bin\\pixi.exe', 'run', '--as-is', '--manifest-path', 'C:\\Users\\runneradmin\\AppData\\Local\\Programs\\comfy-env\\envs\\geometrypack-nodes\\pixi.toml', '-e', 'default', 'python', 'C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\comfyui_pvenv_csv09fm4\\persistent_worker.py', 'tcp://127.0.0.1:65426']...
+  Frame 4 saved (frame_003.jpg, t=4.0s)
+  [capture-node] freeze=25ms shot=163ms unfreeze=8ms saved=True
+  Node executed (3 total), capturing...
+  Frame 5 saved (frame_004.jpg, t=4.7s)
+  [capture-node] freeze=49ms shot=137ms unfreeze=7ms saved=True
+  [capture-loop] iter=50 t=10.5s state={'complete': False, 'error': None, 'executedCount': 3, 'wsState': 1} eval_ms=24 ram=5.6/16.0GB (35%) swap=0.8/2.9GB (29%) cpu=64% browser_rss=0.75GB
+  [capture-loop] iter=100 t=19.3s state={'complete': False, 'error': None, 'executedCount': 3, 'wsState': 1} eval_ms=25 ram=5.7/16.0GB (35%) swap=0.8/2.9GB (29%) cpu=95% browser_rss=0.74GB
+  [capture-loop] iter=150 t=29.7s state={'complete': False, 'error': None, 'executedCount': 3, 'wsState': 1} eval_ms=44 ram=5.6/16.0GB (35%) swap=0.8/2.9GB (29%) cpu=95% browser_rss=0.64GB
+[worker:ComfyUI-GeometryPack] WARNING: WARNING: You need pytorch with cu130 or higher to use optimized CUDA operations.
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 2 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=2 sending call_method
+  [capture-loop] iter=200 t=39.2s state={'complete': False, 'error': None, 'executedCount': 3, 'wsState': 1} eval_ms=42 ram=5.7/16.0GB (36%) swap=0.8/2.9GB (29%) cpu=96% browser_rss=0.63GB
+[worker:ComfyUI-GeometryPack] INFO: Layout: side_by_side, Mode: fields
+[worker:ComfyUI-GeometryPack] INFO: Mesh 1: Mesh - 2754 vertices, 5508 faces
+[worker:ComfyUI-GeometryPack] INFO: Mesh 2: Mesh - 672 vertices, 1342 faces
+[worker:ComfyUI-GeometryPack] INFO: Mesh 1 fields: ['face.cad_face_id']
+[worker:ComfyUI-GeometryPack] INFO: Mesh 2 fields: ['face.cad_face_id']
+[worker:ComfyUI-GeometryPack] INFO: Common fields: ['face.cad_face_id']
+[worker:ComfyUI-GeometryPack] INFO: Mesh 1 visual: kind=None, texture=False, vertex_colors=False
+[worker:ComfyUI-GeometryPack] INFO: Mesh 2 visual: kind=None, texture=False, vertex_colors=False
+[worker:ComfyUI-GeometryPack] INFO: Exporting mesh to VTP: D:\a\ComfyUI-CADabra\ComfyUI-CADabra\ComfyUI_windows_portable\ComfyUI\output\preview_dual_1_5fcd6934.vtp
+[worker:ComfyUI-GeometryPack] INFO: Adding normals field (2754 vertices)
+[worker:ComfyUI-GeometryPack] INFO: Adding face field: cad_face_id
+[worker:ComfyUI-GeometryPack] INFO: Export complete: 2754 vertices, 5508 faces
+[worker:ComfyUI-GeometryPack] INFO: Exported VTP with fields: D:\a\ComfyUI-CADabra\ComfyUI-CADabra\ComfyUI_windows_portable\ComfyUI\output\preview_dual_1_5fcd6934.vtp
+[worker:ComfyUI-GeometryPack] INFO: Exporting mesh to VTP: D:\a\ComfyUI-CADabra\ComfyUI-CADabra\ComfyUI_windows_portable\ComfyUI\output\preview_dual_2_5fcd6934.vtp
+  Node executed (4 total), capturing...
+[worker:ComfyUI-GeometryPack] INFO: Adding normals field (672 vertices)
+[worker:ComfyUI-GeometryPack] INFO: Adding face field: cad_face_id
+[worker:ComfyUI-GeometryPack] INFO: Export complete: 672 vertices, 1342 faces
+[worker:ComfyUI-GeometryPack] INFO: Exported VTP with fields: D:\a\ComfyUI-CADabra\ComfyUI-CADabra\ComfyUI_windows_portable\ComfyUI\output\preview_dual_2_5fcd6934.vtp
+[worker:ComfyUI-GeometryPack] INFO: Preview ready
+[SubprocessWorker] got response: ok
+[comfy-env] GeomPackPreviewMeshDual done (36.67s): result: NodeOutput
+[32m[INFO][0m [32mPrompt executed in 40.60 seconds[0m
+  Frame 6 saved (frame_005.jpg, t=41.2s)
+  [capture-node] freeze=26ms shot=193ms unfreeze=0ms saved=True
+  Execution complete (t=41.2s)
+  Captured 6 unique frames over 41.43s
+  [debug] iframes: 2
+  [debug]   iframe[0]: src=http://127.0.0.1:8188/extensions/ComfyUI-CADabra/viewer_cad_analysis.html?v=1785, canvas=244x498, rafFrozen=True
+  [debug]   iframe[1]: src=http://127.0.0.1:8188/extensions/ComfyUI-GeometryPack/viewer_dual.html?v=1785512, canvas=0x0, rafFrozen=True
+  [timing] trigger_3d_previews: 0.0s
+  Saved high-quality screenshot: mesh_CAD_executed.png
+  [timing] final_screenshot: 0.3s
+    Captured 7 video frames

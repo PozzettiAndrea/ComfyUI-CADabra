@@ -1,0 +1,170 @@
+Capturing execution frames: raytracing.json
+[32m[INFO][0m Using RAM pressure cache.
+[32m[INFO][0m Using RAM pressure cache.
+[32m[INFO][0m Using RAM pressure cache.
+  Frame 1 saved (frame_000.jpg, t=0.0s)
+  Validating workflow...
+  Queuing workflow for execution...
+[32m[INFO][0m === /validate endpoint called ===
+[32m[INFO][0m Received JSON with keys: ['prompt']
+[32m[INFO][0m Prompt has 8 nodes
+[32m[INFO][0m   Node 1: CAD_Load
+[32m[INFO][0m     Inputs: {"filename": "cad/wc.STEP", "upload_progress": "", "\u2b06 upload / drop CAD": null}
+[32m[INFO][0m   Node 12: CADTransform
+[32m[INFO][0m     Inputs: {"translate_x": 0.12109375, "translate_y": 0, "translate_z": ["14", 0], "rotate_x": 0, "rotate_y": 0, "rotate_z": 0, "scale": 1, "cad_model": ["1", 0]}
+[32m[INFO][0m   Node 13: CADBoundingBox
+[32m[INFO][0m     Inputs: {"cad_model": ["1", 0]}
+[32m[INFO][0m   Node 14: FloatMath
+[32m[INFO][0m     Inputs: {"operation": "negate", "operand": 1, "value": ["13", 4]}
+[32m[INFO][0m   Node 17: PreviewCADOCC
+[32m[INFO][0m     Inputs: {"linear_deflection": 0.1, "angular_deflection": 0.5, "preview_occ": "", "cad_model": ["1", 0]}
+[32m[INFO][0m   Node 18: CADRaytracerBVH
+[32m[INFO][0m     Inputs: {"resolution": 522, "deflection": 0.02, "backend": "embree", "output_mode": "full", "roi": "", "npz_name": "", "cad_model": ["12", 0]}
+[32m[INFO][0m   Node 19: MultibandPreview
+[32m[INFO][0m     Inputs: {"channel_index": 0, "multiband": ["21", 0]}
+[32m[INFO][0m   Node 21: MultibandLoadFromPath
+[32m[INFO][0m     Inputs: {"file_path": ["18", 0], "normalize": false}
+[32m[INFO][0m Generated prompt_id: 90f7e1ec-88c6-43eb-991c-159ded30c332
+[32m[INFO][0m Calling execution.validate_prompt()...
+[32m[INFO][0m Validation result: valid=True
+[32m[INFO][0m === Validation PASSED ===
+[32m[INFO][0m got prompt
+[1m[33m[WARNING][0m WARNING: stat: path should be string, bytes, os.PathLike or integer, not NoneType
+[comfy-env] Running CAD_Load: filename: 'cad/wc.STEP'
+[SubprocessWorker] call_method: nodes.cad_nodes.CAD_Load.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=67 sending call_method
+[15:39:43] [CADabra]  Loading CAD file: wc.STEP
+[worker:ComfyUI-CADabra] INFO:  Loading CAD file: wc.STEP
+[15:39:43] [CADabra] Starting: STEP ReadFile(file=wc.STEP)
+[worker:ComfyUI-CADabra] INFO: Starting: STEP ReadFile(file=wc.STEP)
+[15:39:43] [CADabra] Completed: STEP ReadFile(file=wc.STEP) in 0.05s
+[worker:ComfyUI-CADabra] INFO: Completed: STEP ReadFile(file=wc.STEP) in 0.05s
+[15:39:43] [CADabra] Starting: STEP TransferRoots(file=wc.STEP)
+[worker:ComfyUI-CADabra] INFO: Starting: STEP TransferRoots(file=wc.STEP)
+[15:39:44] [CADabra] Completed: STEP TransferRoots(file=wc.STEP) in 0.34s
+[worker:ComfyUI-CADabra] INFO: Completed: STEP TransferRoots(file=wc.STEP) in 0.34s
+[15:39:44] [CADabra]  Cached to BREP: wc.STEP
+[worker:ComfyUI-CADabra] INFO:  Cached to BREP: wc.STEP
+[15:39:44] [CADabra]  Ready: wc.STEP
+[worker:ComfyUI-CADabra] INFO:  Ready: wc.STEP
+[SubprocessWorker] got response: ok
+[comfy-env] CAD_Load done (0.65s): result: NodeOutput
+[comfy-env] Running PreviewCADOCC: linear_deflection: 0.1, angular_deflection: 0.5, cad_model: dict
+[SubprocessWorker] call_method: nodes.cad_nodes.PreviewCADOCC.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=68 sending call_method
+[15:39:44] [CADabra]  Tessellating (linear: 0.1, angular: 0.5)
+[worker:ComfyUI-CADabra] INFO:  Tessellating (linear: 0.1, angular: 0.5)
+[15:39:44] [CADabra] Starting: BRepMesh(linear_deflection=0.1, angular_deflection=0.5)
+[worker:ComfyUI-CADabra] INFO: Starting: BRepMesh(linear_deflection=0.1, angular_deflection=0.5)
+[15:39:44] [CADabra] Completed: BRepMesh(linear_deflection=0.1, angular_deflection=0.5) in 0.53s
+[worker:ComfyUI-CADabra] INFO: Completed: BRepMesh(linear_deflection=0.1, angular_deflection=0.5) in 0.53s
+[15:39:45] [CADabra]  Mesh: 29877 vertices, 53424 triangles
+[worker:ComfyUI-CADabra] INFO:  Mesh: 29877 vertices, 53424 triangles
+  Node executed (1 total), capturing...
+[15:39:45] [CADabra]  Exported VTP: preview_e9671a22.vtp (2,832,240 bytes)
+[worker:ComfyUI-CADabra] INFO:  Exported VTP: preview_e9671a22.vtp (2,832,240 bytes)
+[15:39:45] [CADabra]  Entities: 4 volumes, 118 faces, 548 edges
+[worker:ComfyUI-CADabra] INFO:  Entities: 4 volumes, 118 faces, 548 edges
+[15:39:45] [CADabra]  Face types: {'Plane': 58, 'BSpline': 39, 'Cylinder': 16, 'Torus': 3, 'Cone': 2}
+[worker:ComfyUI-CADabra] INFO:  Face types: {'Plane': 58, 'BSpline': 39, 'Cylinder': 16, 'Torus': 3, 'Cone': 2}
+[15:39:45] [CADabra]  Edge types: {'Line': 242, 'BSpline': 240, 'Circle': 66}
+[worker:ComfyUI-CADabra] INFO:  Edge types: {'Line': 242, 'BSpline': 240, 'Circle': 66}
+[SubprocessWorker] got response: ok
+[comfy-env] PreviewCADOCC done (1.05s): result: NodeOutput
+[comfy-env] Running CADBoundingBox: cad_model: dict
+[SubprocessWorker] call_method: nodes.cad_transform_nodes.CADBoundingBox.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=69 sending call_method
+[SubprocessWorker] got response: ok
+[comfy-env] CADBoundingBox done (0.02s): result: NodeOutput
+[comfy-env] Running FloatMath: operation: 'negate', operand: 1.0, value: -152.39288241063343
+[SubprocessWorker] call_method: nodes.cad_transform_nodes.FloatMath.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=70 sending call_method
+[SubprocessWorker] got response: ok
+[comfy-env] FloatMath done (0.01s): result: NodeOutput
+[comfy-env] Running CADTransform: translate_x: 0.12109375, translate_y: 0.0, translate_z: 152.39288241063343, rotate_x: 0.0, rotate_y: 0.0, rotate_z: 0.0, scale: 1.0, cad_model: dict
+[SubprocessWorker] call_method: nodes.cad_transform_nodes.CADTransform.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=71 sending call_method
+[SubprocessWorker] got response: ok
+[comfy-env] CADTransform done (0.05s): result: NodeOutput
+[comfy-env] Running CADRaytracerBVH: resolution: 522, deflection: 0.02, backend: 'embree', output_mode: 'full', roi: '', npz_name: '', cad_model: dict
+[SubprocessWorker] call_method: nodes.raytracer_node.CADRaytracerBVH.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=72 sending call_method
+  Frame 2 saved (frame_001.jpg, t=2.1s)
+  [capture-node] freeze=350ms shot=228ms unfreeze=7ms saved=True
+  Frame 3 saved (frame_002.jpg, t=4.9s)
+  [capture-periodic] freeze=84ms shot=188ms unfreeze=5ms saved=True
+[worker:ComfyUI-CADabra] 
+=== WATCHDOG TICK 1 ===
+[worker:ComfyUI-CADabra] Current thread 0x00007f0c936a86c0 (most recent call first):
+  File "/tmp/comfyui_pvenv_cfeb7gr3/persistent_worker.py", line 52 in _watchdog
+  File "/home/runner/.ce/envs/cadabra-nodes/.pixi/envs/default/lib/python3.12/threading.py", line 1012 in run
+  File "/home/runner/.ce/envs/cadabra-nodes/.pixi/envs/default/lib/python3.12/threading.py", line 1075 in _bootstrap_inner
+  File "/home/runner/.ce/envs/cadabra-nodes/.pixi/envs/default/lib/python3.12/threading.py", line 1032 in _bootstrap
+
+Thread 0x00007f0c941a8740 (most recent call first):
+  File "/home/runner/.ce/envs/cadabra-nodes/.pixi/envs/default/lib/python3.1/site-packages/OCC/Core/BRepMesh.py", line 5260 in __init__
+  File "/home/runner/.ce/envs/cadabra-nodes/.pixi/envs/default/lib/python3.1/site-packages/occt_rt/raytracer.py", line 72 in __init__
+  File "/home/runner/work/ComfyUI-CADabra/ComfyUI-CADabra/ComfyUI/custom_nodes/ComfyUI-CADabra/nodes/raytracer_node.py", line 143 in execute
+  File "/home/runner/work/ComfyUI-CADabra/ComfyUI-CADabra/ComfyUI/comfy_api/latest/_io.py", line 1935 in EXECUTE_NORMALIZED
+  File "/tmp/comfyui_pvenv_cfeb7gr3/persistent_worker.py", line 1767 in main
+  File "/tmp/comfyui_pvenv_cfeb7gr3/persistent_worker.py", line 1812 in <module>
+
+[worker:ComfyUI-CADabra] === END ===
+
+  Node executed (2 total), capturing...
+[SubprocessWorker] got response: ok
+[comfy-env] CADRaytracerBVH done (6.63s): result: NodeOutput
+PreviewMultibandImage: Batch=1, Channels=16, Names=['height', 'normal_x', 'normal_y', 'normal_z', 'position_x', 'position_y', 'position_z', 'face_id', 'curv_gauss', 'curv_mean', 'curv_min', 'curv_max', 'curv_xx', 'curv_yy', 'curv_xy', 'hit_mask']
+[32m[INFO][0m [32mPrompt executed in 8.71 seconds[0m
+  Frame 4 saved (frame_003.jpg, t=9.2s)
+  [capture-node] freeze=26ms shot=229ms unfreeze=9ms saved=True
+  Execution complete (t=9.6s)
+  Captured 4 unique frames over 9.71s
+  [debug] iframes: 1
+  [debug]   iframe[0]: src=http://127.0.0.1:8188/extensions/ComfyUI-CADabra/viewer_cad_analysis.html?v=1785, canvas=244x498, rafFrozen=False
+  [timing] trigger_3d_previews: 0.1s
+  Saved high-quality screenshot: raytracing_executed.png
+  [timing] final_screenshot: 0.3s
+    Captured 5 video frames

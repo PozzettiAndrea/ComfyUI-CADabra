@@ -1,0 +1,20 @@
+Capturing execution frames: raytracing.json
+  Frame 1 saved (frame_000.jpg, t=0.0s)
+  Validating workflow...
+  Queuing workflow for execution...
+  Node executed (1 total), capturing...
+  Frame 2 saved (frame_001.jpg, t=1.9s)
+  [capture-node] freeze=343ms shot=207ms unfreeze=4ms saved=True
+  Frame 3 saved (frame_002.jpg, t=4.6s)
+  [capture-periodic] freeze=76ms shot=195ms unfreeze=3ms saved=True
+  Node executed (2 total), capturing...
+  Frame 4 saved (frame_003.jpg, t=8.7s)
+  [capture-node] freeze=22ms shot=245ms unfreeze=3ms saved=True
+  Execution complete (t=9.1s)
+  Captured 4 unique frames over 9.2s
+  [debug] iframes: 1
+  [debug]   iframe[0]: src=http://127.0.0.1:8188/extensions/ComfyUI-CADabra/viewer_cad_analysis.html?v=1778, canvas=242x498, rafFrozen=False
+  [timing] trigger_3d_previews: 0.0s
+  Saved high-quality screenshot: raytracing_executed.png
+  [timing] final_screenshot: 0.3s
+    Captured 5 video frames

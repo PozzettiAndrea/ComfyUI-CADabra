@@ -1,0 +1,41 @@
+Capturing execution frames: analyse_CAD.json
+  Frame 1 saved (frame_000.jpg, t=0.0s)
+  Validating workflow...
+  Queuing workflow for execution...
+  Frame 2 saved (frame_001.jpg, t=2.4s)
+  [capture-periodic] freeze=5ms shot=152ms unfreeze=11ms saved=True
+  Frame 3 saved (frame_002.jpg, t=4.6s)
+  [capture-periodic] freeze=5ms shot=149ms unfreeze=4ms saved=True
+  [capture-loop] iter=50 t=6.3s state={'complete': False, 'error': None, 'executedCount': 0, 'wsState': 1} eval_ms=6 ram=6.2/16.0GB (39%) swap=0.3/2.9GB (10%) cpu=50% browser_rss=0.74GB
+  [capture-loop] iter=100 t=12.7s state={'complete': False, 'error': None, 'executedCount': 0, 'wsState': 1} eval_ms=4 ram=6.3/16.0GB (40%) swap=0.3/2.9GB (10%) cpu=59% browser_rss=0.73GB
+  [capture-loop] iter=150 t=18.8s state={'complete': False, 'error': None, 'executedCount': 0, 'wsState': 1} eval_ms=5 ram=6.5/16.0GB (41%) swap=0.3/2.9GB (10%) cpu=55% browser_rss=0.74GB
+  Frame 4 saved (frame_003.jpg, t=22.1s)
+  [capture-periodic] freeze=5ms shot=110ms unfreeze=8ms saved=True
+  Node executed (1 total), capturing...
+  Frame 5 saved (frame_004.jpg, t=23.4s)
+  [capture-node] freeze=6ms shot=146ms unfreeze=17ms saved=True
+  Node executed (2 total), capturing...
+  Frame 6 saved (frame_005.jpg, t=24.0s)
+  [capture-node] freeze=28ms shot=170ms unfreeze=5ms saved=True
+  [capture-loop] iter=200 t=25.9s state={'complete': False, 'error': None, 'executedCount': 2, 'wsState': 1} eval_ms=45 ram=6.6/16.0GB (41%) swap=0.3/2.9GB (10%) cpu=57% browser_rss=0.72GB
+  [capture-loop] iter=250 t=39.0s state={'complete': False, 'error': None, 'executedCount': 2, 'wsState': 1} eval_ms=24 ram=6.6/16.0GB (41%) swap=0.3/2.9GB (10%) cpu=98% browser_rss=0.72GB
+  [capture-loop] iter=300 t=47.0s state={'complete': False, 'error': None, 'executedCount': 2, 'wsState': 1} eval_ms=30 ram=6.7/16.0GB (42%) swap=0.3/2.9GB (10%) cpu=95% browser_rss=0.71GB
+  [capture-loop] iter=350 t=55.2s state={'complete': False, 'error': None, 'executedCount': 2, 'wsState': 1} eval_ms=30 ram=6.6/16.0GB (42%) swap=0.3/2.9GB (10%) cpu=95% browser_rss=0.68GB
+  Node executed (3 total), capturing...
+  Frame 7 saved (frame_006.jpg, t=59.2s)
+  [capture-node] freeze=37ms shot=137ms unfreeze=13ms saved=True
+  Node executed (4 total), capturing...
+  Frame 8 saved (frame_007.jpg, t=61.3s)
+  [capture-node] freeze=188ms shot=520ms unfreeze=8ms saved=True
+  Node executed (5 total), capturing...
+  [capture-node] freeze=198ms shot=487ms unfreeze=0ms saved=False
+  Execution complete (t=62.6s)
+  Captured 8 unique frames over 63.27s
+  [debug] iframes: 3
+  [debug]   iframe[0]: src=http://127.0.0.1:8188/extensions/ComfyUI-CADabra/viewer_cad_edge_detail.html?v=1, canvas=244x381, rafFrozen=True
+  [debug]   iframe[1]: src=http://127.0.0.1:8188/extensions/ComfyUI-CADabra/viewer_cad_edge.html?v=17782395, canvas=244x260, rafFrozen=True
+  [debug]   iframe[2]: src=http://127.0.0.1:8188/extensions/ComfyUI-CADabra/viewer_cad_analysis.html?v=1778, canvas=480x279, rafFrozen=True
+  [timing] trigger_3d_previews: 0.0s
+  Saved high-quality screenshot: analyse_CAD_executed.png
+  [timing] final_screenshot: 0.2s
+    Captured 9 video frames

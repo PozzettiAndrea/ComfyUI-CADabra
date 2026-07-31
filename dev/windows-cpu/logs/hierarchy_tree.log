@@ -1,0 +1,86 @@
+Capturing execution frames: hierarchy_tree.json
+[32m[INFO][0m Using RAM pressure cache.
+[32m[INFO][0m Using RAM pressure cache.
+[32m[INFO][0m Using RAM pressure cache.
+  Frame 1 saved (frame_000.jpg, t=0.0s)
+  Validating workflow...
+  Queuing workflow for execution...
+[32m[INFO][0m === /validate endpoint called ===
+[32m[INFO][0m Received JSON with keys: ['prompt']
+[32m[INFO][0m Prompt has 2 nodes
+[32m[INFO][0m   Node 1: CAD_Load
+[32m[INFO][0m     Inputs: {"filename": "cad/as1-ac-214.stp", "upload_progress": "", "\u2b06 upload / drop CAD": null}
+[32m[INFO][0m   Node 3: CADHierarchyTree
+[32m[INFO][0m     Inputs: {"max_depth": -1, "include_properties": true, "collapse_vertices": true, "linear_deflection": 0.1, "angular_deflection": 0.5, "hierarchy_viewer": "", "cad_model": ["1", 0]}
+[32m[INFO][0m Generated prompt_id: ac485874-292b-47e9-a018-d2109d389baa
+[32m[INFO][0m Calling execution.validate_prompt()...
+[32m[INFO][0m Validation result: valid=True
+[32m[INFO][0m === Validation PASSED ===
+[32m[INFO][0m got prompt
+[comfy-env] Running CAD_Load: filename: 'cad/as1-ac-214.stp'
+[SubprocessWorker] call_method: nodes.cad_nodes.CAD_Load.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: failed
+[ComfyUI-CADabra] Socket unhealthy, restarting worker...
+[comfy-env] default: Library/bin has 624 DLLs
+[ComfyUI-CADabra] python: C:\Users\runneradmin\AppData\Local\Programs\comfy-env\envs\cadabra-nodes\.pixi\envs\default\python.exe
+[ComfyUI-CADabra] sys_path sent to worker: ['D:\\a\\ComfyUI-CADabra\\ComfyUI-CADabra\\ComfyUI', 'D:\\a\\ComfyUI-CADabra\\ComfyUI-CADabra\\ComfyUI\\custom_nodes\\ComfyUI-CADabra', 'C:\\Users\\runneradmin\\AppData\\Local\\Programs\\comfy-env\\envs\\cadabra-nodes\\.pixi\\envs\\default\\Lib\\site-packages', 'D:\\a\\ComfyUI-CADabra\\ComfyUI-CADabra\\ComfyUI\\custom_nodes\\ComfyUI-CADabra']
+[SubprocessWorker] is_pixi=True, python=C:\Users\runneradmin\AppData\Local\Programs\comfy-env\envs\cadabra-nodes\.pixi\envs\default\python.exe
+[SubprocessWorker] launching cmd=['C:\\Users\\runneradmin\\.pixi\\bin\\pixi.exe', 'run', '--as-is', '--manifest-path', 'C:\\Users\\runneradmin\\AppData\\Local\\Programs\\comfy-env\\envs\\cadabra-nodes\\pixi.toml', '-e', 'default', 'python', 'C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\comfyui_pvenv__egmfm55\\persistent_worker.py', 'tcp://127.0.0.1:62322']...
+  Frame 2 saved (frame_001.jpg, t=2.2s)
+  [capture-periodic] freeze=6ms shot=129ms unfreeze=7ms saved=True
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=50 sending call_method
+  Frame 3 saved (frame_002.jpg, t=4.4s)
+  [capture-periodic] freeze=16ms shot=119ms unfreeze=6ms saved=True
+  [capture-loop] iter=50 t=6.1s state={'complete': False, 'error': None, 'executedCount': 0, 'wsState': 1} eval_ms=56 ram=5.9/16.0GB (37%) swap=0.2/2.9GB (7%) cpu=45% browser_rss=0.75GB
+[15:41:16] [CADabra]  Loading CAD file: as1-ac-214.stp
+[worker:ComfyUI-CADabra] INFO:  Loading CAD file: as1-ac-214.stp
+[15:41:16] [CADabra] Starting: STEP ReadFile(file=as1-ac-214.stp)
+[worker:ComfyUI-CADabra] INFO: Starting: STEP ReadFile(file=as1-ac-214.stp)
+[15:41:16] [CADabra] Completed: STEP ReadFile(file=as1-ac-214.stp) in 0.01s
+[worker:ComfyUI-CADabra] INFO: Completed: STEP ReadFile(file=as1-ac-214.stp) in 0.01s
+[15:41:16] [CADabra] Starting: STEP TransferRoots(file=as1-ac-214.stp)
+[worker:ComfyUI-CADabra] INFO: Starting: STEP TransferRoots(file=as1-ac-214.stp)
+[15:41:16] [CADabra] Completed: STEP TransferRoots(file=as1-ac-214.stp) in 0.04s
+[worker:ComfyUI-CADabra] INFO: Completed: STEP TransferRoots(file=as1-ac-214.stp) in 0.04s
+[15:41:16] [CADabra]  Cached to BREP: as1-ac-214.stp
+[worker:ComfyUI-CADabra] INFO:  Cached to BREP: as1-ac-214.stp
+[15:41:16] [CADabra]  Ready: as1-ac-214.stp
+[worker:ComfyUI-CADabra] INFO:  Ready: as1-ac-214.stp
+[SubprocessWorker] got response: ok
+[comfy-env] CAD_Load done (6.72s): result: NodeOutput
+[comfy-env] Running CADHierarchyTree: max_depth: -1, include_properties: True, collapse_vertices: True, linear_deflection: 0.1, angular_deflection: 0.5, cad_model: dict
+[SubprocessWorker] call_method: nodes.cad_hierarchy_node.CADHierarchyTree.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=51 sending call_method
+[15:41:16] [CADabra] [CADHierarchyTree] Mesh exported: cad_hierarchy_1785512476810_mesh.vtp (4116 verts, 3896 tris)
+[worker:ComfyUI-CADabra] INFO: [CADHierarchyTree] Mesh exported: cad_hierarchy_1785512476810_mesh.vtp (4116 verts, 3896 tris)
+  Node executed (1 total), capturing...
+  Frame 4 saved (frame_003.jpg, t=7.4s)
+  [capture-node] freeze=5ms shot=111ms unfreeze=0ms saved=True
+  Execution complete (t=7.4s)
+  Captured 4 unique frames over 7.54s
+  [debug] iframes: 1
+  [debug]   iframe[0]: src=http://127.0.0.1:8188/extensions/ComfyUI-CADabra/viewer_cad_hierarchy.html?v=178, canvas=756x195, rafFrozen=True
+[15:41:16] [CADabra] [CADHierarchyTree] Edges exported: cad_hierarchy_1785512476810_edges.vtp (708 edges)
+[worker:ComfyUI-CADabra] INFO: [CADHierarchyTree] Edges exported: cad_hierarchy_1785512476810_edges.vtp (708 edges)
+[15:41:17] [CADabra] [CADHierarchyTree] Built hierarchy with 160 faces, 708 edges
+[worker:ComfyUI-CADabra] INFO: [CADHierarchyTree] Built hierarchy with 160 faces, 708 edges
+[SubprocessWorker] got response: ok
+[comfy-env] CADHierarchyTree done (0.28s): result: NodeOutput
+[32m[INFO][0m [32mPrompt executed in 7.01 seconds[0m
+  [timing] trigger_3d_previews: 0.2s
+  Saved high-quality screenshot: hierarchy_tree_executed.png
+  [timing] final_screenshot: 0.2s
+    Captured 5 video frames

@@ -1,0 +1,93 @@
+Capturing execution frames: load_preview_cad_batch.json
+  [ComfyUI] [32m[INFO][0m Using RAM pressure cache.
+  [ComfyUI] [32m[INFO][0m Using RAM pressure cache.
+  Frame 1 saved (frame_000.jpg, t=0.0s)
+  Validating workflow...
+  Queuing workflow for execution...
+  [ComfyUI] [32m[INFO][0m === /validate endpoint called ===
+  [ComfyUI] [32m[INFO][0m Received JSON with keys: ['prompt']
+  [ComfyUI] [32m[INFO][0m Prompt has 3 nodes
+  [ComfyUI] [32m[INFO][0m   Node 1: CAD_Load_From_Glob
+  [ComfyUI] [32m[INFO][0m     Inputs: {"glob_pattern": "**/*.stp", "execution_mode": "single_core", "start_index": 0, "max_cads": -1, "recursive": true}
+  [ComfyUI] [32m[INFO][0m   Node 2: PreviewCADBatch
+  [ComfyUI] [32m[INFO][0m     Inputs: {"index": 0, "linear_deflection": 0.1, "angular_deflection": 0.5, "preview_cad_batch": "", "cad_model": ["1", 0]}
+  [ComfyUI] [32m[INFO][0m   Node 3: CADGetFilename
+  [ComfyUI] [32m[INFO][0m     Inputs: {"cad_model": ["1", 0]}
+  [ComfyUI] [32m[INFO][0m Generated prompt_id: 58b4d396-36fb-45e9-affa-4bc21c31e5db
+  [ComfyUI] [32m[INFO][0m Calling execution.validate_prompt()...
+  [ComfyUI] [32m[INFO][0m Validation result: valid=True
+  [ComfyUI] [32m[INFO][0m === Validation PASSED ===
+  [ComfyUI] [32m[INFO][0m got prompt
+  [ComfyUI] [comfy-env] Running CAD_Load_From_Glob: glob_pattern: '**/*.stp', start_index: 0, max_cads: -1, recursive: True, execution_mode: dict
+  [ComfyUI] [SubprocessWorker] call_method: nodes.cad_nodes.CAD_Load_From_Glob.EXECUTE_NORMALIZED
+  [ComfyUI] [SubprocessWorker] acquired lock, ensuring started...
+  [ComfyUI] [ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+  [ComfyUI] [ComfyUI-CADabra] Health check: ok
+  [ComfyUI] [SubprocessWorker] worker started/confirmed
+  [ComfyUI] [SubprocessWorker] serializing kwargs to shm...
+  [ComfyUI] [SubprocessWorker] created 0 shm blocks
+  [ComfyUI] [SubprocessWorker] sending request via socket...
+  [ComfyUI] [SubprocessWorker] call_id=54 sending call_method
+  [ComfyUI] [14:31:47] [CADabra]  Glob pattern: D:\a\comfy-ci\comfy-ci\test_workspaces\CADabra-1414\portable-comfyui\ComfyUI_windows_portable\ComfyUI\input\**\*.stp
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO:  Glob pattern: D:\a\comfy-ci\comfy-ci\test_workspaces\CADabra-1414\portable-comfyui\ComfyUI_windows_portable\ComfyUI\input\**\*.stp
+  [ComfyUI] [14:31:47] [CADabra]  Skipped 0 axis files and 1 small files (< 5KB)
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO:  Skipped 0 axis files and 1 small files (< 5KB)
+  [ComfyUI] [14:31:47] [CADabra]  Found 6 CAD files
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO:  Found 6 CAD files
+  [ComfyUI] [14:31:48] [CADabra]  [1/6] Loaded as1-ac-214.stp
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO:  [1/6] Loaded as1-ac-214.stp
+  [ComfyUI] [14:31:48] [CADabra]  [2/6] Loaded as1-ec-214.stp
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO:  [2/6] Loaded as1-ec-214.stp
+  Frame 2 saved (frame_001.jpg, t=2.2s)
+  [capture-periodic] freeze=4ms shot=120ms unfreeze=5ms saved=True
+  [ComfyUI] [14:31:51] [CADabra]  [3/6] Loaded fan_enclosure.stp
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO:  [3/6] Loaded fan_enclosure.stp
+  [ComfyUI] [14:31:51] [CADabra]  [4/6] Loaded io1-ca-214.stp
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO:  [4/6] Loaded io1-ca-214.stp
+  [ComfyUI] [14:31:51] [CADabra]  [5/6] Loaded mr.stp
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO:  [5/6] Loaded mr.stp
+  [ComfyUI] [14:31:51] [CADabra]  [6/6] Loaded spiral_wind_turbine.stp
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO:  [6/6] Loaded spiral_wind_turbine.stp
+  [ComfyUI] [14:31:51] [CADabra]  Successfully loaded 6 CAD files
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO:  Successfully loaded 6 CAD files
+  [ComfyUI] [SubprocessWorker] got response: ok
+  [ComfyUI] [comfy-env] CAD_Load_From_Glob done (4.08s): result: NodeOutput
+  [ComfyUI] [comfy-env] Running PreviewCADBatch: index: list[1], linear_deflection: list[1], angular_deflection: list[1], cad_model: list[6]
+  [ComfyUI] [SubprocessWorker] call_method: nodes.cad_nodes.PreviewCADBatch.EXECUTE_NORMALIZED
+  [ComfyUI] [SubprocessWorker] acquired lock, ensuring started...
+  [ComfyUI] [ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+  [ComfyUI] [ComfyUI-CADabra] Health check: ok
+  [ComfyUI] [SubprocessWorker] worker started/confirmed
+  [ComfyUI] [SubprocessWorker] serializing kwargs to shm...
+  [ComfyUI] [SubprocessWorker] created 0 shm blocks
+  [ComfyUI] [SubprocessWorker] sending request via socket...
+  [ComfyUI] [SubprocessWorker] call_id=55 sending call_method
+  Node executed (1 total), capturing...
+  [ComfyUI] [14:31:52] [CADabra] Batch: CAD_MODEL mode - Batch size: 6, showing index: 1/6
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO: Batch: CAD_MODEL mode - Batch size: 6, showing index: 1/6
+  [ComfyUI] [14:31:52] [CADabra] Batch: Tessellating (linear: 0.1, angular: 0.5)
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO: Batch: Tessellating (linear: 0.1, angular: 0.5)
+  [ComfyUI] [14:31:52] [CADabra] Starting: BRepMesh(linear_deflection=0.1, angular_deflection=0.5)
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO: Starting: BRepMesh(linear_deflection=0.1, angular_deflection=0.5)
+  [ComfyUI] [14:31:52] [CADabra] Completed: BRepMesh(linear_deflection=0.1, angular_deflection=0.5) in 0.04s
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO: Completed: BRepMesh(linear_deflection=0.1, angular_deflection=0.5) in 0.04s
+  [ComfyUI] [14:31:52] [CADabra] Batch: Mesh: 4116 vertices, 3896 triangles
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO: Batch: Mesh: 4116 vertices, 3896 triangles
+  [ComfyUI] [14:31:52] [CADabra] Batch: Entities: 18 volumes, 160 faces, 708 edges
+  [ComfyUI] [worker:ComfyUI-CADabra] INFO: Batch: Entities: 18 volumes, 160 faces, 708 edges
+  [ComfyUI] [SubprocessWorker] got response: ok
+  [ComfyUI] [comfy-env] PreviewCADBatch done (0.28s): result: NodeOutput
+  [ComfyUI] [32m[INFO][0m [32mPrompt executed in 4.37 seconds[0m
+  Frame 3 saved (frame_002.jpg, t=4.5s)
+  [capture-node] freeze=6ms shot=114ms unfreeze=6ms saved=True
+  Node executed (2 total), capturing...
+  Frame 4 saved (frame_003.jpg, t=4.9s)
+  [capture-node] freeze=159ms shot=189ms unfreeze=0ms saved=True
+  Execution complete (t=4.9s)
+  Captured 4 unique frames over 5.28s
+  [debug] iframes: 1
+  [debug]   iframe[0]: src=http://127.0.0.1:41887/extensions/ComfyUI-CADabra/viewer_cad_analysis.html?v=178, canvas=488x518, rafFrozen=True
+  [timing] trigger_3d_previews: 0.0s
+  Saved high-quality screenshot: load_preview_cad_batch_executed.png
+  [timing] final_screenshot: 0.2s
+    Captured 5 video frames

@@ -1,0 +1,35 @@
+{
+  "frames": [
+    {
+      "file": "frame_000.jpg",
+      "time": 0.0,
+      "log": "Capturing execution frames: raytracing_roi.json"
+    },
+    {
+      "file": "frame_001.jpg",
+      "time": 0.95,
+      "log": "Capturing execution frames: raytracing_roi.json\n  Frame 1 saved (frame_000.jpg, t=0.0s)\n  Validating workflow...\n  Queuing workflow for execution..."
+    },
+    {
+      "file": "frame_002.jpg",
+      "time": 1.61,
+      "log": "Capturing execution frames: raytracing_roi.json\n  Frame 1 saved (frame_000.jpg, t=0.0s)\n  Validating workflow...\n  Queuing workflow for execution...\n  Node executed (1 total), capturing...\n  Frame 2 saved (frame_001.jpg, t=0.9s)\n  [capture-node] freeze=29ms shot=190ms unfreeze=13ms saved=True"
+    },
+    {
+      "file": "frame_003.jpg",
+      "time": 4.11,
+      "log": "Capturing execution frames: raytracing_roi.json\n  Frame 1 saved (frame_000.jpg, t=0.0s)\n  Validating workflow...\n  Queuing workflow for execution...\n  Node executed (1 total), capturing...\n  Frame 2 saved (frame_001.jpg, t=0.9s)\n  [capture-node] freeze=29ms shot=190ms unfreeze=13ms saved=True\n  Node executed (2 total), capturing...\n  Frame 3 saved (frame_002.jpg, t=1.6s)\n  [capture-node] freeze=45ms shot=174ms unfreeze=4ms saved=True"
+    },
+    {
+      "file": "frame_004.jpg",
+      "time": 7.06,
+      "log": "Capturing execution frames: raytracing_roi.json\n  Frame 1 saved (frame_000.jpg, t=0.0s)\n  Validating workflow...\n  Queuing workflow for execution...\n  Node executed (1 total), capturing...\n  Frame 2 saved (frame_001.jpg, t=0.9s)\n  [capture-node] freeze=29ms shot=190ms unfreeze=13ms saved=True\n  Node executed (2 total), capturing...\n  Frame 3 saved (frame_002.jpg, t=1.6s)\n  [capture-node] freeze=45ms shot=174ms unfreeze=4ms saved=True\n  Frame 4 saved (frame_003.jpg, t=4.1s)\n  [capture-periodic] freeze=4ms shot=197ms unfreeze=4ms saved=True"
+    },
+    {
+      "file": "frame_005.jpg",
+      "time": 9.500683546066284,
+      "log": "Final screenshot"
+    }
+  ],
+  "total_time": 7.27
+}

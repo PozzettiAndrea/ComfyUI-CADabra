@@ -1,0 +1,22 @@
+Capturing execution frames: cad_quality_metrics.json
+  Frame 1 saved (frame_000.jpg, t=0.0s)
+  Validating workflow...
+  Queuing workflow for execution...
+  Frame 2 saved (frame_001.jpg, t=2.3s)
+  [capture-periodic] freeze=4ms shot=139ms unfreeze=5ms saved=True
+  Frame 3 saved (frame_002.jpg, t=4.6s)
+  [capture-periodic] freeze=5ms shot=122ms unfreeze=5ms saved=True
+  [capture-loop] iter=50 t=6.1s state={'complete': False, 'error': None, 'executedCount': 0, 'wsState': 1} eval_ms=8 ram=6.2/16.0GB (38%) swap=0.3/2.9GB (10%) cpu=53% browser_rss=0.70GB
+  Node executed (1 total), capturing...
+  Frame 4 saved (frame_003.jpg, t=14.9s)
+  [capture-node] freeze=253ms shot=484ms unfreeze=5ms saved=True
+  Node executed (2 total), capturing...
+  [capture-node] freeze=127ms shot=445ms unfreeze=0ms saved=False
+  Execution complete (t=16.5s)
+  Captured 4 unique frames over 17.12s
+  [debug] iframes: 1
+  [debug]   iframe[0]: src=http://127.0.0.1:8188/extensions/ComfyUI-CADabra/viewer_cad_analysis.html?v=1778, canvas=372x498, rafFrozen=True
+  [timing] trigger_3d_previews: 0.0s
+  Saved high-quality screenshot: cad_quality_metrics_executed.png
+  [timing] final_screenshot: 0.2s
+    Captured 5 video frames

@@ -1,0 +1,30 @@
+{
+  "frames": [
+    {
+      "file": "frame_000.jpg",
+      "time": 0.0,
+      "log": "Capturing execution frames: cad_manipulation.json"
+    },
+    {
+      "file": "frame_001.jpg",
+      "time": 1.27,
+      "log": "Capturing execution frames: cad_manipulation.json\n  Frame 1 saved (frame_000.jpg, t=0.0s)\n  Validating workflow...\n  Queuing workflow for execution..."
+    },
+    {
+      "file": "frame_002.jpg",
+      "time": 4.26,
+      "log": "Capturing execution frames: cad_manipulation.json\n  Frame 1 saved (frame_000.jpg, t=0.0s)\n  Validating workflow...\n  Queuing workflow for execution...\n  Node executed (1 total), capturing...\n  Frame 2 saved (frame_001.jpg, t=1.3s)\n  [capture-node] freeze=41ms shot=156ms unfreeze=5ms saved=True\n  Node executed (2 total), capturing...\n  [capture-node] freeze=29ms shot=151ms unfreeze=7ms saved=False"
+    },
+    {
+      "file": "frame_003.jpg",
+      "time": 11.08,
+      "log": "Capturing execution frames: cad_manipulation.json\n  Frame 1 saved (frame_000.jpg, t=0.0s)\n  Validating workflow...\n  Queuing workflow for execution...\n  Node executed (1 total), capturing...\n  Frame 2 saved (frame_001.jpg, t=1.3s)\n  [capture-node] freeze=41ms shot=156ms unfreeze=5ms saved=True\n  Node executed (2 total), capturing...\n  [capture-node] freeze=29ms shot=151ms unfreeze=7ms saved=False\n  Frame 3 saved (frame_002.jpg, t=4.3s)\n  [capture-periodic] freeze=24ms shot=160ms unfreeze=7ms saved=True\n  [capture-loop] iter=50 t=9.9s state={'complete': False, 'error': None, 'executedCount': 2, 'wsState': 1} eval_ms=29 ram=5.3/16.0GB (33%) swap=0.3/2.9GB (9%) cpu=67% browser_rss=0.84GB"
+    },
+    {
+      "file": "frame_004.jpg",
+      "time": 14.233885288238525,
+      "log": "Final screenshot"
+    }
+  ],
+  "total_time": 11.97
+}

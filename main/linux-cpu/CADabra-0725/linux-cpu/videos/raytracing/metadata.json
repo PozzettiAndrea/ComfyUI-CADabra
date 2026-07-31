@@ -1,0 +1,30 @@
+{
+  "frames": [
+    {
+      "file": "frame_000.jpg",
+      "time": 0.0,
+      "log": "Capturing execution frames: raytracing.json"
+    },
+    {
+      "file": "frame_001.jpg",
+      "time": 1.95,
+      "log": "Capturing execution frames: raytracing.json\n  Frame 1 saved (frame_000.jpg, t=0.0s)\n  Validating workflow...\n  Queuing workflow for execution..."
+    },
+    {
+      "file": "frame_002.jpg",
+      "time": 4.64,
+      "log": "Capturing execution frames: raytracing.json\n  Frame 1 saved (frame_000.jpg, t=0.0s)\n  Validating workflow...\n  Queuing workflow for execution...\n  Node executed (1 total), capturing...\n  Frame 2 saved (frame_001.jpg, t=1.9s)\n  [capture-node] freeze=325ms shot=214ms unfreeze=4ms saved=True"
+    },
+    {
+      "file": "frame_003.jpg",
+      "time": 8.77,
+      "log": "Capturing execution frames: raytracing.json\n  Frame 1 saved (frame_000.jpg, t=0.0s)\n  Validating workflow...\n  Queuing workflow for execution...\n  Node executed (1 total), capturing...\n  Frame 2 saved (frame_001.jpg, t=1.9s)\n  [capture-node] freeze=325ms shot=214ms unfreeze=4ms saved=True\n  Frame 3 saved (frame_002.jpg, t=4.6s)\n  [capture-periodic] freeze=83ms shot=184ms unfreeze=4ms saved=True"
+    },
+    {
+      "file": "frame_004.jpg",
+      "time": 11.347962379455566,
+      "log": "Final screenshot"
+    }
+  ],
+  "total_time": 9.08
+}

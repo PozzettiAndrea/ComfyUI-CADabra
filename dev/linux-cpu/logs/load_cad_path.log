@@ -1,0 +1,74 @@
+Capturing execution frames: load_cad_path.json
+[32m[INFO][0m Using RAM pressure cache.
+[32m[INFO][0m Using RAM pressure cache.
+  Frame 1 saved (frame_000.jpg, t=0.0s)
+  Validating workflow...
+  Queuing workflow for execution...
+  Node executed (1 total), capturing...
+[32m[INFO][0m === /validate endpoint called ===
+[32m[INFO][0m Received JSON with keys: ['prompt']
+[32m[INFO][0m Prompt has 2 nodes
+[32m[INFO][0m   Node 1: CAD_Load_Path
+[32m[INFO][0m     Inputs: {"file_path": "/input/cad/spiral_wind_turbine.stp"}
+[32m[INFO][0m   Node 2: PreviewCADOCC
+[32m[INFO][0m     Inputs: {"linear_deflection": 0.1, "angular_deflection": 0.5, "preview_occ": "", "cad_model": ["1", 0]}
+[32m[INFO][0m Generated prompt_id: 56aa1f2e-0eb7-4c8b-89c9-b5514285d71d
+[32m[INFO][0m Calling execution.validate_prompt()...
+[32m[INFO][0m Validation result: valid=True
+[32m[INFO][0m === Validation PASSED ===
+[32m[INFO][0m got prompt
+[comfy-env] Running CAD_Load_Path: file_path: '/input/cad/spiral_wind_turbine.stp'
+[SubprocessWorker] call_method: nodes.cad_nodes.CAD_Load_Path.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=52 sending call_method
+[15:38:13] [CADabra]  Using cache: spiral_wind_turbine.stp
+[worker:ComfyUI-CADabra] INFO:  Using cache: spiral_wind_turbine.stp
+[15:38:13] [CADabra]  Ready: spiral_wind_turbine.stp
+[worker:ComfyUI-CADabra] INFO:  Ready: spiral_wind_turbine.stp
+[SubprocessWorker] got response: ok
+[comfy-env] CAD_Load_Path done (0.01s): result: NodeOutput
+[comfy-env] Running PreviewCADOCC: linear_deflection: 0.1, angular_deflection: 0.5, cad_model: dict
+[SubprocessWorker] call_method: nodes.cad_nodes.PreviewCADOCC.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=53 sending call_method
+[15:38:13] [CADabra]  Tessellating (linear: 0.1, angular: 0.5)
+[worker:ComfyUI-CADabra] INFO:  Tessellating (linear: 0.1, angular: 0.5)
+[15:38:13] [CADabra] Starting: BRepMesh(linear_deflection=0.1, angular_deflection=0.5)
+[worker:ComfyUI-CADabra] INFO: Starting: BRepMesh(linear_deflection=0.1, angular_deflection=0.5)
+[15:38:13] [CADabra] Completed: BRepMesh(linear_deflection=0.1, angular_deflection=0.5) in 0.08s
+[worker:ComfyUI-CADabra] INFO: Completed: BRepMesh(linear_deflection=0.1, angular_deflection=0.5) in 0.08s
+[15:38:13] [CADabra]  Mesh: 3386 vertices, 5508 triangles
+[worker:ComfyUI-CADabra] INFO:  Mesh: 3386 vertices, 5508 triangles
+[15:38:13] [CADabra]  Exported VTP: preview_059379d4.vtp (283,224 bytes)
+[worker:ComfyUI-CADabra] INFO:  Exported VTP: preview_059379d4.vtp (283,224 bytes)
+[15:38:13] [CADabra]  Entities: 1 volumes, 29 faces, 158 edges
+[worker:ComfyUI-CADabra] INFO:  Entities: 1 volumes, 29 faces, 158 edges
+[15:38:13] [CADabra]  Face types: {'BSpline': 15, 'Cylinder': 8, 'Plane': 3, 'Cone': 3}
+[worker:ComfyUI-CADabra] INFO:  Face types: {'BSpline': 15, 'Cylinder': 8, 'Plane': 3, 'Cone': 3}
+[15:38:13] [CADabra]  Edge types: {'BSpline': 124, 'Circle': 34}
+[worker:ComfyUI-CADabra] INFO:  Edge types: {'BSpline': 124, 'Circle': 34}
+[SubprocessWorker] got response: ok
+[comfy-env] PreviewCADOCC done (0.16s): result: NodeOutput
+[32m[INFO][0m [32mPrompt executed in 0.17 seconds[0m
+  Frame 2 saved (frame_001.jpg, t=0.7s)
+  [capture-node] freeze=7ms shot=96ms unfreeze=0ms saved=True
+  Execution complete (t=0.7s)
+  Captured 2 unique frames over 0.79s
+  [debug] iframes: 1
+  [debug]   iframe[0]: src=http://127.0.0.1:8188/extensions/ComfyUI-CADabra/viewer_cad_analysis.html?v=1785, canvas=244x498, rafFrozen=True
+  [timing] trigger_3d_previews: 0.0s
+  Saved high-quality screenshot: load_cad_path_executed.png
+  [timing] final_screenshot: 0.2s
+    Captured 3 video frames

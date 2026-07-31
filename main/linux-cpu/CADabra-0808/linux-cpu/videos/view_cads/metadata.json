@@ -1,0 +1,35 @@
+{
+  "frames": [
+    {
+      "file": "frame_000.jpg",
+      "time": 0.0,
+      "log": "Capturing execution frames: view_cads.json"
+    },
+    {
+      "file": "frame_001.jpg",
+      "time": 2.22,
+      "log": "Capturing execution frames: view_cads.json\n  Frame 1 saved (frame_000.jpg, t=0.0s)\n  Validating workflow...\n  Queuing workflow for execution..."
+    },
+    {
+      "file": "frame_002.jpg",
+      "time": 4.39,
+      "log": "Capturing execution frames: view_cads.json\n  Frame 1 saved (frame_000.jpg, t=0.0s)\n  Validating workflow...\n  Queuing workflow for execution...\n  Frame 2 saved (frame_001.jpg, t=2.2s)\n  [capture-periodic] freeze=2ms shot=117ms unfreeze=5ms saved=True"
+    },
+    {
+      "file": "frame_003.jpg",
+      "time": 5.27,
+      "log": "Capturing execution frames: view_cads.json\n  Frame 1 saved (frame_000.jpg, t=0.0s)\n  Validating workflow...\n  Queuing workflow for execution...\n  Frame 2 saved (frame_001.jpg, t=2.2s)\n  [capture-periodic] freeze=2ms shot=117ms unfreeze=5ms saved=True\n  Frame 3 saved (frame_002.jpg, t=4.4s)\n  [capture-periodic] freeze=5ms shot=136ms unfreeze=2ms saved=True"
+    },
+    {
+      "file": "frame_004.jpg",
+      "time": 7.24,
+      "log": "Capturing execution frames: view_cads.json\n  Frame 1 saved (frame_000.jpg, t=0.0s)\n  Validating workflow...\n  Queuing workflow for execution...\n  Frame 2 saved (frame_001.jpg, t=2.2s)\n  [capture-periodic] freeze=2ms shot=117ms unfreeze=5ms saved=True\n  Frame 3 saved (frame_002.jpg, t=4.4s)\n  [capture-periodic] freeze=5ms shot=136ms unfreeze=2ms saved=True\n  Node executed (2 total), capturing...\n  Frame 4 saved (frame_003.jpg, t=5.3s)\n  [capture-node] freeze=1051ms shot=463ms unfreeze=8ms saved=True"
+    },
+    {
+      "file": "frame_005.jpg",
+      "time": 9.93674087524414,
+      "log": "Final screenshot"
+    }
+  ],
+  "total_time": 7.69
+}

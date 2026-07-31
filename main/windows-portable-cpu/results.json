@@ -1,0 +1,396 @@
+{
+  "timestamp": "2026-07-31T14:36:13.390118+00:00",
+  "platform": "windows_portable",
+  "hardware": {
+    "os": "Windows-10-10.0.26100-SP0",
+    "cpu": "AMD64 Family 25 Model 1 Stepping 1, AuthenticAMD"
+  },
+  "commit_hash": "1651951d8e67651931ae974d345647860de09889",
+  "run_url": "https://github.com/PozzettiAndrea/comfy-ci/actions/runs/30637654499",
+  "success": true,
+  "summary": {
+    "total": 21,
+    "passed": 21,
+    "failed": 0
+  },
+  "workflows": [
+    {
+      "name": "analyse_CAD",
+      "status": "pass",
+      "duration_seconds": 44.67,
+      "error": null,
+      "hardware": {
+        "os": "Windows-10-10.0.26100-SP0",
+        "cpu": "AMD64 Family 25 Model 1 Stepping 1, AuthenticAMD"
+      },
+      "resources": {
+        "ram": {
+          "peak": 2.35,
+          "avg": 1.96
+        },
+        "total_ram_gb": 16.0,
+        "samples": 44
+      }
+    },
+    {
+      "name": "cad_curvature",
+      "status": "pass",
+      "duration_seconds": 25.1,
+      "error": null,
+      "hardware": {
+        "os": "Windows-10-10.0.26100-SP0",
+        "cpu": "AMD64 Family 25 Model 1 Stepping 1, AuthenticAMD"
+      },
+      "resources": {
+        "ram": {
+          "peak": 2.91,
+          "avg": 2.45
+        },
+        "total_ram_gb": 16.0,
+        "samples": 25
+      }
+    },
+    {
+      "name": "cad_fix_degenerate_faces",
+      "status": "pass",
+      "duration_seconds": 19.7,
+      "error": null,
+      "hardware": {
+        "os": "Windows-10-10.0.26100-SP0",
+        "cpu": "AMD64 Family 25 Model 1 Stepping 1, AuthenticAMD"
+      },
+      "resources": {
+        "ram": {
+          "peak": 2.88,
+          "avg": 2.72
+        },
+        "total_ram_gb": 16.0,
+        "samples": 20
+      }
+    },
+    {
+      "name": "cad_heal_advanced",
+      "status": "pass",
+      "duration_seconds": 14.05,
+      "error": null,
+      "hardware": {
+        "os": "Windows-10-10.0.26100-SP0",
+        "cpu": "AMD64 Family 25 Model 1 Stepping 1, AuthenticAMD"
+      },
+      "resources": {
+        "ram": {
+          "peak": 2.77,
+          "avg": 2.77
+        },
+        "total_ram_gb": 16.0,
+        "samples": 14
+      }
+    },
+    {
+      "name": "cad_inspection_healing",
+      "status": "pass",
+      "duration_seconds": 16.5,
+      "error": null,
+      "hardware": {
+        "os": "Windows-10-10.0.26100-SP0",
+        "cpu": "AMD64 Family 25 Model 1 Stepping 1, AuthenticAMD"
+      },
+      "resources": {
+        "ram": {
+          "peak": 2.77,
+          "avg": 2.76
+        },
+        "total_ram_gb": 16.0,
+        "samples": 17
+      }
+    },
+    {
+      "name": "cad_manipulation",
+      "status": "pass",
+      "duration_seconds": 29.5,
+      "error": null,
+      "hardware": {
+        "os": "Windows-10-10.0.26100-SP0",
+        "cpu": "AMD64 Family 25 Model 1 Stepping 1, AuthenticAMD"
+      },
+      "resources": {
+        "ram": {
+          "peak": 2.75,
+          "avg": 2.7
+        },
+        "total_ram_gb": 16.0,
+        "samples": 28
+      }
+    },
+    {
+      "name": "cad_quality_metrics",
+      "status": "pass",
+      "duration_seconds": 22.61,
+      "error": null,
+      "hardware": {
+        "os": "Windows-10-10.0.26100-SP0",
+        "cpu": "AMD64 Family 25 Model 1 Stepping 1, AuthenticAMD"
+      },
+      "resources": {
+        "ram": {
+          "peak": 2.61,
+          "avg": 2.55
+        },
+        "total_ram_gb": 16.0,
+        "samples": 23
+      }
+    },
+    {
+      "name": "coordtransform",
+      "status": "pass",
+      "duration_seconds": 10.23,
+      "error": null,
+      "hardware": {
+        "os": "Windows-10-10.0.26100-SP0",
+        "cpu": "AMD64 Family 25 Model 1 Stepping 1, AuthenticAMD"
+      },
+      "resources": {
+        "ram": {
+          "peak": 2.46,
+          "avg": 2.43
+        },
+        "total_ram_gb": 16.0,
+        "samples": 11
+      }
+    },
+    {
+      "name": "edge_analysis",
+      "status": "pass",
+      "duration_seconds": 18.61,
+      "error": null,
+      "hardware": {
+        "os": "Windows-10-10.0.26100-SP0",
+        "cpu": "AMD64 Family 25 Model 1 Stepping 1, AuthenticAMD"
+      },
+      "resources": {
+        "ram": {
+          "peak": 2.41,
+          "avg": 2.37
+        },
+        "total_ram_gb": 16.0,
+        "samples": 19
+      }
+    },
+    {
+      "name": "extract_largest_component",
+      "status": "pass",
+      "duration_seconds": 12.48,
+      "error": null,
+      "hardware": {
+        "os": "Windows-10-10.0.26100-SP0",
+        "cpu": "AMD64 Family 25 Model 1 Stepping 1, AuthenticAMD"
+      },
+      "resources": {
+        "ram": {
+          "peak": 2.35,
+          "avg": 2.33
+        },
+        "total_ram_gb": 16.0,
+        "samples": 13
+      }
+    },
+    {
+      "name": "hierarchy_tree",
+      "status": "pass",
+      "duration_seconds": 10.88,
+      "error": null,
+      "hardware": {
+        "os": "Windows-10-10.0.26100-SP0",
+        "cpu": "AMD64 Family 25 Model 1 Stepping 1, AuthenticAMD"
+      },
+      "resources": {
+        "ram": {
+          "peak": 2.3,
+          "avg": 2.28
+        },
+        "total_ram_gb": 16.0,
+        "samples": 11
+      }
+    },
+    {
+      "name": "load_cad_path",
+      "status": "pass",
+      "duration_seconds": 9.62,
+      "error": null,
+      "hardware": {
+        "os": "Windows-10-10.0.26100-SP0",
+        "cpu": "AMD64 Family 25 Model 1 Stepping 1, AuthenticAMD"
+      },
+      "resources": {
+        "ram": {
+          "peak": 2.25,
+          "avg": 2.23
+        },
+        "total_ram_gb": 16.0,
+        "samples": 10
+      }
+    },
+    {
+      "name": "load_preview_cad_batch",
+      "status": "pass",
+      "duration_seconds": 13.67,
+      "error": null,
+      "hardware": {
+        "os": "Windows-10-10.0.26100-SP0",
+        "cpu": "AMD64 Family 25 Model 1 Stepping 1, AuthenticAMD"
+      },
+      "resources": {
+        "ram": {
+          "peak": 2.2,
+          "avg": 2.11
+        },
+        "total_ram_gb": 16.0,
+        "samples": 14
+      }
+    },
+    {
+      "name": "mesh_CAD",
+      "status": "pass",
+      "duration_seconds": 50.35,
+      "error": null,
+      "hardware": {
+        "os": "Windows-10-10.0.26100-SP0",
+        "cpu": "AMD64 Family 25 Model 1 Stepping 1, AuthenticAMD"
+      },
+      "resources": {
+        "ram": {
+          "peak": 2.02,
+          "avg": 1.89
+        },
+        "total_ram_gb": 16.0,
+        "samples": 47
+      }
+    },
+    {
+      "name": "mesh_face_seg",
+      "status": "pass",
+      "duration_seconds": 10.04,
+      "error": null,
+      "hardware": {
+        "os": "Windows-10-10.0.26100-SP0",
+        "cpu": "AMD64 Family 25 Model 1 Stepping 1, AuthenticAMD"
+      },
+      "resources": {
+        "ram": {
+          "peak": 1.97,
+          "avg": 1.97
+        },
+        "total_ram_gb": 16.0,
+        "samples": 10
+      }
+    },
+    {
+      "name": "overlapping_faces",
+      "status": "pass",
+      "duration_seconds": 58.29,
+      "error": null,
+      "hardware": {
+        "os": "Windows-10-10.0.26100-SP0",
+        "cpu": "AMD64 Family 25 Model 1 Stepping 1, AuthenticAMD"
+      },
+      "resources": {
+        "ram": {
+          "peak": 1.97,
+          "avg": 1.9
+        },
+        "total_ram_gb": 16.0,
+        "samples": 58
+      }
+    },
+    {
+      "name": "raytracing",
+      "status": "pass",
+      "duration_seconds": 64.78,
+      "error": null,
+      "hardware": {
+        "os": "Windows-10-10.0.26100-SP0",
+        "cpu": "AMD64 Family 25 Model 1 Stepping 1, AuthenticAMD"
+      },
+      "resources": {
+        "ram": {
+          "peak": 1.8,
+          "avg": 1.68
+        },
+        "total_ram_gb": 16.0,
+        "samples": 62
+      }
+    },
+    {
+      "name": "raytracing_roi",
+      "status": "pass",
+      "duration_seconds": 24.18,
+      "error": null,
+      "hardware": {
+        "os": "Windows-10-10.0.26100-SP0",
+        "cpu": "AMD64 Family 25 Model 1 Stepping 1, AuthenticAMD"
+      },
+      "resources": {
+        "ram": {
+          "peak": 1.86,
+          "avg": 1.69
+        },
+        "total_ram_gb": 16.0,
+        "samples": 24
+      }
+    },
+    {
+      "name": "spline_to_circle",
+      "status": "pass",
+      "duration_seconds": 9.75,
+      "error": null,
+      "hardware": {
+        "os": "Windows-10-10.0.26100-SP0",
+        "cpu": "AMD64 Family 25 Model 1 Stepping 1, AuthenticAMD"
+      },
+      "resources": {
+        "ram": {
+          "peak": 1.82,
+          "avg": 1.8
+        },
+        "total_ram_gb": 16.0,
+        "samples": 10
+      }
+    },
+    {
+      "name": "spline_viewer",
+      "status": "pass",
+      "duration_seconds": 11.6,
+      "error": null,
+      "hardware": {
+        "os": "Windows-10-10.0.26100-SP0",
+        "cpu": "AMD64 Family 25 Model 1 Stepping 1, AuthenticAMD"
+      },
+      "resources": {
+        "ram": {
+          "peak": 1.82,
+          "avg": 1.81
+        },
+        "total_ram_gb": 16.0,
+        "samples": 12
+      }
+    },
+    {
+      "name": "view_cads",
+      "status": "pass",
+      "duration_seconds": 26.03,
+      "error": null,
+      "hardware": {
+        "os": "Windows-10-10.0.26100-SP0",
+        "cpu": "AMD64 Family 25 Model 1 Stepping 1, AuthenticAMD"
+      },
+      "resources": {
+        "ram": {
+          "peak": 1.88,
+          "avg": 1.8
+        },
+        "total_ram_gb": 16.0,
+        "samples": 25
+      }
+    }
+  ]
+}

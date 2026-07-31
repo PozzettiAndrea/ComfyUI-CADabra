@@ -1,0 +1,66 @@
+[00:00] Crash dump logging enabled: /Users/runner/work/ComfyUI-CADabra/ComfyUI-CADabra/comfy-test-logs/CADabra-1533/macos-cpu/crash_dump.log
+[00:00] 
+[00:00] [1/6] SYNTAX
+[00:00] ----------------------------------------
+[00:00] 
+[DEBUG] server=None, api=None
+[00:00] Found pyproject.toml (modern format)
+[00:00] Found requirements.txt (legacy format)
+[00:00] Unicode check: OK (all characters cp1252-safe)
+[00:00] Forbidden patterns check: OK
+[00:00] [SYNTAX] PASSED
+[00:00] 
+[00:00] [2/6] COVERAGE
+[00:00] ----------------------------------------
+[00:00] 
+Analyzing workflow coverage...
+[00:00] Coverage: 40/40 registered nodes used across 21 workflow(s) (100%)
+[00:00] Coverage check: OK (all registered nodes used by at least one workflow)
+[00:00] [COVERAGE] PASSED
+[00:00] 
+[00:00] [3/6] INSTALL
+[00:00] ----------------------------------------
+[00:00] 
+[DEBUG] server=None, api=None
+[00:00] Attach mode: using prebuilt env at /Users/runner/work/ComfyUI-CADabra/ComfyUI-CADabra/ComfyUI (server: http://127.0.0.1:8188)
+[00:00] ComfyUI under test: 0.29.0
+[00:00] [INSTALL] PASSED
+[00:00] 
+[00:00] [4/6] REGISTRATION
+[00:00] ----------------------------------------
+[00:00] 
+[DEBUG] server=None, api=None
+[00:00] 
+Attaching to ComfyUI server at http://127.0.0.1:8188 (log: /Users/runner/work/ComfyUI-CADabra/ComfyUI-CADabra/comfy-test-logs/server.log)...
+[00:00] Checking for import errors in server logs...
+[00:00] No import errors detected
+[00:00] Found 954 registered nodes
+[00:00] ComfyUI version (server-reported): 0.29.0
+[00:00] [REGISTRATION] PASSED
+[00:00] 
+[00:00] [5/6] INSTANTIATION
+[00:00] ----------------------------------------
+[00:00] 
+[DEBUG] server=<comfy_test.comfyui.server.AttachedServer object at 0x10106a990>, api=<comfy_test.comfyui.api.ComfyUIAPI object at 0x10107c2d0>
+[00:00] Testing node constructors...
+[00:03] All 0 node(s) instantiated successfully!
+[00:03] [INSTANTIATION] PASSED
+[00:03] 
+[00:03] [6/6] EXECUTION
+[00:03] ----------------------------------------
+[00:03] 
+[DEBUG] server=<comfy_test.comfyui.server.AttachedServer object at 0x10106a990>, api=<comfy_test.comfyui.api.ComfyUIAPI object at 0x10107c2d0>
+[00:03] CPU runner - will execute 21 workflow(s)
+[00:03] Running 21 workflow(s) (all with videos)...
+[00:03] Starting headless browser...
+[00:03]   macOS -- using Apple Metal GPU via ANGLE
+[00:05] 
+macos: FAILED (unexpected error)
+[00:05] Error: Browser closed.
+==================== Browser output: ====================
+<launching> /Users/runner/work/ComfyUI-CADabra/ComfyUI-CADabra/.playwright/chromium-1084/chrome-mac/Chromium.app/Contents/MacOS/Chromium --disable-field-trial-config --disable-background-networking --enable-features=NetworkService,NetworkServiceInProcess --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-extensions --disable-features=ImprovedCookieControls,LazyFrameLoading,GlobalMediaControls,DestroyProfileOnBrowserClose,MediaRouter,DialMediaRouteProvider,AcceptCHFrame,AutoExpandDetailsElement,CertificateTransparencyComponentUpdater,AvoidUnnecessaryBeforeUnloadCheckSync,Translate --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --force-color-profile=srgb --metrics-recording-only --no-first-run --enable-automation --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --enable-use-zoom-for-dsf=false --use-angle --headless --hide-scrollbars --mute-audio --blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4 --no-sandbox --enable-gpu --use-angle=metal --ignore-gpu-blocklist --user-data-dir=/var/folders/df/djsxfhc17x95674wsm_g8s980000gn/T/playwright_chromiumdev_profile-5OYc2d --remote-debugging-pipe --no-startup-window
+<launched> pid=2821
+=========================== logs ===========================
+<launching> /Users/runner/work/ComfyUI-CADabra/ComfyUI-CADabra/.playwright/chromium-1084/chrome-mac/Chromium.app/Contents/MacOS/Chromium --disable-field-trial-config --disable-background-networking --enable-features=NetworkService,NetworkServiceInProcess --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-extensions --disable-features=ImprovedCookieControls,LazyFrameLoading,GlobalMediaControls,DestroyProfileOnBrowserClose,MediaRouter,DialMediaRouteProvider,AcceptCHFrame,AutoExpandDetailsElement,CertificateTransparencyComponentUpdater,AvoidUnnecessaryBeforeUnloadCheckSync,Translate --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --force-color-profile=srgb --metrics-recording-only --no-first-run --enable-automation --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --enable-use-zoom-for-dsf=false --use-angle --headless --hide-scrollbars --mute-audio --blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4 --no-sandbox --enable-gpu --use-angle=metal --ignore-gpu-blocklist --user-data-dir=/var/folders/df/djsxfhc17x95674wsm_g8s980000gn/T/playwright_chromiumdev_profile-5OYc2d --remote-debugging-pipe --no-startup-window
+<launched> pid=2821
+============================================================

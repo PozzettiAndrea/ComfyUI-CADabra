@@ -1,0 +1,41 @@
+Loading workflow from /Users/runner/work/comfy-gpu-ci/comfy-gpu-ci/ComfyUI/custom_nodes/ComfyUI-CADabra/workflows/cad_manipulation.json...
+Converting litegraph workflow to prompt format...
+Queuing workflow: /Users/runner/work/comfy-gpu-ci/comfy-gpu-ci/ComfyUI/custom_nodes/ComfyUI-CADabra/workflows/cad_manipulation.json...
+[DEBUG] Connecting WebSocket to ws://127.0.0.1:8188/ws?clientId=88e59f9f-1941-45d8-9b48-32ae50029785
+[DEBUG] WebSocket connected successfully
+Queued with ID: 2505c3e9-af1d-4814-bc4a-0744db3e942f
+[DEBUG] WS msg: type=status prompt_id=None (waiting for 2505c3e9-af1d-4814-bc4a-0744db3e942f)
+[DEBUG] WS msg: type=status prompt_id=None (waiting for 2505c3e9-af1d-4814-bc4a-0744db3e942f)
+[DEBUG] WS msg: type=status prompt_id=None (waiting for 2505c3e9-af1d-4814-bc4a-0744db3e942f)
+[DEBUG] WS msg: type=progress_state prompt_id=2505c3e9-af1d-4814-bc4a-0744db3e942f (waiting for 2505c3e9-af1d-4814-bc4a-0744db3e942f)
+[DEBUG] Unhandled msg_type: progress_state
+[DEBUG] WS msg: type=progress_state prompt_id=2505c3e9-af1d-4814-bc4a-0744db3e942f (waiting for 2505c3e9-af1d-4814-bc4a-0744db3e942f)
+[DEBUG] Unhandled msg_type: progress_state
+[DEBUG] WS msg: type=progress_state prompt_id=2505c3e9-af1d-4814-bc4a-0744db3e942f (waiting for 2505c3e9-af1d-4814-bc4a-0744db3e942f)
+[DEBUG] Unhandled msg_type: progress_state
+[DEBUG] WS msg: type=progress_state prompt_id=2505c3e9-af1d-4814-bc4a-0744db3e942f (waiting for 2505c3e9-af1d-4814-bc4a-0744db3e942f)
+[DEBUG] Unhandled msg_type: progress_state
+[DEBUG] WS msg: type=progress_state prompt_id=2505c3e9-af1d-4814-bc4a-0744db3e942f (waiting for 2505c3e9-af1d-4814-bc4a-0744db3e942f)
+[DEBUG] Unhandled msg_type: progress_state
+[DEBUG] WS msg: type=progress_state prompt_id=2505c3e9-af1d-4814-bc4a-0744db3e942f (waiting for 2505c3e9-af1d-4814-bc4a-0744db3e942f)
+[DEBUG] Unhandled msg_type: progress_state
+[DEBUG] WS msg: type=progress_state prompt_id=2505c3e9-af1d-4814-bc4a-0744db3e942f (waiting for 2505c3e9-af1d-4814-bc4a-0744db3e942f)
+[DEBUG] Unhandled msg_type: progress_state
+[DEBUG] WS msg: type=progress_state prompt_id=2505c3e9-af1d-4814-bc4a-0744db3e942f (waiting for 2505c3e9-af1d-4814-bc4a-0744db3e942f)
+[DEBUG] Unhandled msg_type: progress_state
+[DEBUG] WS msg: type=progress_state prompt_id=2505c3e9-af1d-4814-bc4a-0744db3e942f (waiting for 2505c3e9-af1d-4814-bc4a-0744db3e942f)
+[DEBUG] Unhandled msg_type: progress_state
+[DEBUG] WS msg: type=progress_state prompt_id=2505c3e9-af1d-4814-bc4a-0744db3e942f (waiting for 2505c3e9-af1d-4814-bc4a-0744db3e942f)
+[DEBUG] Unhandled msg_type: progress_state
+[DEBUG] WS msg: type=progress_state prompt_id=2505c3e9-af1d-4814-bc4a-0744db3e942f (waiting for 2505c3e9-af1d-4814-bc4a-0744db3e942f)
+[DEBUG] Unhandled msg_type: progress_state
+[DEBUG] WS msg: type=progress_state prompt_id=2505c3e9-af1d-4814-bc4a-0744db3e942f (waiting for 2505c3e9-af1d-4814-bc4a-0744db3e942f)
+[DEBUG] Unhandled msg_type: progress_state
+[DEBUG] WS msg: type=progress_state prompt_id=2505c3e9-af1d-4814-bc4a-0744db3e942f (waiting for 2505c3e9-af1d-4814-bc4a-0744db3e942f)
+[DEBUG] Unhandled msg_type: progress_state
+[DEBUG] WS msg: type=progress_state prompt_id=2505c3e9-af1d-4814-bc4a-0744db3e942f (waiting for 2505c3e9-af1d-4814-bc4a-0744db3e942f)
+[DEBUG] Unhandled msg_type: progress_state
+[DEBUG] WS msg: type=status prompt_id=None (waiting for 2505c3e9-af1d-4814-bc4a-0744db3e942f)
+Execution complete (queue empty)
+Workflow completed successfully!
+    Saved screenshot: cad_manipulation_executed.png

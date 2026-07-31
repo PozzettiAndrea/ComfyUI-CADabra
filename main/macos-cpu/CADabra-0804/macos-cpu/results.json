@@ -1,0 +1,161 @@
+{
+  "timestamp": "2026-05-08T08:06:45.553728+00:00",
+  "platform": "macos",
+  "hardware": {
+    "os": "macOS-15.7.4-arm64-arm-64bit-Mach-O",
+    "cpu": "arm"
+  },
+  "commit_hash": "371e11e638ec75c639ee8b75a560a2abb4bb18e6",
+  "success": true,
+  "summary": {
+    "total": 8,
+    "passed": 8,
+    "failed": 0
+  },
+  "workflows": [
+    {
+      "name": "analyse_CAD",
+      "status": "pass",
+      "duration_seconds": 31.34,
+      "error": null,
+      "hardware": {
+        "os": "macOS-15.7.4-arm64-arm-64bit-Mach-O",
+        "cpu": "arm"
+      },
+      "resources": {
+        "ram": {
+          "peak": 3.82,
+          "avg": 3.75
+        },
+        "total_ram_gb": 7.0,
+        "samples": 30
+      }
+    },
+    {
+      "name": "cad_manipulation",
+      "status": "pass",
+      "duration_seconds": 8.84,
+      "error": null,
+      "hardware": {
+        "os": "macOS-15.7.4-arm64-arm-64bit-Mach-O",
+        "cpu": "arm"
+      },
+      "resources": {
+        "ram": {
+          "peak": 3.82,
+          "avg": 3.79
+        },
+        "total_ram_gb": 7.0,
+        "samples": 8
+      }
+    },
+    {
+      "name": "cad_quality_metrics",
+      "status": "pass",
+      "duration_seconds": 12.49,
+      "error": null,
+      "hardware": {
+        "os": "macOS-15.7.4-arm64-arm-64bit-Mach-O",
+        "cpu": "arm"
+      },
+      "resources": {
+        "ram": {
+          "peak": 3.8,
+          "avg": 3.77
+        },
+        "total_ram_gb": 7.0,
+        "samples": 12
+      }
+    },
+    {
+      "name": "edge_analysis",
+      "status": "pass",
+      "duration_seconds": 7.22,
+      "error": null,
+      "hardware": {
+        "os": "macOS-15.7.4-arm64-arm-64bit-Mach-O",
+        "cpu": "arm"
+      },
+      "resources": {
+        "ram": {
+          "peak": 3.77,
+          "avg": 3.75
+        },
+        "total_ram_gb": 7.0,
+        "samples": 7
+      }
+    },
+    {
+      "name": "mesh_CAD",
+      "status": "pass",
+      "duration_seconds": 19.01,
+      "error": null,
+      "hardware": {
+        "os": "macOS-15.7.4-arm64-arm-64bit-Mach-O",
+        "cpu": "arm"
+      },
+      "resources": {
+        "ram": {
+          "peak": 3.79,
+          "avg": 3.61
+        },
+        "total_ram_gb": 7.0,
+        "samples": 18
+      }
+    },
+    {
+      "name": "raytracing",
+      "status": "pass",
+      "duration_seconds": 7.77,
+      "error": null,
+      "hardware": {
+        "os": "macOS-15.7.4-arm64-arm-64bit-Mach-O",
+        "cpu": "arm"
+      },
+      "resources": {
+        "ram": {
+          "peak": 3.79,
+          "avg": 3.77
+        },
+        "total_ram_gb": 7.0,
+        "samples": 8
+      }
+    },
+    {
+      "name": "raytracing_roi",
+      "status": "pass",
+      "duration_seconds": 6.51,
+      "error": null,
+      "hardware": {
+        "os": "macOS-15.7.4-arm64-arm-64bit-Mach-O",
+        "cpu": "arm"
+      },
+      "resources": {
+        "ram": {
+          "peak": 3.8,
+          "avg": 3.77
+        },
+        "total_ram_gb": 7.0,
+        "samples": 6
+      }
+    },
+    {
+      "name": "view_cads",
+      "status": "pass",
+      "duration_seconds": 11.41,
+      "error": null,
+      "hardware": {
+        "os": "macOS-15.7.4-arm64-arm-64bit-Mach-O",
+        "cpu": "arm"
+      },
+      "resources": {
+        "ram": {
+          "peak": 3.8,
+          "avg": 3.75
+        },
+        "total_ram_gb": 7.0,
+        "samples": 11
+      }
+    }
+  ]
+}

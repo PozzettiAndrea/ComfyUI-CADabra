@@ -1,0 +1,21 @@
+Loading workflow from /Users/runner/work/comfy-gpu-ci/comfy-gpu-ci/ComfyUI/custom_nodes/ComfyUI-CADabra/workflows/mesh_CAD.json...
+Converting litegraph workflow to prompt format...
+Queuing workflow: /Users/runner/work/comfy-gpu-ci/comfy-gpu-ci/ComfyUI/custom_nodes/ComfyUI-CADabra/workflows/mesh_CAD.json...
+[DEBUG] Connecting WebSocket to ws://127.0.0.1:8188/ws?clientId=19b5921c-ae18-4664-a2b0-ba4019be972b
+[DEBUG] WebSocket connected successfully
+Queued with ID: 770c9fab-7f72-4850-8309-e23225b1b319
+[DEBUG] WS msg: type=status prompt_id=None (waiting for 770c9fab-7f72-4850-8309-e23225b1b319)
+[DEBUG] WS msg: type=status prompt_id=None (waiting for 770c9fab-7f72-4850-8309-e23225b1b319)
+[DEBUG] WS msg: type=status prompt_id=None (waiting for 770c9fab-7f72-4850-8309-e23225b1b319)
+[DEBUG] WS msg: type=progress_state prompt_id=770c9fab-7f72-4850-8309-e23225b1b319 (waiting for 770c9fab-7f72-4850-8309-e23225b1b319)
+[DEBUG] Unhandled msg_type: progress_state
+[DEBUG] WS msg: type=progress_state prompt_id=770c9fab-7f72-4850-8309-e23225b1b319 (waiting for 770c9fab-7f72-4850-8309-e23225b1b319)
+[DEBUG] Unhandled msg_type: progress_state
+[DEBUG] WS msg: type=progress_state prompt_id=770c9fab-7f72-4850-8309-e23225b1b319 (waiting for 770c9fab-7f72-4850-8309-e23225b1b319)
+[DEBUG] Unhandled msg_type: progress_state
+[DEBUG] WS msg: type=progress_state prompt_id=770c9fab-7f72-4850-8309-e23225b1b319 (waiting for 770c9fab-7f72-4850-8309-e23225b1b319)
+[DEBUG] Unhandled msg_type: progress_state
+[DEBUG] WS msg: type=status prompt_id=None (waiting for 770c9fab-7f72-4850-8309-e23225b1b319)
+Execution complete (queue empty)
+Workflow completed successfully!
+    Saved screenshot: mesh_CAD_executed.png

@@ -1,0 +1,130 @@
+Capturing execution frames: coordtransform.json
+[32m[INFO][0m Using RAM pressure cache.
+[32m[INFO][0m Using RAM pressure cache.
+  Frame 1 saved (frame_000.jpg, t=0.0s)
+  Validating workflow...
+  Queuing workflow for execution...
+[32m[INFO][0m === /validate endpoint called ===
+[32m[INFO][0m Received JSON with keys: ['prompt']
+[32m[INFO][0m Prompt has 5 nodes
+[32m[INFO][0m   Node 1: PreviewCADDual
+[32m[INFO][0m     Inputs: {"layout": "side_by_side", "opacity_1": 1, "opacity_2": 0.6, "linear_deflection": 0.1, "angular_deflection": 0.5, "preview_cad_dual": "{\"show_edges\":false,\"camera_state\":\"{\\\"position\\\":[198.5
+[32m[INFO][0m   Node 2: CAD_Load
+[32m[INFO][0m     Inputs: {"filename": "cad/spiral_wind_turbine.stp", "upload_progress": "", "\u2b06 upload / drop CAD": null}
+[32m[INFO][0m   Node 3: CoordSystemCADToTransform
+[32m[INFO][0m     Inputs: {"mode": "normal", "cad_model": ["5", 0]}
+[32m[INFO][0m   Node 4: CADTransform
+[32m[INFO][0m     Inputs: {"translate_x": ["3", 0], "translate_y": ["3", 1], "translate_z": ["3", 2], "rotate_x": ["3", 3], "rotate_y": ["3", 4], "rotate_z": ["3", 5], "scale": 1, "cad_model": ["2", 0]}
+[32m[INFO][0m   Node 5: CAD_Load
+[32m[INFO][0m     Inputs: {"filename": "cad/example_axis.igs", "upload_progress": "", "\u2b06 upload / drop CAD": null}
+[32m[INFO][0m Generated prompt_id: f7493924-095b-4f3e-a485-9e93b4df6300
+[32m[INFO][0m Calling execution.validate_prompt()...
+[32m[INFO][0m Validation result: valid=True
+[32m[INFO][0m === Validation PASSED ===
+[32m[INFO][0m got prompt
+[comfy-env] Running CAD_Load: filename: 'cad/spiral_wind_turbine.stp'
+[SubprocessWorker] call_method: nodes.cad_nodes.CAD_Load.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=34 sending call_method
+[15:40:35] [CADabra]  Using cache: spiral_wind_turbine.stp
+[worker:ComfyUI-CADabra] INFO:  Using cache: spiral_wind_turbine.stp
+[15:40:35] [CADabra]  Ready: spiral_wind_turbine.stp
+[worker:ComfyUI-CADabra] INFO:  Ready: spiral_wind_turbine.stp
+[SubprocessWorker] got response: ok
+[comfy-env] CAD_Load done (0.07s): result: NodeOutput
+[comfy-env] Running CAD_Load: filename: 'cad/example_axis.igs'
+[SubprocessWorker] call_method: nodes.cad_nodes.CAD_Load.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=35 sending call_method
+[15:40:35] [CADabra]  Loading CAD file: example_axis.igs
+[worker:ComfyUI-CADabra] INFO:  Loading CAD file: example_axis.igs
+[15:40:35] [CADabra] Starting: IGES ReadFile(file=example_axis.igs)
+[worker:ComfyUI-CADabra] INFO: Starting: IGES ReadFile(file=example_axis.igs)
+[15:40:35] [CADabra] Completed: IGES ReadFile(file=example_axis.igs) in 0.01s
+[worker:ComfyUI-CADabra] INFO: Completed: IGES ReadFile(file=example_axis.igs) in 0.01s
+[15:40:35] [CADabra] Starting: IGES TransferRoots(file=example_axis.igs)
+[worker:ComfyUI-CADabra] INFO: Starting: IGES TransferRoots(file=example_axis.igs)
+[15:40:35] [CADabra] Completed: IGES TransferRoots(file=example_axis.igs) in 0.00s
+[worker:ComfyUI-CADabra] INFO: Completed: IGES TransferRoots(file=example_axis.igs) in 0.00s
+[15:40:35] [CADabra]  Cached to BREP: example_axis.igs
+[worker:ComfyUI-CADabra] INFO:  Cached to BREP: example_axis.igs
+[15:40:35] [CADabra]  Ready: example_axis.igs
+[worker:ComfyUI-CADabra] INFO:  Ready: example_axis.igs
+[SubprocessWorker] got response: ok
+[comfy-env] CAD_Load done (0.24s): result: NodeOutput
+[comfy-env] Running CoordSystemCADToTransform: mode: 'normal', cad_model: dict
+[SubprocessWorker] call_method: nodes.coord_system_to_transform_node.CoordSystemCADToTransform.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=36 sending call_method
+[15:40:35] [CADabra]  Axis parsed via OCC: origin=(20.0, 10.0, 5.0)
+[worker:ComfyUI-CADabra] INFO:  Axis parsed via OCC: origin=(20.0, 10.0, 5.0)
+[15:40:35] [CADabra]    X-dir: (50.0, 0.0, 0.0)
+[worker:ComfyUI-CADabra] INFO:    X-dir: (50.0, 0.0, 0.0)
+[15:40:35] [CADabra]    Y-dir: (0.0, 40.957602214000005, 28.678821818000003)
+[worker:ComfyUI-CADabra] INFO:    Y-dir: (0.0, 40.957602214000005, 28.678821818000003)
+[15:40:35] [CADabra]    Z-dir: (0.0, -28.678821818000007, 40.957602214000005)
+[worker:ComfyUI-CADabra] INFO:    Z-dir: (0.0, -28.678821818000007, 40.957602214000005)
+[SubprocessWorker] got response: ok
+[comfy-env] CoordSystemCADToTransform done (0.07s): result: NodeOutput
+[comfy-env] Running CADTransform: translate_x: 20.0, translate_y: 10.0, translate_z: 5.0, rotate_x: 35.000000000715744, rotate_y: 0.0, rotate_z: 0.0, scale: 1.0, cad_model: dict
+[SubprocessWorker] call_method: nodes.cad_transform_nodes.CADTransform.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=37 sending call_method
+[SubprocessWorker] got response: ok
+[comfy-env] CADTransform done (0.08s): result: NodeOutput
+[comfy-env] Running PreviewCADDual: layout: 'side_by_side', opacity_1: 1.0, opacity_2: 0.6, linear_deflection: 0.1, angular_deflection: 0.5, cad_1: dict, cad_2: dict
+[SubprocessWorker] call_method: nodes.cad_preview_dual_node.PreviewCADDual.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=38 sending call_method
+[15:40:35] [CADabra] Starting: BRepMesh(linear_deflection=0.1, angular_deflection=0.5)
+[worker:ComfyUI-CADabra] INFO: Starting: BRepMesh(linear_deflection=0.1, angular_deflection=0.5)
+[15:40:35] [CADabra] Completed: BRepMesh(linear_deflection=0.1, angular_deflection=0.5) in 0.07s
+[worker:ComfyUI-CADabra] INFO: Completed: BRepMesh(linear_deflection=0.1, angular_deflection=0.5) in 0.07s
+[15:40:36] [CADabra] Starting: BRepMesh(linear_deflection=0.1, angular_deflection=0.5)
+[worker:ComfyUI-CADabra] INFO: Starting: BRepMesh(linear_deflection=0.1, angular_deflection=0.5)
+[15:40:36] [CADabra] Completed: BRepMesh(linear_deflection=0.1, angular_deflection=0.5) in 0.07s
+[worker:ComfyUI-CADabra] INFO: Completed: BRepMesh(linear_deflection=0.1, angular_deflection=0.5) in 0.07s
+  Node executed (1 total), capturing...
+[SubprocessWorker] got response: ok
+[comfy-env] PreviewCADDual done (0.43s): result: NodeOutput
+[32m[INFO][0m [32mPrompt executed in 0.90 seconds[0m
+  Frame 2 saved (frame_001.jpg, t=1.2s)
+  [capture-node] freeze=101ms shot=186ms unfreeze=0ms saved=True
+  Execution complete (t=1.2s)
+  Captured 2 unique frames over 1.55s
+  [debug] iframes: 1
+  [debug]   iframe[0]: src=http://127.0.0.1:8188/extensions/ComfyUI-CADabra/viewer_cad_dual.html?v=17855124, canvas=371x485, rafFrozen=True
+  [timing] trigger_3d_previews: 0.0s
+  Saved high-quality screenshot: coordtransform_executed.png
+  [timing] final_screenshot: 0.2s
+    Captured 3 video frames

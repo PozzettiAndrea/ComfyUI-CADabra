@@ -1,0 +1,122 @@
+  [ComfyUI] [32m[INFO][0m Using RAM pressure cache.
+Capturing execution frames: mesh_face_seg.json
+  [ComfyUI] [32m[INFO][0m Using RAM pressure cache.
+  Frame 1 saved (frame_000.jpg, t=0.0s)
+  Validating workflow...
+  Queuing workflow for execution...
+  [ComfyUI] [32m[INFO][0m === /validate endpoint called ===
+  [ComfyUI] [32m[INFO][0m Received JSON with keys: ['prompt']
+  [ComfyUI] [32m[INFO][0m Prompt has 3 nodes
+  [ComfyUI] [32m[INFO][0m   Node 3: MeshFaceSegmentation
+  [ComfyUI] [32m[INFO][0m     Inputs: {"method": "cluster_normals", "facets_angle_threshold": 0.1, "cluster_num_segments": 10, "region_grow_normal_threshold": 0.95, "region_grow_min_faces": 10, "mesh": ["9", 0]}
+  [ComfyUI] [32m[INFO][0m   Node 6: GeomPackPreviewMeshVTK
+  [ComfyUI] [32m[INFO][0m     Inputs: {"mode": "fields", "preview_vtk": "{\"show_edges\":false,\"camera_state\":\"{\\\"position\\\":[2.545314595852611,-1.412026682908065,-1.6503656193710248],\\\"focalPoint\\\":[0,0,0],\\\"viewUp\\\":[0.25
+  [ComfyUI] [32m[INFO][0m   Node 9: GeomPackLoadMesh
+  [ComfyUI] [32m[INFO][0m     Inputs: {"file_path": "3d/cube.stl"}
+  [ComfyUI] [32m[INFO][0m Generated prompt_id: 1e2aa2fe-e808-4789-af04-9bb761fa8b11
+  [ComfyUI] [32m[INFO][0m Calling execution.validate_prompt()...
+  [ComfyUI] [32m[INFO][0m Validation result: valid=True
+  [ComfyUI] [32m[INFO][0m === Validation PASSED ===
+  [ComfyUI] [32m[INFO][0m got prompt
+  [ComfyUI] [comfy-env] Running GeomPackLoadMesh: file_path: '3d/cube.stl'
+  [ComfyUI] [SubprocessWorker] call_method: nodes.io.load_mesh.LoadMesh.EXECUTE_NORMALIZED
+  [ComfyUI] [SubprocessWorker] acquired lock, ensuring started...
+  [ComfyUI] [ComfyUI-GeometryPack] Health check: ping (timeout=5.0s)...
+  [ComfyUI] [ComfyUI-GeometryPack] Health check: ok
+  [ComfyUI] [SubprocessWorker] worker started/confirmed
+  [ComfyUI] [SubprocessWorker] serializing kwargs to shm...
+  [ComfyUI] [SubprocessWorker] created 0 shm blocks
+  [ComfyUI] [SubprocessWorker] sending request via socket...
+  [ComfyUI] [SubprocessWorker] call_id=3 sending call_method
+  [ComfyUI] [worker:ComfyUI-GeometryPack] INFO: Found mesh in input folder: 3d/cube.stl
+  [ComfyUI] [worker:ComfyUI-GeometryPack] INFO: Loading: D:\a\comfy-ci\comfy-ci\test_workspaces\CADabra-1414\portable-comfyui\ComfyUI_windows_portable\ComfyUI\input\3d/cube.stl
+  [ComfyUI] [worker:ComfyUI-GeometryPack] INFO: Initial mesh: 98 vertices, 192 faces
+  [ComfyUI] [worker:ComfyUI-GeometryPack] INFO: Successfully loaded: 98 vertices, 192 faces
+  [ComfyUI] [worker:ComfyUI-GeometryPack] INFO: Loaded: 98 vertices, 192 faces
+  [ComfyUI] [SubprocessWorker] got response: ok
+  [ComfyUI] [comfy-env] GeomPackLoadMesh done (0.18s): result: NodeOutput
+  [ComfyUI] [comfy-env] Running MeshFaceSegmentation: method: 'cluster_normals', facets_angle_threshold: 0.1, cluster_num_segments: 10, region_grow_normal_threshold: 0.95, region_grow_min_faces: 10, mesh: Trimesh
+  [ComfyUI] [SubprocessWorker] call_method: nodes.mesh_recon_nodes.MeshFaceSegmentationNode.EXECUTE_NORMALIZED
+  [ComfyUI] [SubprocessWorker] acquired lock, ensuring started...
+  [ComfyUI] [ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+  [ComfyUI] [ComfyUI-CADabra] Health check: ok
+  [ComfyUI] [SubprocessWorker] worker started/confirmed
+  [ComfyUI] [SubprocessWorker] serializing kwargs to shm...
+  [ComfyUI] [SubprocessWorker] created 1 shm blocks
+  [ComfyUI] [SubprocessWorker] sending request via socket...
+  [ComfyUI] [SubprocessWorker] call_id=60 sending call_method
+  [ComfyUI] C:\Users\stduser\AppData\Local\Programs\comfy-env\envs\cadabra-nodes\.pixi\envs\default\Lib\site-packages\joblib\externals\loky\backend\context.py:131: UserWarning: Could not find the number of physical cores for the following reason:
+  [ComfyUI] [WinError 2] The system cannot find the file specified
+  [ComfyUI] Returning the number of logical cores instead. You can silence this warning by setting LOKY_MAX_CPU_COUNT to the number of cores you want to use.
+  [ComfyUI]   warnings.warn(
+  [ComfyUI] [worker:ComfyUI-CADabra]   File "C:\Users\stduser\AppData\Local\Programs\comfy-env\envs\cadabra-nodes\.pixi\envs\default\Lib\site-packages\joblib\externals\loky\backend\context.py", line 247, in _count_physical_cores
+  [ComfyUI]     cpu_count_physical = _count_physical_cores_win32()
+  [ComfyUI]                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  [ComfyUI] 
+  [ComfyUI] [worker:ComfyUI-CADabra]   File "C:\Users\stduser\AppData\Local\Programs\comfy-env\envs\cadabra-nodes\.pixi\envs\default\Lib\site-packages\joblib\externals\loky\backend\context.py", line 299, in _count_physical_cores_win32
+  [ComfyUI]     cpu_info = subprocess.run(
+  [ComfyUI]                ^^^^^^^^^^^^^^^
+  [ComfyUI] 
+  [ComfyUI] [worker:ComfyUI-CADabra]   File "C:\Users\stduser\AppData\Local\Programs\comfy-env\envs\cadabra-nodes\.pixi\envs\default\Lib\subprocess.py", line 548, in run
+  [ComfyUI]     with Popen(*popenargs, **kwargs) as process:
+  [ComfyUI]          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  [ComfyUI] 
+  [ComfyUI] [worker:ComfyUI-CADabra]   File "C:\Users\stduser\AppData\Local\Programs\comfy-env\envs\cadabra-nodes\.pixi\envs\default\Lib\subprocess.py", line 1026, in __init__
+  [ComfyUI]     self._execute_child(args, executable, preexec_fn, close_fds,
+  [ComfyUI] 
+  [ComfyUI] [worker:ComfyUI-CADabra]   File "C:\Users\stduser\AppData\Local\Programs\comfy-env\envs\cadabra-nodes\.pixi\envs\default\Lib\subprocess.py", line 1538, in _execute_child
+  [ComfyUI]     hp, ht, pid, tid = _winapi.CreateProcess(executable, args,
+  [ComfyUI]                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  [ComfyUI] 
+  [ComfyUI] C:\Users\stduser\AppData\Local\Programs\comfy-env\envs\cadabra-nodes\.pixi\envs\default\Lib\site-packages\threadpoolctl.py:1226: RuntimeWarning:
+  [ComfyUI] Found Intel OpenMP ('libiomp') and LLVM OpenMP ('libomp') loaded at
+  [ComfyUI] the same time. Both libraries are known to be incompatible and this
+  [ComfyUI] can cause random crashes or deadlocks on Linux when loaded in the
+  [ComfyUI] same Python program.
+  [ComfyUI] Using threadpoolctl may cause crashes or deadlocks. For more
+  [ComfyUI] information and possible workarounds, please see
+  [ComfyUI]     https://github.com/joblib/threadpoolctl/blob/master/multiple_openmp.md
+  [ComfyUI] 
+  [ComfyUI]   warnings.warn(msg, RuntimeWarning)
+  [ComfyUI] C:\Users\stduser\AppData\Local\Programs\comfy-env\envs\cadabra-nodes\.pixi\envs\default\Lib\site-packages\sklearn\cluster\_kmeans.py:1428: UserWarning: KMeans is known to have a memory leak on Windows with MKL, when there are less chunks than available threads. You can avoid it by setting the environment variable OMP_NUM_THREADS=1.
+  [ComfyUI]   warnings.warn(
+  [ComfyUI] C:\Users\stduser\AppData\Local\Programs\comfy-env\envs\cadabra-nodes\.pixi\envs\default\Lib\site-packages\sklearn\base.py:1403: ConvergenceWarning: Number of distinct clusters (6) found smaller than n_clusters (10). Possibly due to duplicate points in X.
+  [ComfyUI]   return fit_method(estimator, *args, **kwargs)
+  [ComfyUI] [SubprocessWorker] got response: ok
+  [ComfyUI] [comfy-env] MeshFaceSegmentation done (0.71s): result: NodeOutput
+  [ComfyUI] [comfy-env] Running GeomPackPreviewMeshVTK: mode: 'fields', trimesh: Trimesh
+  [ComfyUI] [SubprocessWorker] call_method: nodes.visualization.preview_mesh_vtk.PreviewMeshVTKNode.EXECUTE_NORMALIZED
+  [ComfyUI] [SubprocessWorker] acquired lock, ensuring started...
+  [ComfyUI] [ComfyUI-GeometryPack] Health check: ping (timeout=5.0s)...
+  [ComfyUI] [ComfyUI-GeometryPack] Health check: ok
+  [ComfyUI] [SubprocessWorker] worker started/confirmed
+  [ComfyUI] [SubprocessWorker] serializing kwargs to shm...
+  [ComfyUI] [SubprocessWorker] created 1 shm blocks
+  [ComfyUI] [SubprocessWorker] sending request via socket...
+  [ComfyUI] [SubprocessWorker] call_id=4 sending call_method
+  [ComfyUI] [worker:ComfyUI-GeometryPack] INFO: Preparing preview: Mesh - 98 vertices, 192 faces
+  [ComfyUI] [worker:ComfyUI-GeometryPack] INFO: Mode: fields
+  [ComfyUI] [worker:ComfyUI-GeometryPack] INFO: Visual data - has_visual: True, kind: None, texture: False, vertex_colors: False
+  [ComfyUI] [worker:ComfyUI-GeometryPack] INFO: Using fields mode - VTP export
+  [ComfyUI] [worker:ComfyUI-GeometryPack] INFO: Exporting mesh to VTP: D:\a\comfy-ci\comfy-ci\test_workspaces\CADabra-1414\portable-comfyui\ComfyUI_windows_portable\ComfyUI\output\preview_vtk_e96e3a32.vtp
+  [ComfyUI] [worker:ComfyUI-GeometryPack] INFO: Adding normals field (98 vertices)
+  [ComfyUI] [worker:ComfyUI-GeometryPack] INFO: Adding face field: stl
+  [ComfyUI] [worker:ComfyUI-GeometryPack] INFO: Adding face field: segment_id
+  [ComfyUI] [worker:ComfyUI-GeometryPack] INFO: Export complete: 98 vertices, 192 faces
+  [ComfyUI] [worker:ComfyUI-GeometryPack] INFO: Exported VTP to: D:\a\comfy-ci\comfy-ci\test_workspaces\CADabra-1414\portable-comfyui\ComfyUI_windows_portable\ComfyUI\output\preview_vtk_e96e3a32.vtp
+  [ComfyUI] [worker:ComfyUI-GeometryPack] INFO: Face attributes: ['stl', 'segment_id']
+  [ComfyUI] [worker:ComfyUI-GeometryPack] INFO: Fields mode info: watertight=True, volume=1.0, area=6.0, fields=['face.stl', 'face.segment_id']
+  [ComfyUI] [SubprocessWorker] got response: ok
+  [ComfyUI] [comfy-env] GeomPackPreviewMeshVTK done (0.19s): result: NodeOutput
+  [ComfyUI] [32m[INFO][0m [32mPrompt executed in 1.09 seconds[0m
+  Node executed (1 total), capturing...
+  Frame 2 saved (frame_001.jpg, t=1.4s)
+  [capture-node] freeze=38ms shot=97ms unfreeze=0ms saved=True
+  Execution complete (t=1.4s)
+  Captured 2 unique frames over 1.6s
+  [debug] iframes: 1
+  [debug]   iframe[0]: src=http://127.0.0.1:41887/extensions/ComfyUI-GeometryPack/viewer_vtk.html?v=1785508, canvas=488x244, rafFrozen=True
+  [timing] trigger_3d_previews: 0.0s
+  Saved high-quality screenshot: mesh_face_seg_executed.png
+  [timing] final_screenshot: 0.2s
+    Captured 3 video frames

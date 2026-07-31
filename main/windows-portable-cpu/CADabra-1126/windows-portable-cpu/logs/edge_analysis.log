@@ -1,0 +1,19 @@
+Capturing execution frames: edge_analysis.json
+  Frame 1 saved (frame_000.jpg, t=0.0s)
+  Validating workflow...
+  Queuing workflow for execution...
+  Node executed (1 total), capturing...
+  Frame 2 saved (frame_001.jpg, t=0.6s)
+  [capture-node] freeze=8ms shot=117ms unfreeze=8ms saved=True
+  Node executed (3 total), capturing...
+  Frame 3 saved (frame_002.jpg, t=1.0s)
+  [capture-node] freeze=5ms shot=101ms unfreeze=0ms saved=True
+  Execution complete (t=1.0s)
+  Captured 3 unique frames over 1.18s
+  [debug] iframes: 2
+  [debug]   iframe[0]: src=http://127.0.0.1:8188/extensions/ComfyUI-CADabra/viewer_cad_edge_detail.html?v=1, canvas=244x381, rafFrozen=True
+  [debug]   iframe[1]: src=http://127.0.0.1:8188/extensions/ComfyUI-CADabra/viewer_cad_edge.html?v=17782397, canvas=347x269, rafFrozen=True
+  [timing] trigger_3d_previews: 0.0s
+  Saved high-quality screenshot: edge_analysis_executed.png
+  [timing] final_screenshot: 0.2s
+    Captured 4 video frames

@@ -1,0 +1,126 @@
+Capturing execution frames: mesh_face_seg.json
+[32m[INFO][0m Using RAM pressure cache.
+[32m[INFO][0m Using RAM pressure cache.
+[32m[INFO][0m Using RAM pressure cache.
+  Frame 1 saved (frame_000.jpg, t=0.0s)
+  Validating workflow...
+  Queuing workflow for execution...
+[32m[INFO][0m === /validate endpoint called ===
+[32m[INFO][0m Received JSON with keys: ['prompt']
+[32m[INFO][0m Prompt has 3 nodes
+[32m[INFO][0m   Node 3: MeshFaceSegmentation
+[32m[INFO][0m     Inputs: {"method": "cluster_normals", "facets_angle_threshold": 0.1, "cluster_num_segments": 10, "region_grow_normal_threshold": 0.95, "region_grow_min_faces": 10, "mesh": ["9", 0]}
+[32m[INFO][0m   Node 6: GeomPackPreviewMeshVTK
+[32m[INFO][0m     Inputs: {"mode": "fields", "preview_vtk": "{\"show_edges\":false,\"camera_state\":\"{\\\"position\\\":[2.545314595852611,-1.412026682908065,-1.6503656193710248],\\\"focalPoint\\\":[0,0,0],\\\"viewUp\\\":[0.25
+[32m[INFO][0m   Node 9: GeomPackLoadMesh
+[32m[INFO][0m     Inputs: {"file_path": "3d/cube.stl"}
+[32m[INFO][0m Generated prompt_id: ba91ca27-87dd-404e-a115-90fd9270b9d7
+[32m[INFO][0m Calling execution.validate_prompt()...
+[32m[INFO][0m Validation result: valid=True
+[32m[INFO][0m === Validation PASSED ===
+[32m[INFO][0m got prompt
+[comfy-env] Running GeomPackLoadMesh: file_path: '3d/cube.stl'
+[SubprocessWorker] call_method: nodes.io.load_mesh.LoadMesh.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-GeometryPack] Health check: ping (timeout=5.0s)...
+[ComfyUI-GeometryPack] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 0 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=3 sending call_method
+[worker:ComfyUI-GeometryPack] INFO: Found mesh in input folder: 3d/cube.stl
+[worker:ComfyUI-GeometryPack] INFO: Loading: D:\a\ComfyUI-CADabra\ComfyUI-CADabra\ComfyUI_windows_portable\ComfyUI\input\3d/cube.stl
+[worker:ComfyUI-GeometryPack] INFO: Initial mesh: 98 vertices, 192 faces
+[worker:ComfyUI-GeometryPack] INFO: Successfully loaded: 98 vertices, 192 faces
+[worker:ComfyUI-GeometryPack] INFO: Loaded: 98 vertices, 192 faces
+[SubprocessWorker] got response: ok
+[comfy-env] GeomPackLoadMesh done (0.15s): result: NodeOutput
+[comfy-env] Running MeshFaceSegmentation: method: 'cluster_normals', facets_angle_threshold: 0.1, cluster_num_segments: 10, region_grow_normal_threshold: 0.95, region_grow_min_faces: 10, mesh: Trimesh
+[SubprocessWorker] call_method: nodes.mesh_recon_nodes.MeshFaceSegmentationNode.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-CADabra] Health check: ping (timeout=5.0s)...
+[ComfyUI-CADabra] Health check: failed
+[ComfyUI-CADabra] Socket unhealthy, restarting worker...
+[comfy-env] default: Library/bin has 624 DLLs
+[ComfyUI-CADabra] python: C:\Users\runneradmin\AppData\Local\Programs\comfy-env\envs\cadabra-nodes\.pixi\envs\default\python.exe
+[ComfyUI-CADabra] sys_path sent to worker: ['D:\\a\\ComfyUI-CADabra\\ComfyUI-CADabra\\ComfyUI_windows_portable\\ComfyUI', 'D:\\a\\ComfyUI-CADabra\\ComfyUI-CADabra\\ComfyUI_windows_portable\\ComfyUI\\custom_nodes\\ComfyUI-CADabra', 'C:\\Users\\runneradmin\\AppData\\Local\\Programs\\comfy-env\\envs\\cadabra-nodes\\.pixi\\envs\\default\\Lib\\site-packages', 'D:\\a\\ComfyUI-CADabra\\ComfyUI-CADabra\\ComfyUI_windows_portable\\ComfyUI\\custom_nodes\\ComfyUI-CADabra']
+[SubprocessWorker] is_pixi=True, python=C:\Users\runneradmin\AppData\Local\Programs\comfy-env\envs\cadabra-nodes\.pixi\envs\default\python.exe
+[SubprocessWorker] launching cmd=['C:\\Users\\runneradmin\\.pixi\\bin\\pixi.exe', 'run', '--as-is', '--manifest-path', 'C:\\Users\\runneradmin\\AppData\\Local\\Programs\\comfy-env\\envs\\cadabra-nodes\\pixi.toml', '-e', 'default', 'python', 'C:\\Users\\RUNNER~1\\AppData\\Local\\Temp\\comfyui_pvenv_uldekk3h\\persistent_worker.py', 'tcp://127.0.0.1:56208']...
+  Frame 2 saved (frame_001.jpg, t=2.2s)
+  [capture-periodic] freeze=5ms shot=102ms unfreeze=5ms saved=True
+C:\Users\runneradmin\AppData\Local\Programs\comfy-env\envs\cadabra-nodes\.pixi\envs\default\Lib\site-packages\torch\cuda\__init__.py:188: UserWarning: cudaGetDeviceCount() returned cudaErrorNotSupported, likely using older driver or on CPU machine (Triggered internally at C:\actions-runner\_work\pytorch\pytorch\c10\cuda\CUDAFunctions.cpp:88.)
+  return torch._C._cuda_getDeviceCount() > 0
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 1 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=60 sending call_method
+  Frame 3 saved (frame_002.jpg, t=4.4s)
+  [capture-periodic] freeze=5ms shot=101ms unfreeze=6ms saved=True
+  [capture-loop] iter=50 t=5.8s state={'complete': False, 'error': None, 'executedCount': 0, 'wsState': 1} eval_ms=5 ram=5.7/16.0GB (36%) swap=0.8/2.9GB (28%) cpu=43% browser_rss=0.68GB
+C:\Users\runneradmin\AppData\Local\Programs\comfy-env\envs\cadabra-nodes\.pixi\envs\default\Lib\site-packages\joblib\externals\loky\backend\context.py:131: UserWarning: Could not find the number of physical cores for the following reason:
+[WinError 2] The system cannot find the file specified
+Returning the number of logical cores instead. You can silence this warning by setting LOKY_MAX_CPU_COUNT to the number of cores you want to use.
+  warnings.warn(
+[worker:ComfyUI-CADabra]   File "C:\Users\runneradmin\AppData\Local\Programs\comfy-env\envs\cadabra-nodes\.pixi\envs\default\Lib\site-packages\joblib\externals\loky\backend\context.py", line 247, in _count_physical_cores
+    cpu_count_physical = _count_physical_cores_win32()
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+[worker:ComfyUI-CADabra]   File "C:\Users\runneradmin\AppData\Local\Programs\comfy-env\envs\cadabra-nodes\.pixi\envs\default\Lib\site-packages\joblib\externals\loky\backend\context.py", line 299, in _count_physical_cores_win32
+    cpu_info = subprocess.run(
+               ^^^^^^^^^^^^^^^
+
+[worker:ComfyUI-CADabra]   File "C:\Users\runneradmin\AppData\Local\Programs\comfy-env\envs\cadabra-nodes\.pixi\envs\default\Lib\subprocess.py", line 548, in run
+    with Popen(*popenargs, **kwargs) as process:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+[worker:ComfyUI-CADabra]   File "C:\Users\runneradmin\AppData\Local\Programs\comfy-env\envs\cadabra-nodes\.pixi\envs\default\Lib\subprocess.py", line 1026, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+
+[worker:ComfyUI-CADabra]   File "C:\Users\runneradmin\AppData\Local\Programs\comfy-env\envs\cadabra-nodes\.pixi\envs\default\Lib\subprocess.py", line 1538, in _execute_child
+    hp, ht, pid, tid = _winapi.CreateProcess(executable, args,
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+  Node executed (1 total), capturing...
+C:\Users\runneradmin\AppData\Local\Programs\comfy-env\envs\cadabra-nodes\.pixi\envs\default\Lib\site-packages\sklearn\cluster\_kmeans.py:1428: UserWarning: KMeans is known to have a memory leak on Windows with MKL, when there are less chunks than available threads. You can avoid it by setting the environment variable OMP_NUM_THREADS=1.
+  warnings.warn(
+C:\Users\runneradmin\AppData\Local\Programs\comfy-env\envs\cadabra-nodes\.pixi\envs\default\Lib\site-packages\sklearn\base.py:1403: ConvergenceWarning: Number of distinct clusters (6) found smaller than n_clusters (10). Possibly due to duplicate points in X.
+  return fit_method(estimator, *args, **kwargs)
+[SubprocessWorker] got response: ok
+[comfy-env] MeshFaceSegmentation done (6.11s): result: NodeOutput
+[comfy-env] Running GeomPackPreviewMeshVTK: mode: 'fields', trimesh: Trimesh
+[SubprocessWorker] call_method: nodes.visualization.preview_mesh_vtk.PreviewMeshVTKNode.EXECUTE_NORMALIZED
+[SubprocessWorker] acquired lock, ensuring started...
+[ComfyUI-GeometryPack] Health check: ping (timeout=5.0s)...
+[ComfyUI-GeometryPack] Health check: ok
+[SubprocessWorker] worker started/confirmed
+[SubprocessWorker] serializing kwargs to shm...
+[SubprocessWorker] created 1 shm blocks
+[SubprocessWorker] sending request via socket...
+[SubprocessWorker] call_id=4 sending call_method
+[worker:ComfyUI-GeometryPack] INFO: Preparing preview: Mesh - 98 vertices, 192 faces
+[worker:ComfyUI-GeometryPack] INFO: Mode: fields
+[worker:ComfyUI-GeometryPack] INFO: Visual data - has_visual: True, kind: None, texture: False, vertex_colors: False
+[worker:ComfyUI-GeometryPack] INFO: Using fields mode - VTP export
+[worker:ComfyUI-GeometryPack] INFO: Exporting mesh to VTP: D:\a\ComfyUI-CADabra\ComfyUI-CADabra\ComfyUI_windows_portable\ComfyUI\output\preview_vtk_9254047e.vtp
+[worker:ComfyUI-GeometryPack] INFO: Adding normals field (98 vertices)
+[worker:ComfyUI-GeometryPack] INFO: Adding face field: stl
+[worker:ComfyUI-GeometryPack] INFO: Adding face field: segment_id
+[worker:ComfyUI-GeometryPack] INFO: Export complete: 98 vertices, 192 faces
+[worker:ComfyUI-GeometryPack] INFO: Exported VTP to: D:\a\ComfyUI-CADabra\ComfyUI-CADabra\ComfyUI_windows_portable\ComfyUI\output\preview_vtk_9254047e.vtp
+[worker:ComfyUI-GeometryPack] INFO: Face attributes: ['stl', 'segment_id']
+[worker:ComfyUI-GeometryPack] INFO: Fields mode info: watertight=True, volume=1.0, area=6.0, fields=['face.stl', 'face.segment_id']
+[SubprocessWorker] got response: ok
+[comfy-env] GeomPackPreviewMeshVTK done (0.24s): result: NodeOutput
+[32m[INFO][0m [32mPrompt executed in 6.51 seconds[0m
+  Frame 4 saved (frame_003.jpg, t=6.8s)
+  [capture-node] freeze=5ms shot=99ms unfreeze=5ms saved=True
+  Execution complete (t=7.1s)
+  Captured 4 unique frames over 7.07s
+  [debug] iframes: 1
+  [debug]   iframe[0]: src=http://127.0.0.1:8188/extensions/ComfyUI-GeometryPack/viewer_vtk.html?v=17855128, canvas=0x0, rafFrozen=False
+  [timing] trigger_3d_previews: 0.0s
+  Saved high-quality screenshot: mesh_face_seg_executed.png
+  [timing] final_screenshot: 0.2s
+    Captured 5 video frames

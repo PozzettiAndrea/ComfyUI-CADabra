@@ -1,0 +1,25 @@
+Loading workflow from /Users/runner/work/comfy-gpu-ci/comfy-gpu-ci/ComfyUI/custom_nodes/ComfyUI-CADabra/workflows/raytracing_roi.json...
+Converting litegraph workflow to prompt format...
+Queuing workflow: /Users/runner/work/comfy-gpu-ci/comfy-gpu-ci/ComfyUI/custom_nodes/ComfyUI-CADabra/workflows/raytracing_roi.json...
+[DEBUG] Connecting WebSocket to ws://127.0.0.1:8188/ws?clientId=0d76e709-1ef0-4569-90bc-503ce36179eb
+[DEBUG] WebSocket connected successfully
+Queued with ID: 11cb8b9f-9c50-4739-bf00-c2cac244eba4
+[DEBUG] WS msg: type=status prompt_id=None (waiting for 11cb8b9f-9c50-4739-bf00-c2cac244eba4)
+[DEBUG] WS msg: type=status prompt_id=None (waiting for 11cb8b9f-9c50-4739-bf00-c2cac244eba4)
+[DEBUG] WS msg: type=status prompt_id=None (waiting for 11cb8b9f-9c50-4739-bf00-c2cac244eba4)
+[DEBUG] WS msg: type=progress_state prompt_id=11cb8b9f-9c50-4739-bf00-c2cac244eba4 (waiting for 11cb8b9f-9c50-4739-bf00-c2cac244eba4)
+[DEBUG] Unhandled msg_type: progress_state
+[DEBUG] WS msg: type=progress_state prompt_id=11cb8b9f-9c50-4739-bf00-c2cac244eba4 (waiting for 11cb8b9f-9c50-4739-bf00-c2cac244eba4)
+[DEBUG] Unhandled msg_type: progress_state
+[DEBUG] WS msg: type=progress_state prompt_id=11cb8b9f-9c50-4739-bf00-c2cac244eba4 (waiting for 11cb8b9f-9c50-4739-bf00-c2cac244eba4)
+[DEBUG] Unhandled msg_type: progress_state
+[DEBUG] WS msg: type=progress_state prompt_id=11cb8b9f-9c50-4739-bf00-c2cac244eba4 (waiting for 11cb8b9f-9c50-4739-bf00-c2cac244eba4)
+[DEBUG] Unhandled msg_type: progress_state
+[DEBUG] WS msg: type=progress_state prompt_id=11cb8b9f-9c50-4739-bf00-c2cac244eba4 (waiting for 11cb8b9f-9c50-4739-bf00-c2cac244eba4)
+[DEBUG] Unhandled msg_type: progress_state
+[DEBUG] WS msg: type=progress_state prompt_id=11cb8b9f-9c50-4739-bf00-c2cac244eba4 (waiting for 11cb8b9f-9c50-4739-bf00-c2cac244eba4)
+[DEBUG] Unhandled msg_type: progress_state
+[DEBUG] WS msg: type=status prompt_id=None (waiting for 11cb8b9f-9c50-4739-bf00-c2cac244eba4)
+Execution complete (queue empty)
+Workflow completed successfully!
+    Saved screenshot: raytracing_roi_executed.png
