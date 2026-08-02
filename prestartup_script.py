@@ -9,12 +9,14 @@ log = logging.getLogger("cadabra")
 
 setup_env()
 
-SCRIPT_DIR = Path(__file__).resolve().parent
-COMFYUI_DIR = SCRIPT_DIR.parent.parent
+SCRIPT_DIR = Path(__file__).resolve().parent  # still used for viewer/web paths
 
-# Copy example assets from subdirectories
-copy_files(SCRIPT_DIR / "assets" / "cad", COMFYUI_DIR / "input" / "cad", "**/*")
-copy_files(SCRIPT_DIR / "assets" / "3d", COMFYUI_DIR / "input" / "3d", "**/*")
+# Copy example assets into ComfyUI's effective input dir.
+# `"input/cad"` etc. are resolved by copy_files via folder_paths so they
+# land where CAD_Load actually reads from — correct on vanilla ComfyUI,
+# Comfy Desktop (inputDir override), --input-directory, etc.
+copy_files("assets/cad", "input/cad", "**/*")
+copy_files("assets/3d",  "input/3d",  "**/*")
 
 # Copy viewers
 viewers = [
