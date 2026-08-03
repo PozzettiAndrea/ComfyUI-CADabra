@@ -30,7 +30,9 @@ def _candidate_paths(path, subfolder):
     """Yield candidate locations for `path`, most specific first."""
     yield path
 
-    stripped = path.lstrip("/\\")
+    stripped = path.lstrip("/\\").replace("\\", "/")
+    head, _, rest = stripped.partition("/")
+
     base = None
     input_dir = None
     output_dir = None
@@ -41,6 +43,18 @@ def _candidate_paths(path, subfolder):
         output_dir = folder_paths.get_output_directory()
     except (ImportError, AttributeError):
         base = os.environ.get("COMFYUI_BASE")
+
+    # When the incoming path already carries a known folder-key prefix
+    # ("input/...", "output/..."), peel that segment and resolve the
+    # remainder against the corresponding folder_paths directory. Without
+    # this, hosts that override --input-directory (Comfy Desktop points
+    # it at ~/ComfyUI-Shared/input) produce double-nested candidates like
+    # <input_dir>/input/cad/foo.stp that never resolve.
+    if rest:
+        if head == "input" and input_dir:
+            yield os.path.join(input_dir, rest)
+        elif head == "output" and output_dir:
+            yield os.path.join(output_dir, rest)
 
     if base:
         yield os.path.join(base, stripped)
