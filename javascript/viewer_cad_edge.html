@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>CADabra Edge Analysis Viewer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+            background: #1a1a1a;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+        #container {
+            flex: 1;
+            min-height: 0;
+            width: 100%;
+            position: relative;
+        }
+        #loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #ccc;
+            font-size: 14px;
+            text-align: center;
+            z-index: 10;
+        }
+        #error {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #ff6b6b;
+            font-size: 14px;
+            text-align: center;
+            z-index: 10;
+            max-width: 80%;
+            display: none;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+        /* Settings overlay and panel */
+        #settingsOverlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1999;
+            display: none;
+        }
+        #settingsOverlay.visible {
+            display: block;
+        }
+        #settingsPanel {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #1a1a1a;
+            border: 1px solid #555;
+            border-radius: 6px;
+            padding: 16px;
+            z-index: 2000;
+            display: none;
+            min-width: 280px;
+            max-width: 320px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+            font-size: 12px;
+            color: #ccc;
+        }
+        #settingsPanel.visible {
+            display: block;
+        }
+        #settingsPanel h3 {
+            margin: 0 0 12px 0;
+            color: #ccc;
+            font-size: 14px;
+            font-weight: normal;
+            border-bottom: 1px solid #333;
+            padding-bottom: 8px;
+        }
+        #settingsPanel .setting-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+        #settingsPanel .setting-row label {
+            flex: 1;
+            color: #ccc;
+            font-size: 11px;
+            cursor: pointer;
+        }
+        #settingsPanel .setting-row input[type="checkbox"] {
+            cursor: pointer;
+        }
+        #settingsPanel .slider-row {
+            margin-bottom: 8px;
+        }
+        #settingsPanel .slider-row label {
+            display: block;
+            font-size: 10px;
+            color: #888;
+            margin-bottom: 2px;
+        }
+        #settingsPanel .slider-row input[type="range"] {
+            width: 100%;
+        }
+        #settingsPanel .slider-row .value {
+            font-family: monospace;
+            color: #ccc;
+        }
+        #settingsPanel .button-row {
+            display: flex;
+            gap: 8px;
+            margin-top: 14px;
+            padding-top: 12px;
+            border-top: 1px solid #333;
+        }
+        #settingsPanel .button-row button {
+            flex: 1;
+            padding: 6px 12px;
+            font-size: 11px;
+            background: #333;
+            border: 1px solid #555;
+            color: #ccc;
+            cursor: pointer;
+            border-radius: 3px;
+        }
+        #settingsPanel .button-row button:hover {
+            background: #444;
+        }
+        #settingsPanel .button-row button.primary {
+            background: #4CAF50;
+            border-color: #4CAF50;
+            color: white;
+        }
+        #settingsPanel .button-row button.primary:hover {
+            background: #45a049;
+        }
+        /* Edge info panel - hidden, info shown in parent widget panel instead */
+        #edgeInfoPanel {
+            display: none !important;
+        }
+        #edgeInfoPanel h4 {
+            margin: 0 0 8px 0;
+            color: #4a9eff;
+            font-size: 12px;
+        }
+        #edgeInfoPanel .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        #edgeInfoPanel .info-label {
+            color: #888;
+        }
+        #edgeInfoPanel .info-value {
+            color: #fff;
+            font-family: monospace;
+        }
+        #edgeInfoPanel .info-section {
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid #333;
+        }
+        #edgeInfoPanel .info-section-title {
+            color: #888;
+            font-size: 10px;
+            margin-bottom: 4px;
+        }
+        #edgeInfoPanel .clickable-list span {
+            display: inline-block;
+            background: #4a9eff;
+            color: #000;
+            padding: 1px 6px;
+            border-radius: 2px;
+            margin: 2px;
+            font-size: 10px;
+            cursor: pointer;
+        }
+        #edgeInfoPanel .clickable-list span:hover {
+            background: #6bb3ff;
+        }
+        #edgeInfoPanel .clickable-list span.connected {
+            background: #4aff4a;
+        }
+        #edgeInfoPanel .clickable-list span.connected:hover {
+            background: #6bff6b;
+        }
+        /* Legend */
+        #legend {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid #444;
+            border-radius: 4px;
+            padding: 8px 12px;
+            font-size: 10px;
+            color: #ccc;
+            z-index: 100;
+        }
+        #legend .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 4px;
+        }
+        #legend .legend-item:last-child {
+            margin-bottom: 0;
+        }
+        #legend .legend-color {
+            width: 20px;
+            height: 3px;
+            border-radius: 1px;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <div id="loading">
+            <div>Ready to load edge data...</div>
+        </div>
+        <div id="error"></div>
+
+        <!-- Settings overlay and panel -->
+        <div id="settingsOverlay"></div>
+        <div id="settingsPanel">
+            <h3>Edge Viewer Settings</h3>
+
+            <div class="setting-row">
+                <input type="checkbox" id="showConnected" checked>
+                <label for="showConnected">Highlight Connected Edges</label>
+            </div>
+            <div class="setting-row">
+                <input type="checkbox" id="showVertices">
+                <label for="showVertices">Show Vertex Points</label>
+            </div>
+
+            <div class="slider-row">
+                <label>Pick Threshold: <span class="value" id="thresholdValue">0.5</span></label>
+                <input type="range" id="pickThreshold" min="0.1" max="2.0" step="0.1" value="0.5">
+            </div>
+
+            <div class="button-row">
+                <button id="settingsCancel">Cancel</button>
+                <button id="settingsApply" class="primary">Apply</button>
+            </div>
+        </div>
+
+        <!-- Edge info panel -->
+        <div id="edgeInfoPanel">
+            <h4>Edge <span id="edgeIdDisplay">-</span></h4>
+            <div class="info-row">
+                <span class="info-label">Type:</span>
+                <span class="info-value" id="edgeTypeDisplay">-</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Length:</span>
+                <span class="info-value" id="edgeLengthDisplay">-</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Free Edge:</span>
+                <span class="info-value" id="edgeFreeDisplay">-</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Curvature:</span>
+                <span class="info-value" id="edgeCurvatureDisplay">-</span>
+            </div>
+            <div class="info-section" id="verticesSection">
+                <div class="info-section-title">Vertices</div>
+                <div class="info-row">
+                    <span class="info-label">Start:</span>
+                    <span class="info-value" id="edgeStartDisplay">-</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">End:</span>
+                    <span class="info-value" id="edgeEndDisplay">-</span>
+                </div>
+            </div>
+            <div class="info-section" id="adjacentFacesSection">
+                <div class="info-section-title">Adjacent Faces</div>
+                <div class="clickable-list" id="adjacentFacesList"></div>
+            </div>
+            <div class="info-section" id="connectedEdgesSection">
+                <div class="info-section-title">Connected Edges</div>
+                <div class="clickable-list" id="connectedEdgesList"></div>
+            </div>
+        </div>
+
+        <!-- Legend -->
+        <div id="legend">
+            <div class="legend-item">
+                <div class="legend-color" style="background: #ff0000;"></div>
+                <span>Free Edge (boundary)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #333333;"></div>
+                <span>Shared Edge (internal)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #ffaa00;"></div>
+                <span>Selected</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #00ff00;"></div>
+                <span>Connected</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load Three.js for rendering -->
+    <script src="three/three.min.js"></script>
+    <script src="three/OrbitControls.js"></script>
+
+    <script>
+        console.log('[CADabra Edge] Viewer initializing...');
+
+        let scene, camera, renderer, controls;
+        let edgeLines = new Map();  // edge_id -> THREE.LineSegments
+        let vertexPoints = null;
+        let currentVisualizationMode = 'normal';
+
+        // Edge selection state
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        let selectedEdgeId = null;
+        let highlightLine = null;
+        let connectedHighlights = [];
+
+        // Analysis data
+        let analysisData = null;
+        let nodeId = null;
+
+        // Settings
+        let pickThreshold = 0.5;
+
+        const loadingDiv = document.getElementById('loading');
+        const errorDiv = document.getElementById('error');
+        const edgeInfoPanel = document.getElementById('edgeInfoPanel');
+
+        // Initialize Three.js scene
+        function initScene() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x1a1a1a);
+
+            const container = document.getElementById('container');
+            camera = new THREE.PerspectiveCamera(
+                50,
+                container.clientWidth / container.clientHeight,
+                0.01,
+                10000
+            );
+            camera.position.set(100, 100, 100);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            container.appendChild(renderer.domElement);
+
+            // Add lights
+            const ambientLight = new THREE.AmbientLight(0xffffff, 1.0);
+            scene.add(ambientLight);
+
+            // Add orbit controls
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+
+            // Handle window resize
+            window.addEventListener('resize', onWindowResize, false);
+
+            // Handle mouse clicks for edge selection
+            renderer.domElement.addEventListener('click', onMouseClick, false);
+
+            // Start animation loop
+            animate();
+        }
+
+        function onWindowResize() {
+            const container = document.getElementById('container');
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // Mouse click handler for edge selection
+        function onMouseClick(event) {
+            if (!analysisData || edgeLines.size === 0) return;
+
+            // Calculate mouse position in normalized device coordinates
+            const rect = renderer.domElement.getBoundingClientRect();
+            mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+            // Configure raycaster for line picking
+            raycaster.params.Line.threshold = pickThreshold;
+            raycaster.setFromCamera(mouse, camera);
+
+            // Test against all edge lines
+            const edgeLineArray = Array.from(edgeLines.values());
+            const intersects = raycaster.intersectObjects(edgeLineArray);
+
+            if (intersects.length > 0) {
+                const hit = intersects[0].object;
+                const edgeId = hit.userData.edgeId;
+                if (edgeId !== undefined) {
+                    selectEdge(edgeId);
+                }
+            } else {
+                // Clicked on empty space - deselect
+                clearEdgeSelection();
+            }
+        }
+
+        // Select and highlight an edge
+        function selectEdge(edgeId) {
+            if (selectedEdgeId === edgeId) {
+                // Clicking same edge - deselect
+                clearEdgeSelection();
+                return;
+            }
+
+            selectedEdgeId = edgeId;
+            console.log('[CADabra Edge] Selected edge:', edgeId);
+
+            const edgeData = analysisData.edges ? analysisData.edges.find(e => e.edge_id === edgeId) : null;
+
+            if (edgeData) {
+                // Create highlight for selected edge
+                createEdgeHighlight(edgeId, 0xffaa00, 4);
+
+                // Highlight connected edges if enabled
+                const showConnected = document.getElementById('showConnected').checked;
+                if (showConnected && edgeData.connected_edges) {
+                    const startEdges = edgeData.connected_edges.start || [];
+                    const endEdges = edgeData.connected_edges.end || [];
+                    createConnectedHighlights([...startEdges, ...endEdges]);
+                }
+
+                // Update info panel
+                updateEdgeInfoPanel(edgeData);
+
+                // Notify parent
+                window.parent.postMessage({
+                    type: 'EDGE_SELECTED',
+                    nodeId: nodeId,
+                    edgeId: edgeId,
+                    edgeData: edgeData
+                }, '*');
+            }
+        }
+
+        // Create highlight for selected edge
+        function createEdgeHighlight(edgeId, color, linewidth) {
+            clearHighlights();
+
+            const edgeLine = edgeLines.get(edgeId);
+            if (!edgeLine) return;
+
+            const material = new THREE.LineBasicMaterial({
+                color: color,
+                linewidth: linewidth
+            });
+
+            highlightLine = new THREE.LineSegments(
+                edgeLine.geometry.clone(),
+                material
+            );
+            scene.add(highlightLine);
+        }
+
+        // Create highlights for connected edges
+        function createConnectedHighlights(connectedIds) {
+            connectedIds.forEach(connId => {
+                const connLine = edgeLines.get(connId);
+                if (connLine) {
+                    const material = new THREE.LineBasicMaterial({
+                        color: 0x00ff00,
+                        linewidth: 3
+                    });
+                    const highlight = new THREE.LineSegments(
+                        connLine.geometry.clone(),
+                        material
+                    );
+                    scene.add(highlight);
+                    connectedHighlights.push(highlight);
+                }
+            });
+        }
+
+        // Clear all highlights
+        function clearHighlights() {
+            if (highlightLine) {
+                scene.remove(highlightLine);
+                highlightLine.geometry.dispose();
+                highlightLine.material.dispose();
+                highlightLine = null;
+            }
+
+            connectedHighlights.forEach(h => {
+                scene.remove(h);
+                h.geometry.dispose();
+                h.material.dispose();
+            });
+            connectedHighlights = [];
+        }
+
+        // Clear edge selection
+        function clearEdgeSelection() {
+            selectedEdgeId = null;
+            clearHighlights();
+            edgeInfoPanel.classList.remove('visible');
+
+            window.parent.postMessage({
+                type: 'EDGE_SELECTED',
+                nodeId: nodeId,
+                edgeId: null,
+                edgeData: null
+            }, '*');
+
+            console.log('[CADabra Edge] Selection cleared');
+        }
+
+        // Update edge info panel
+        function updateEdgeInfoPanel(edgeData) {
+            document.getElementById('edgeIdDisplay').textContent = edgeData.edge_id;
+            document.getElementById('edgeTypeDisplay').textContent = edgeData.edge_type || '-';
+            document.getElementById('edgeLengthDisplay').textContent =
+                edgeData.length !== null ? edgeData.length.toFixed(4) : '-';
+            document.getElementById('edgeFreeDisplay').textContent =
+                edgeData.is_free ? 'Yes (boundary)' : 'No (internal)';
+
+            // Curvature
+            if (edgeData.curvature) {
+                const curv = edgeData.curvature;
+                if (curv.min === curv.max) {
+                    document.getElementById('edgeCurvatureDisplay').textContent =
+                        curv.avg.toFixed(4);
+                } else {
+                    document.getElementById('edgeCurvatureDisplay').textContent =
+                        `${curv.min.toFixed(4)} - ${curv.max.toFixed(4)}`;
+                }
+            } else {
+                document.getElementById('edgeCurvatureDisplay').textContent = '-';
+            }
+
+            // Vertices
+            if (edgeData.vertices) {
+                document.getElementById('edgeStartDisplay').textContent =
+                    `[${edgeData.vertices.start.map(v => v.toFixed(2)).join(', ')}]`;
+                document.getElementById('edgeEndDisplay').textContent =
+                    `[${edgeData.vertices.end.map(v => v.toFixed(2)).join(', ')}]`;
+                document.getElementById('verticesSection').style.display = 'block';
+            } else {
+                document.getElementById('verticesSection').style.display = 'none';
+            }
+
+            // Adjacent faces
+            const adjacentFacesList = document.getElementById('adjacentFacesList');
+            adjacentFacesList.innerHTML = '';
+            if (edgeData.adjacent_faces && edgeData.adjacent_faces.length > 0) {
+                edgeData.adjacent_faces.forEach(faceId => {
+                    const span = document.createElement('span');
+                    span.textContent = `Face ${faceId}`;
+                    adjacentFacesList.appendChild(span);
+                });
+                document.getElementById('adjacentFacesSection').style.display = 'block';
+            } else {
+                document.getElementById('adjacentFacesSection').style.display = 'none';
+            }
+
+            // Connected edges
+            const connectedEdgesList = document.getElementById('connectedEdgesList');
+            connectedEdgesList.innerHTML = '';
+            if (edgeData.connected_edges) {
+                const startEdges = edgeData.connected_edges.start || [];
+                const endEdges = edgeData.connected_edges.end || [];
+                const allConnected = [...new Set([...startEdges, ...endEdges])];
+
+                if (allConnected.length > 0) {
+                    allConnected.forEach(connEdgeId => {
+                        const span = document.createElement('span');
+                        span.textContent = connEdgeId;
+                        span.className = 'connected';
+                        span.addEventListener('click', () => selectEdge(connEdgeId));
+                        connectedEdgesList.appendChild(span);
+                    });
+                    document.getElementById('connectedEdgesSection').style.display = 'block';
+                } else {
+                    document.getElementById('connectedEdgesSection').style.display = 'none';
+                }
+            } else {
+                document.getElementById('connectedEdgesSection').style.display = 'none';
+            }
+
+            edgeInfoPanel.classList.add('visible');
+        }
+
+        function showError(message) {
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            loadingDiv.style.display = 'none';
+        }
+
+        function showLoading(message) {
+            loadingDiv.innerHTML = `<div>${message}</div>`;
+            loadingDiv.style.display = 'block';
+            errorDiv.style.display = 'none';
+        }
+
+        function fitCameraToEdges() {
+            if (edgeLines.size === 0) return;
+
+            // Compute bounding box of all edges
+            const box = new THREE.Box3();
+            edgeLines.forEach(line => {
+                box.expandByObject(line);
+            });
+
+            const center = box.getCenter(new THREE.Vector3());
+            const size = box.getSize(new THREE.Vector3());
+
+            const maxDim = Math.max(size.x, size.y, size.z);
+            const fov = camera.fov * (Math.PI / 180);
+            let cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2));
+            cameraZ *= 2;
+
+            camera.position.set(center.x + cameraZ, center.y + cameraZ, center.z + cameraZ);
+            camera.lookAt(center);
+            controls.target.copy(center);
+            controls.update();
+        }
+
+        // Set camera to specific view direction
+        function setViewDirection(direction) {
+            if (edgeLines.size === 0) return;
+
+            const box = new THREE.Box3();
+            edgeLines.forEach(line => {
+                box.expandByObject(line);
+            });
+
+            const center = box.getCenter(new THREE.Vector3());
+            const size = box.getSize(new THREE.Vector3());
+            const maxDim = Math.max(size.x, size.y, size.z);
+            const distance = maxDim * 2;
+
+            const positions = {
+                '+X': [center.x + distance, center.y, center.z],
+                '-X': [center.x - distance, center.y, center.z],
+                '+Y': [center.x, center.y + distance, center.z],
+                '-Y': [center.x, center.y - distance, center.z],
+                '+Z': [center.x, center.y, center.z + distance],
+                '-Z': [center.x, center.y, center.z - distance]
+            };
+
+            const pos = positions[direction];
+            if (pos) {
+                camera.position.set(pos[0], pos[1], pos[2]);
+                camera.lookAt(center);
+                controls.target.copy(center);
+                controls.update();
+            }
+        }
+
+        // Get color for edge based on visualization mode
+        function getEdgeColor(edge, mode, minLength, maxLength) {
+            switch (mode) {
+                case 'edge_type_heatmap':
+                    return edgeTypeToColor(edge.edge_type);
+                case 'length_heatmap':
+                    return lengthToColor(edge.length || 0, minLength, maxLength);
+                case 'normal':
+                default:
+                    return edge.is_free ? 0xff0000 : 0x333333;
+            }
+        }
+
+        // Color by edge type
+        function edgeTypeToColor(type) {
+            const colors = {
+                'Line': 0x4444ff,
+                'Circle': 0x44ff44,
+                'Ellipse': 0x44ffff,
+                'BSpline': 0xff44ff,
+                'Bezier': 0xffff44,
+                'Parabola': 0xff8844,
+                'Hyperbola': 0x8844ff,
+                'Other': 0x888888
+            };
+            return colors[type] || 0x888888;
+        }
+
+        // Color by length (green -> yellow -> red)
+        function lengthToColor(length, min, max) {
+            if (max <= min) return 0x00ff00;
+            const t = (length - min) / (max - min);
+            const color = new THREE.Color();
+            if (t < 0.5) {
+                color.setRGB(t * 2, 1, 0);
+            } else {
+                color.setRGB(1, 1 - (t - 0.5) * 2, 0);
+            }
+            return color.getHex();
+        }
+
+        // Update legend based on visualization mode
+        function updateLegend(mode) {
+            const legend = document.getElementById('legend');
+            if (mode === 'normal') {
+                legend.innerHTML = `
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #ff0000;"></div>
+                        <span>Free Edge (boundary)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #333333;"></div>
+                        <span>Shared Edge (internal)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #ffaa00;"></div>
+                        <span>Selected</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #00ff00;"></div>
+                        <span>Connected</span>
+                    </div>
+                `;
+            } else if (mode === 'edge_type_heatmap') {
+                legend.innerHTML = `
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #4444ff;"></div>
+                        <span>Line</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #44ff44;"></div>
+                        <span>Circle</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #ff44ff;"></div>
+                        <span>BSpline</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #ffff44;"></div>
+                        <span>Bezier</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #888888;"></div>
+                        <span>Other</span>
+                    </div>
+                `;
+            } else if (mode === 'length_heatmap') {
+                legend.innerHTML = `
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #00ff00;"></div>
+                        <span>Short</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #ffff00;"></div>
+                        <span>Medium</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #ff0000;"></div>
+                        <span>Long</span>
+                    </div>
+                `;
+            }
+        }
+
+        // Create edge lines from analysis data
+        function createEdgeLines(edgesData, mode) {
+            // Clear existing edges
+            edgeLines.forEach(line => {
+                scene.remove(line);
+                line.geometry.dispose();
+                line.material.dispose();
+            });
+            edgeLines.clear();
+
+            if (!edgesData || edgesData.length === 0) {
+                console.log('[CADabra Edge] No edge data');
+                return;
+            }
+
+            // Compute length range for heatmap
+            const lengths = edgesData.map(e => e.length || 0).filter(l => l > 0);
+            const minLength = lengths.length > 0 ? Math.min(...lengths) : 0;
+            const maxLength = lengths.length > 0 ? Math.max(...lengths) : 1;
+
+            // Create line segments for each edge
+            for (const edge of edgesData) {
+                if (!edge.points || edge.points.length < 2) continue;
+
+                const positions = [];
+                for (let i = 0; i < edge.points.length - 1; i++) {
+                    positions.push(
+                        edge.points[i][0], edge.points[i][1], edge.points[i][2],
+                        edge.points[i + 1][0], edge.points[i + 1][1], edge.points[i + 1][2]
+                    );
+                }
+
+                const geometry = new THREE.BufferGeometry();
+                geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+
+                const color = getEdgeColor(edge, mode, minLength, maxLength);
+                const material = new THREE.LineBasicMaterial({
+                    color: color,
+                    linewidth: edge.is_free ? 2 : 1
+                });
+
+                const lineSegments = new THREE.LineSegments(geometry, material);
+                lineSegments.userData.edgeId = edge.edge_id;
+                lineSegments.userData.edgeData = edge;
+
+                edgeLines.set(edge.edge_id, lineSegments);
+                scene.add(lineSegments);
+            }
+
+            console.log('[CADabra Edge] Created', edgeLines.size, 'edge lines');
+            updateLegend(mode);
+        }
+
+        // Load edge analysis data
+        async function loadEdgeAnalysis(edgeUrl, receivedNodeId, visualizationMode) {
+            nodeId = receivedNodeId;
+            currentVisualizationMode = visualizationMode || 'normal';
+
+            showLoading('Loading edge data...');
+
+            try {
+                console.log('[CADabra Edge] Fetching:', edgeUrl);
+                const response = await fetch(edgeUrl);
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch: ${response.statusText}`);
+                }
+
+                analysisData = await response.json();
+                console.log('[CADabra Edge] Loaded', analysisData.num_edges, 'edges');
+
+                // Create edge lines
+                createEdgeLines(analysisData.edges, currentVisualizationMode);
+
+                // Fit camera
+                fitCameraToEdges();
+
+                loadingDiv.style.display = 'none';
+                console.log('[CADabra Edge] Viewer ready');
+                console.log('[CADabra Edge] Loaded successfully');
+
+            } catch (error) {
+                console.error('[CADabra Edge] Error:', error);
+                showError('Failed to load edge data: ' + error.message);
+            }
+        }
+
+        // Settings panel
+        const settingsOverlay = document.getElementById('settingsOverlay');
+        const settingsPanel = document.getElementById('settingsPanel');
+        let originalSettings = {};
+
+        function openSettings() {
+            originalSettings = {
+                showConnected: document.getElementById('showConnected').checked,
+                showVertices: document.getElementById('showVertices').checked,
+                pickThreshold: document.getElementById('pickThreshold').value
+            };
+            settingsOverlay.classList.add('visible');
+            settingsPanel.classList.add('visible');
+        }
+
+        function closeSettings() {
+            settingsOverlay.classList.remove('visible');
+            settingsPanel.classList.remove('visible');
+        }
+
+        function restoreSettings() {
+            document.getElementById('showConnected').checked = originalSettings.showConnected;
+            document.getElementById('showVertices').checked = originalSettings.showVertices;
+            document.getElementById('pickThreshold').value = originalSettings.pickThreshold;
+            document.getElementById('thresholdValue').textContent = originalSettings.pickThreshold;
+            pickThreshold = parseFloat(originalSettings.pickThreshold);
+        }
+
+        settingsOverlay.addEventListener('click', () => {
+            restoreSettings();
+            closeSettings();
+        });
+
+        document.getElementById('settingsCancel').addEventListener('click', () => {
+            restoreSettings();
+            closeSettings();
+        });
+
+        document.getElementById('settingsApply').addEventListener('click', () => {
+            pickThreshold = parseFloat(document.getElementById('pickThreshold').value);
+            closeSettings();
+        });
+
+        document.getElementById('pickThreshold').addEventListener('input', (e) => {
+            document.getElementById('thresholdValue').textContent = e.target.value;
+        });
+
+        // Listen for messages from parent window
+        window.addEventListener('message', (event) => {
+            console.log('[CADabra Edge] Received message:', event.data);
+
+            if (event.data.type === 'OPEN_SETTINGS') {
+                openSettings();
+                return;
+            }
+
+            if (event.data.type === 'FIT_VIEW') {
+                fitCameraToEdges();
+                return;
+            }
+
+            if (event.data.type === 'SET_VIEW') {
+                setViewDirection(event.data.direction);
+                return;
+            }
+
+            if (event.data.type === 'LOAD_EDGE_ANALYSIS') {
+                const { edgeUrl, nodeId: receivedNodeId, visualizationMode } = event.data;
+                if (edgeUrl) {
+                    loadEdgeAnalysis(edgeUrl, receivedNodeId, visualizationMode);
+                } else {
+                    showError('No edge data URL provided');
+                }
+            } else if (event.data.type === 'DESELECT_EDGE') {
+                clearEdgeSelection();
+            } else if (event.data.type === 'SELECT_EDGE_BY_ID') {
+                const edgeId = event.data.edgeId;
+                if (!analysisData || !analysisData.edges) {
+                    alert('No data loaded');
+                    return;
+                }
+                const edge = analysisData.edges.find(e => e.edge_id === edgeId);
+                if (!edge) {
+                    alert(`Edge ID ${edgeId} not found`);
+                    return;
+                }
+                selectEdge(edgeId);
+            }
+        });
+
+        // Initialize
+        initScene();
+        loadingDiv.style.display = 'none';
+        console.log('[CADabra Edge] Viewer initialized');
+    </script>
+</body>
+</html>

@@ -11,4 +11,5 @@ Documentation = "https://github.com/PozzettiAndrea/ComfyUI-CADabra#readme"
 [tool.comfy]
 PublisherId = "pznodes"
 DisplayName = "CADabra"
+web = "javascript"
 Icon = "https://raw.githubusercontent.com/PozzettiAndrea/ComfyUI-CADabra/main/assets/icon.png"

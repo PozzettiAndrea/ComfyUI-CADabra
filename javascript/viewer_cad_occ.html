@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>CADabra OpenCascade.js Viewer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+            background: #1a1a1a;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+        #container {
+            flex: 1;
+            min-height: 0;
+            width: 100%;
+            position: relative;
+        }
+        #loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #ccc;
+            font-size: 14px;
+            text-align: center;
+            z-index: 10;
+        }
+        #error {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #ff6b6b;
+            font-size: 14px;
+            text-align: center;
+            z-index: 10;
+            max-width: 80%;
+            display: none;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+        /* Settings overlay and panel */
+        #settingsOverlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1999;
+            display: none;
+        }
+        #settingsOverlay.visible {
+            display: block;
+        }
+        #settingsPanel {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #1a1a1a;
+            border: 1px solid #555;
+            border-radius: 6px;
+            padding: 16px;
+            z-index: 2000;
+            display: none;
+            min-width: 280px;
+            max-width: 320px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+            font-size: 12px;
+            color: #ccc;
+        }
+        #settingsPanel.visible {
+            display: block;
+        }
+        #settingsPanel h3 {
+            margin: 0 0 12px 0;
+            color: #ccc;
+            font-size: 14px;
+            font-weight: normal;
+            border-bottom: 1px solid #333;
+            padding-bottom: 8px;
+        }
+        #settingsPanel .setting-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+        #settingsPanel .setting-row label {
+            flex: 1;
+            color: #ccc;
+            font-size: 11px;
+            cursor: pointer;
+        }
+        #settingsPanel .setting-row input[type="checkbox"] {
+            cursor: pointer;
+        }
+        #settingsPanel .setting-section {
+            margin-top: 12px;
+            padding-top: 10px;
+            border-top: 1px solid #333;
+        }
+        #settingsPanel .setting-section h4 {
+            margin: 0 0 8px 0;
+            font-size: 11px;
+            font-weight: bold;
+            color: #888;
+        }
+        #settingsPanel .slider-row {
+            margin-bottom: 8px;
+        }
+        #settingsPanel .slider-row label {
+            display: block;
+            font-size: 10px;
+            color: #888;
+            margin-bottom: 2px;
+        }
+        #settingsPanel .slider-row input[type="range"] {
+            width: 100%;
+        }
+        #settingsPanel .slider-row .value {
+            font-family: monospace;
+            color: #ccc;
+        }
+        #settingsPanel .button-row {
+            display: flex;
+            gap: 8px;
+            margin-top: 14px;
+            padding-top: 12px;
+            border-top: 1px solid #333;
+        }
+        #settingsPanel .button-row button {
+            flex: 1;
+            padding: 6px 12px;
+            font-size: 11px;
+            background: #333;
+            border: 1px solid #555;
+            color: #ccc;
+            cursor: pointer;
+            border-radius: 3px;
+        }
+        #settingsPanel .button-row button:hover {
+            background: #444;
+        }
+        #settingsPanel .button-row button.primary {
+            background: #4CAF50;
+            border-color: #4CAF50;
+            color: white;
+        }
+        #settingsPanel .button-row button.primary:hover {
+            background: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <div id="loading">
+            <div>Initializing OpenCascade.js...</div>
+            <div style="margin-top: 10px; font-size: 12px; color: #999;">This may take a moment on first load</div>
+        </div>
+        <div id="error"></div>
+
+        <!-- Settings overlay and panel (triggered by gear icon in nav bar) -->
+        <div id="settingsOverlay"></div>
+        <div id="settingsPanel">
+            <h3>Viewer Settings</h3>
+
+            <div class="setting-row">
+                <input type="checkbox" id="serverTessellation" checked>
+                <label for="serverTessellation">Server-Side Tessellation</label>
+            </div>
+            <div class="setting-row">
+                <input type="checkbox" id="wireframe">
+                <label for="wireframe">Wireframe</label>
+            </div>
+            <div class="setting-row">
+                <input type="checkbox" id="showEdges" checked>
+                <label for="showEdges">Show Edges</label>
+            </div>
+
+            <div class="setting-section">
+                <h4>Tessellation Quality</h4>
+                <div class="slider-row">
+                    <label>Linear Deflection: <span class="value" id="linearValue">0.1</span></label>
+                    <input type="range" id="linearDeflection" min="0.01" max="2.0" step="0.01" value="0.1">
+                </div>
+                <div class="slider-row">
+                    <label>Angular Deflection: <span class="value" id="angularValue">0.5</span></label>
+                    <input type="range" id="angularDeflection" min="0.1" max="1.0" step="0.05" value="0.5">
+                </div>
+            </div>
+
+            <div class="button-row">
+                <button id="settingsCancel">Cancel</button>
+                <button id="settingsApply" class="primary">Apply</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load Three.js for rendering (bundled locally - r138) -->
+    <script src="three/three.min.js"></script>
+    <script src="three/OrbitControls.js"></script>
+    <!-- Load GLTFLoader from CDN (compatible with three.js r138) -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.138.0/examples/js/loaders/GLTFLoader.js"></script>
+
+    <!-- Load OpenCascade.js as ES module (bundled locally - v1.1.1) -->
+    <script type="module">
+        import opencascadeInit from './.libs/opencascade/opencascade.wasm.js';
+
+        const OCC_LIBS_BASE = new URL('./.libs/opencascade/', document.baseURI).pathname;
+        console.log('[OCC] Loading OpenCascade.js from local bundle: ' + OCC_LIBS_BASE);
+
+        let scene, camera, renderer, controls;
+        let currentMesh = null;
+        let currentEdges = null;
+        let oc = null;
+
+        const loadingDiv = document.getElementById('loading');
+        const errorDiv = document.getElementById('error');
+
+        // Debug logging system - Capture ALL console output
+        const debugLog = [];
+
+        // Save original console methods
+        const originalConsole = {
+            log: console.log,
+            error: console.error,
+            warn: console.warn,
+            info: console.info,
+            debug: console.debug
+        };
+
+        // Helper to format arguments for logging
+        function formatArgs(args) {
+            return args.map(arg => {
+                if (typeof arg === 'object') {
+                    try {
+                        return JSON.stringify(arg, null, 2);
+                    } catch (e) {
+                        return String(arg);
+                    }
+                }
+                return String(arg);
+            }).join(' ');
+        }
+
+        // Intercept all console methods
+        function interceptConsole() {
+            const timestamp = () => new Date().toISOString();
+
+            console.log = function(...args) {
+                debugLog.push(`[${timestamp()}] [LOG] ${formatArgs(args)}`);
+                originalConsole.log.apply(console, args);
+            };
+
+            console.error = function(...args) {
+                debugLog.push(`[${timestamp()}] [ERROR] ${formatArgs(args)}`);
+                originalConsole.error.apply(console, args);
+            };
+
+            console.warn = function(...args) {
+                debugLog.push(`[${timestamp()}] [WARN] ${formatArgs(args)}`);
+                originalConsole.warn.apply(console, args);
+            };
+
+            console.info = function(...args) {
+                debugLog.push(`[${timestamp()}] [INFO] ${formatArgs(args)}`);
+                originalConsole.info.apply(console, args);
+            };
+
+            console.debug = function(...args) {
+                debugLog.push(`[${timestamp()}] [DEBUG] ${formatArgs(args)}`);
+                originalConsole.debug.apply(console, args);
+            };
+        }
+
+        // Start intercepting console
+        interceptConsole();
+
+        // Legacy logDebug function for compatibility
+        function logDebug(message, ...args) {
+            console.log(message, ...args);
+        }
+
+        function downloadDebugLog() {
+            const logText = debugLog.join('\n');
+            const blob = new Blob([logText], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `cadabra_console_${Date.now()}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            console.log('[OCC] Console log downloaded');
+        }
+
+        // Initialize Three.js scene
+        function initScene() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x1a1a1a);
+
+            const container = document.getElementById('container');
+            camera = new THREE.PerspectiveCamera(
+                50,
+                container.clientWidth / container.clientHeight,
+                0.01,
+                10000
+            );
+            camera.position.set(100, 100, 100);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            container.appendChild(renderer.domElement);
+
+            // Add lights
+            const ambientLight = new THREE.AmbientLight(0x404040, 2);
+            scene.add(ambientLight);
+
+            const directionalLight1 = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight1.position.set(1, 1, 1);
+            scene.add(directionalLight1);
+
+            const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.4);
+            directionalLight2.position.set(-1, -1, -1);
+            scene.add(directionalLight2);
+
+            // Add orbit controls
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+
+            // Handle window resize
+            window.addEventListener('resize', onWindowResize, false);
+
+            // Start animation loop
+            animate();
+        }
+
+        function onWindowResize() {
+            const container = document.getElementById('container');
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // Initialize OpenCascade.js
+        async function initOpenCascade() {
+            try {
+                console.log('[OCC] Initializing OpenCascade.js...');
+                // Override locateFile to point to correct WASM location
+                oc = await opencascadeInit({
+                    locateFile: (path) => {
+                        if (path.endsWith('.wasm')) {
+                            return OCC_LIBS_BASE + path;
+                        }
+                        return path;
+                    }
+                });
+                console.log('[OCC] OpenCascade.js initialized successfully');
+                loadingDiv.style.display = 'none';
+            } catch (error) {
+                console.error('[OCC] Failed to initialize OpenCascade.js:', error);
+                showError('Failed to initialize OpenCascade.js: ' + error.message);
+            }
+        }
+
+        function showError(message) {
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            loadingDiv.style.display = 'none';
+        }
+
+        function showLoading(message) {
+            loadingDiv.innerHTML = `<div>${message}</div>`;
+            loadingDiv.style.display = 'block';
+            errorDiv.style.display = 'none';
+        }
+
+        // Load and display CAD file
+        async function loadCADFile(filepath, format) {
+            if (!oc) {
+                showError('OpenCascade.js not initialized');
+                return;
+            }
+
+            showLoading('Loading CAD file...');
+
+            try {
+                console.log('[OCC] Fetching CAD file:', filepath);
+                const response = await fetch(filepath);
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch file: ${response.statusText}`);
+                }
+
+                const arrayBuffer = await response.arrayBuffer();
+                const fileBuffer = new Uint8Array(arrayBuffer);
+
+                console.log('[OCC] File loaded, size:', fileBuffer.length, 'bytes');
+                showLoading('Parsing CAD geometry...');
+
+                // Write file to virtual filesystem
+                const filename = 'temp.' + (format || 'step');
+                oc.FS.writeFile('/' + filename, fileBuffer);
+
+                // Read the STEP file
+                console.log('[OCC] Reading STEP file...');
+                const reader = new oc.STEPControl_Reader_1();
+                const readStatus = reader.ReadFile('/' + filename);
+
+                if (readStatus !== oc.IFSelect_ReturnStatus.IFSelect_RetDone) {
+                    throw new Error('Failed to read STEP file');
+                }
+
+                console.log('[OCC] Transferring to document...');
+                reader.TransferRoots();  // v1.1.1 API - no parameters needed
+                const shape = reader.OneShape();
+
+                console.log('[OCC] Tessellating shape...');
+                showLoading('Converting to mesh...');
+
+                // Tessellate the shape for visualization
+                const incrementalMesh = new oc.BRepMesh_IncrementalMesh_2(
+                    shape,
+                    0.1,  // Linear deflection
+                    false,
+                    0.5,  // Angular deflection
+                    true
+                );
+
+                // Extract triangulation
+                const vertices = [];
+                const indices = [];
+                const explorer = new oc.TopExp_Explorer_2(
+                    shape,
+                    oc.TopAbs_ShapeEnum.TopAbs_FACE,
+                    oc.TopAbs_ShapeEnum.TopAbs_SHAPE
+                );
+
+                let vertexOffset = 0;
+
+                while (explorer.More()) {
+                    const face = oc.TopoDS.Face_1(explorer.Current());
+                    const location = new oc.TopLoc_Location_1();
+                    const triangulation = oc.BRep_Tool.Triangulation(face, location);
+
+                    if (!triangulation.IsNull()) {
+                        const transformation = location.Transformation();
+                        const nodeCount = triangulation.get().NbNodes();
+                        const triangleCount = triangulation.get().NbTriangles();
+
+                        // Get vertices
+                        for (let i = 1; i <= nodeCount; i++) {
+                            const node = triangulation.get().Node(i);
+                            const transformed = node.Transformed(transformation);
+                            vertices.push(transformed.X(), transformed.Y(), transformed.Z());
+                        }
+
+                        // Get triangles
+                        const faceOrientation = face.Orientation_1();
+                        for (let i = 1; i <= triangleCount; i++) {
+                            const triangle = triangulation.get().Triangle(i);
+                            let i1 = triangle.Value(1);
+                            let i2 = triangle.Value(2);
+                            let i3 = triangle.Value(3);
+
+                            // Adjust for face orientation
+                            if (faceOrientation === oc.TopAbs_Orientation.TopAbs_REVERSED) {
+                                indices.push(
+                                    vertexOffset + i1 - 1,
+                                    vertexOffset + i3 - 1,
+                                    vertexOffset + i2 - 1
+                                );
+                            } else {
+                                indices.push(
+                                    vertexOffset + i1 - 1,
+                                    vertexOffset + i2 - 1,
+                                    vertexOffset + i3 - 1
+                                );
+                            }
+                        }
+
+                        vertexOffset += nodeCount;
+                    }
+
+                    explorer.Next();
+                }
+
+                console.log('[OCC] Mesh created:', vertices.length / 3, 'vertices,', indices.length / 3, 'triangles');
+
+                // Create Three.js geometry
+                const geometry = new THREE.BufferGeometry();
+                geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+                geometry.setIndex(indices);
+                geometry.computeVertexNormals();
+
+                // Remove old mesh if exists
+                if (currentMesh) {
+                    scene.remove(currentMesh);
+                    currentMesh.geometry.dispose();
+                    currentMesh.material.dispose();
+                }
+                if (currentEdges) {
+                    scene.remove(currentEdges);
+                    currentEdges.geometry.dispose();
+                    currentEdges.material.dispose();
+                }
+
+                // Create mesh material
+                const material = new THREE.MeshPhongMaterial({
+                    color: 0x88ccff,
+                    side: THREE.DoubleSide,
+                    flatShading: false,
+                    polygonOffset: true,
+                    polygonOffsetFactor: 1,
+                    polygonOffsetUnits: 1
+                });
+
+                currentMesh = new THREE.Mesh(geometry, material);
+                scene.add(currentMesh);
+
+                // Create edges
+                const edgesGeometry = new THREE.EdgesGeometry(geometry, 15);
+                const edgesMaterial = new THREE.LineBasicMaterial({ color: 0x000000, linewidth: 1 });
+                currentEdges = new THREE.LineSegments(edgesGeometry, edgesMaterial);
+                scene.add(currentEdges);
+
+                // Fit camera to model
+                fitCameraToModel();
+
+                // Clean up
+                oc.FS.unlink('/' + filename);
+
+                loadingDiv.style.display = 'none';
+                console.log('[OCC] CAD file Loaded successfully');
+
+            } catch (error) {
+                console.error('[OCC] Error loading CAD file:', error);
+                showError('Failed to load CAD file: ' + error.message);
+            }
+        }
+
+        function fitCameraToModel() {
+            if (!currentMesh) return;
+
+            const box = new THREE.Box3().setFromObject(currentMesh);
+            const center = box.getCenter(new THREE.Vector3());
+            const size = box.getSize(new THREE.Vector3());
+
+            const maxDim = Math.max(size.x, size.y, size.z);
+            const fov = camera.fov * (Math.PI / 180);
+            let cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2));
+
+            cameraZ *= 2; // Add some padding
+
+            // Default view: -Z (looking down from above)
+            camera.position.set(center.x, center.y, center.z - cameraZ);
+            camera.lookAt(center);
+            controls.target.copy(center);
+            controls.update();
+        }
+
+        // Set camera to axis-aligned view direction
+        function setViewDirection(direction) {
+            if (!currentMesh) return;
+
+            const box = new THREE.Box3().setFromObject(currentMesh);
+            const center = box.getCenter(new THREE.Vector3());
+            const size = box.getSize(new THREE.Vector3());
+            const maxDim = Math.max(size.x, size.y, size.z);
+            const fov = camera.fov * (Math.PI / 180);
+            let distance = Math.abs(maxDim / 2 / Math.tan(fov / 2)) * 2;
+
+            const positions = {
+                '+X': [center.x + distance, center.y, center.z],
+                '-X': [center.x - distance, center.y, center.z],
+                '+Y': [center.x, center.y + distance, center.z],
+                '-Y': [center.x, center.y - distance, center.z],
+                '+Z': [center.x, center.y, center.z + distance],
+                '-Z': [center.x, center.y, center.z - distance]
+            };
+
+            const pos = positions[direction];
+            if (pos) {
+                camera.position.set(pos[0], pos[1], pos[2]);
+                camera.lookAt(center);
+                controls.target.copy(center);
+                controls.update();
+            }
+        }
+
+        // Settings panel elements
+        const settingsOverlay = document.getElementById('settingsOverlay');
+        const settingsPanel = document.getElementById('settingsPanel');
+
+        // Store original settings to restore on cancel
+        let originalSettings = {};
+
+        function openSettings() {
+            // Store current settings before opening
+            originalSettings = {
+                serverTessellation: document.getElementById('serverTessellation').checked,
+                wireframe: document.getElementById('wireframe').checked,
+                showEdges: document.getElementById('showEdges').checked,
+                linearDeflection: document.getElementById('linearDeflection').value,
+                angularDeflection: document.getElementById('angularDeflection').value
+            };
+            settingsOverlay.classList.add('visible');
+            settingsPanel.classList.add('visible');
+        }
+
+        function closeSettings() {
+            settingsOverlay.classList.remove('visible');
+            settingsPanel.classList.remove('visible');
+        }
+
+        function restoreSettings() {
+            document.getElementById('serverTessellation').checked = originalSettings.serverTessellation;
+            document.getElementById('wireframe').checked = originalSettings.wireframe;
+            document.getElementById('showEdges').checked = originalSettings.showEdges;
+            document.getElementById('linearDeflection').value = originalSettings.linearDeflection;
+            document.getElementById('angularDeflection').value = originalSettings.angularDeflection;
+            document.getElementById('linearValue').textContent = originalSettings.linearDeflection;
+            document.getElementById('angularValue').textContent = originalSettings.angularDeflection;
+
+            // Also restore visual state
+            if (currentMesh) {
+                currentMesh.material.wireframe = originalSettings.wireframe;
+            }
+            if (currentEdges) {
+                currentEdges.visible = originalSettings.showEdges;
+            }
+        }
+
+        // Click overlay to close settings
+        settingsOverlay.addEventListener('click', () => {
+            restoreSettings();
+            closeSettings();
+        });
+
+        // Cancel button
+        document.getElementById('settingsCancel').addEventListener('click', () => {
+            restoreSettings();
+            closeSettings();
+        });
+
+        // Apply button
+        document.getElementById('settingsApply').addEventListener('click', () => {
+            const linearValue = parseFloat(document.getElementById('linearDeflection').value);
+            const angularValue = parseFloat(document.getElementById('angularDeflection').value);
+
+            console.log(`[OCC] Applying settings: linear=${linearValue}, angular=${angularValue}`);
+
+            // Send message to parent window to update node parameters
+            window.parent.postMessage({
+                type: 'UPDATE_DEFLECTION',
+                linear_deflection: linearValue,
+                angular_deflection: angularValue
+            }, '*');
+
+            closeSettings();
+        });
+
+        // Live preview for wireframe and edges
+        document.getElementById('wireframe').addEventListener('change', (e) => {
+            if (currentMesh) {
+                currentMesh.material.wireframe = e.target.checked;
+            }
+        });
+
+        document.getElementById('showEdges').addEventListener('change', (e) => {
+            if (currentEdges) {
+                currentEdges.visible = e.target.checked;
+            }
+        });
+
+        // Deflection slider updates (live value display)
+        document.getElementById('linearDeflection').addEventListener('input', (e) => {
+            document.getElementById('linearValue').textContent = e.target.value;
+        });
+
+        document.getElementById('angularDeflection').addEventListener('input', (e) => {
+            document.getElementById('angularValue').textContent = e.target.value;
+        });
+
+        // Load pre-tessellated mesh from GLB (server-side tessellation)
+        async function loadGLB(glbpath) {
+            showLoading('Loading GLB mesh...');
+
+            try {
+                console.log('[OCC] Fetching GLB file:', glbpath);
+
+                const loader = new THREE.GLTFLoader();
+
+                loader.load(
+                    glbpath,
+                    // onLoad callback
+                    (gltf) => {
+                        console.log('[OCC] GLB Loaded successfully');
+                        logDebug('[OCC DEBUG] GLTF structure:', gltf);
+                        logDebug('[OCC DEBUG] Scene children count:', gltf.scene.children.length);
+
+                        // Remove old mesh if exists
+                        if (currentMesh) {
+                            scene.remove(currentMesh);
+                            currentMesh.geometry.dispose();
+                            currentMesh.material.dispose();
+                        }
+                        if (currentEdges) {
+                            scene.remove(currentEdges);
+                            currentEdges.geometry.dispose();
+                            currentEdges.material.dispose();
+                        }
+
+                        // Extract the mesh from the GLTF scene - handle different structures
+                        let loadedMesh = null;
+                        let geometry = null;
+
+                        // Try to find mesh in scene hierarchy
+                        gltf.scene.traverse((child) => {
+                            if (child.isMesh && child.geometry) {
+                                loadedMesh = child;
+                                geometry = child.geometry;
+                                logDebug('[OCC DEBUG] Found mesh in scene, vertices:', geometry.attributes.position.count);
+                            }
+                        });
+
+                        if (!geometry) {
+                            console.error('[OCC] No mesh found in GLB. Scene structure:', gltf.scene);
+                            throw new Error('No mesh found in GLB file');
+                        }
+
+                        // Compute normals (GLB contains only vertices + indices for speed)
+                        geometry.computeVertexNormals();
+                        console.log('[OCC] Computed vertex normals on client side');
+
+                        // Update material for better visualization
+                        const material = new THREE.MeshPhongMaterial({
+                            color: 0x88ccff,
+                            side: THREE.DoubleSide,
+                            flatShading: false,
+                            polygonOffset: true,
+                            polygonOffsetFactor: 1,
+                            polygonOffsetUnits: 1
+                        });
+
+                        currentMesh = new THREE.Mesh(geometry, material);
+                        scene.add(currentMesh);
+
+                        // Create edges
+                        const edgesGeometry = new THREE.EdgesGeometry(geometry, 15);
+                        const edgesMaterial = new THREE.LineBasicMaterial({ color: 0x000000, linewidth: 1 });
+                        currentEdges = new THREE.LineSegments(edgesGeometry, edgesMaterial);
+                        scene.add(currentEdges);
+
+                        // Fit camera to model
+                        fitCameraToModel();
+
+                        loadingDiv.style.display = 'none';
+                        console.log('[OCC] GLB mesh Loaded successfully (server-side tessellation)');
+                        logDebug('[OCC DEBUG] Mesh vertex count:', geometry.attributes.position.count);
+                        logDebug('[OCC DEBUG] Mesh face count:', geometry.index ? geometry.index.count / 3 : 'no indices');
+                    },
+                    // onProgress callback
+                    (xhr) => {
+                        const percentComplete = (xhr.loaded / xhr.total * 100);
+                        logDebug(`[OCC DEBUG] GLB loading: ${percentComplete.toFixed(1)}%`);
+                    },
+                    // onError callback
+                    (error) => {
+                        console.error('[OCC] Error loading GLB:', error);
+                        showError('Failed to load GLB: ' + error.message);
+                    }
+                );
+
+            } catch (error) {
+                console.error('[OCC] Error loading GLB:', error);
+                showError('Failed to load GLB: ' + error.message);
+            }
+        }
+
+        // Load pre-tessellated mesh from JSON (server-side tessellation)
+        async function loadMeshJSON(meshpath) {
+            showLoading('Loading pre-tessellated mesh...');
+
+            try {
+                console.log('[OCC] Fetching mesh JSON:', meshpath);
+                const response = await fetch(meshpath);
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch mesh: ${response.statusText}`);
+                }
+
+                const meshData = await response.json();
+                console.log('[OCC] Mesh loaded:', meshData.vertex_count, 'vertices,', meshData.face_count, 'faces');
+
+                showLoading('Creating 3D geometry...');
+
+                // Remove old mesh if exists
+                if (currentMesh) {
+                    scene.remove(currentMesh);
+                    currentMesh.geometry.dispose();
+                    currentMesh.material.dispose();
+                }
+                if (currentEdges) {
+                    scene.remove(currentEdges);
+                    currentEdges.geometry.dispose();
+                    currentEdges.material.dispose();
+                }
+
+                // Create Three.js geometry from JSON mesh data
+                const geometry = new THREE.BufferGeometry();
+                geometry.setAttribute('position', new THREE.Float32BufferAttribute(meshData.vertices, 3));
+                geometry.setIndex(meshData.indices);
+                geometry.computeVertexNormals();
+
+                // Create mesh material
+                const material = new THREE.MeshPhongMaterial({
+                    color: 0x88ccff,
+                    side: THREE.DoubleSide,
+                    flatShading: false,
+                    polygonOffset: true,
+                    polygonOffsetFactor: 1,
+                    polygonOffsetUnits: 1
+                });
+
+                currentMesh = new THREE.Mesh(geometry, material);
+                scene.add(currentMesh);
+
+                // Create edges
+                const edgesGeometry = new THREE.EdgesGeometry(geometry, 15);
+                const edgesMaterial = new THREE.LineBasicMaterial({ color: 0x000000, linewidth: 1 });
+                currentEdges = new THREE.LineSegments(edgesGeometry, edgesMaterial);
+                scene.add(currentEdges);
+
+                // Fit camera to model
+                fitCameraToModel();
+
+                loadingDiv.style.display = 'none';
+                console.log('[OCC] Mesh Loaded successfully (server-side tessellation)');
+
+            } catch (error) {
+                console.error('[OCC] Error loading mesh:', error);
+                showError('Failed to load mesh: ' + error.message);
+            }
+        }
+
+        // Load mesh from inline data (passed directly in postMessage)
+        function loadMeshDirect(meshData) {
+            showLoading('Loading pre-tessellated mesh (in-memory)...');
+
+            try {
+                console.log('[OCC] Loading inline mesh data:', meshData.vertex_count, 'vertices,', meshData.face_count, 'faces');
+                logDebug('[OCC DEBUG] meshData.vertices type:', typeof meshData.vertices);
+                logDebug('[OCC DEBUG] meshData.vertices length:', meshData.vertices ? meshData.vertices.length : 'null');
+                logDebug('[OCC DEBUG] meshData.indices type:', typeof meshData.indices);
+                logDebug('[OCC DEBUG] meshData.indices length:', meshData.indices ? meshData.indices.length : 'null');
+
+                showLoading('Creating 3D geometry...');
+
+                // Remove old mesh if exists
+                if (currentMesh) {
+                    scene.remove(currentMesh);
+                    currentMesh.geometry.dispose();
+                    currentMesh.material.dispose();
+                }
+                if (currentEdges) {
+                    scene.remove(currentEdges);
+                    currentEdges.geometry.dispose();
+                    currentEdges.material.dispose();
+                }
+
+                // Create Three.js geometry from inline mesh data
+                const geometry = new THREE.BufferGeometry();
+                geometry.setAttribute('position', new THREE.Float32BufferAttribute(meshData.vertices, 3));
+                geometry.setIndex(meshData.indices);
+                geometry.computeVertexNormals();
+
+                // Create mesh material
+                const material = new THREE.MeshPhongMaterial({
+                    color: 0x88ccff,
+                    side: THREE.DoubleSide,
+                    flatShading: false,
+                    polygonOffset: true,
+                    polygonOffsetFactor: 1,
+                    polygonOffsetUnits: 1
+                });
+
+                currentMesh = new THREE.Mesh(geometry, material);
+                scene.add(currentMesh);
+
+                // Create edges
+                const edgesGeometry = new THREE.EdgesGeometry(geometry, 15);
+                const edgesMaterial = new THREE.LineBasicMaterial({ color: 0x000000, linewidth: 1 });
+                currentEdges = new THREE.LineSegments(edgesGeometry, edgesMaterial);
+                scene.add(currentEdges);
+
+                // Fit camera to model
+                fitCameraToModel();
+
+                loadingDiv.style.display = 'none';
+                console.log('[OCC] Mesh Loaded successfully from inline data (json_pass mode)');
+
+            } catch (error) {
+                console.error('[OCC] Error loading inline mesh:', error);
+                showError('Failed to load inline mesh: ' + error.message);
+            }
+        }
+
+        // Listen for messages from parent window
+        window.addEventListener('message', (event) => {
+            console.log('[OCC] Received message:', event.data);
+            logDebug('[OCC DEBUG] Message type:', event.data.type);
+            logDebug('[OCC DEBUG] Event origin:', event.origin);
+
+            // Handle settings panel open request from nav bar gear button
+            if (event.data.type === 'OPEN_SETTINGS') {
+                openSettings();
+                return;
+            }
+
+            // Handle fit to view request from nav bar Fit button
+            if (event.data.type === 'FIT_VIEW') {
+                fitCameraToModel();
+                return;
+            }
+
+            // Handle view direction change from nav bar view buttons
+            if (event.data.type === 'SET_VIEW') {
+                setViewDirection(event.data.direction);
+                return;
+            }
+
+            if (event.data.type === 'LOAD_CAD') {
+                const glbpath = event.data.glbpath;
+                const filepath = event.data.filepath;
+                const linearDeflection = event.data.linear_deflection || 0.1;
+                const angularDeflection = event.data.angular_deflection || 0.5;
+
+                // Update slider values to match current settings
+                const linearSlider = document.getElementById('linearDeflection');
+                const angularSlider = document.getElementById('angularDeflection');
+                if (linearSlider) {
+                    linearSlider.value = linearDeflection;
+                    document.getElementById('linearValue').textContent = linearDeflection;
+                }
+                if (angularSlider) {
+                    angularSlider.value = angularDeflection;
+                    document.getElementById('angularValue').textContent = angularDeflection;
+                }
+
+                // Debug: Log received data
+                logDebug('[OCC DEBUG] glbpath:', glbpath);
+                logDebug('[OCC DEBUG] filepath:', filepath);
+                logDebug('[OCC DEBUG] deflection values:', linearDeflection, angularDeflection);
+
+                // Priority 1: GLB mesh file (glb_save mode) - server-side tessellation, fast binary loading
+                if (glbpath) {
+                    console.log('[OCC] Using GLB mesh file (server-side tessellation)');
+                    loadGLB(glbpath);
+                }
+                // Priority 2: STEP file (step_save mode) - client-side tessellation fallback
+                else if (filepath) {
+                    console.log('[OCC] Using STEP file with client-side tessellation (fallback mode)');
+                    loadCADFile(filepath, event.data.format);
+                }
+                else {
+                    showError('No CAD data available to load');
+                }
+            }
+        });
+
+        // Initialize everything
+        initScene();
+        initOpenCascade();
+
+        console.log('[OCC] Viewer initialized and ready');
+    </script>
+</body>
+</html>

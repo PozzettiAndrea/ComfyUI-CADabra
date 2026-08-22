@@ -1,13 +1,45 @@
 """ComfyUI-CADabra Prestartup Script."""
 import logging
 
+import shutil
 from pathlib import Path
-from comfy_env import setup_env, copy_files
-from comfy_3d_viewers import copy_viewer, get_three_dir
+import folder_paths
+from comfy_env import setup_env
 
 log = logging.getLogger("cadabra")
 
 setup_env()
+
+# The CONFIGURED input directory, never the code-tree one. ComfyUI Desktop
+# (--base-directory) and --input-directory both relocate it, and the load
+# nodes only ever scan folder_paths.get_input_directory(). main.py runs
+# apply_custom_paths() before prestartup scripts, so this is already resolved.
+INPUT = Path(folder_paths.get_input_directory())
+
+
+def copy_files(src: Path, dst: Path, pattern: str = "*") -> int:
+    """Copy bundled assets into a directory. Returns files written.
+
+    Seeds rather than syncs: an existing file is left alone, so a user's
+    edited demo asset survives every relaunch. Raises if `src` is missing --
+    a typo'd asset directory is a packaging bug, and silence is how it stays
+    one.
+    """
+    src, dst = Path(src), Path(dst)
+    if not src.is_dir():
+        raise FileNotFoundError(f"asset directory not found: {src}")
+    written = 0
+    for f in src.glob(pattern):
+        if not f.is_file():
+            continue
+        target = dst / f.relative_to(src)
+        if target.exists():
+            continue
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(f, target)
+        written += 1
+    return written
+
 
 SCRIPT_DIR = Path(__file__).resolve().parent  # still used for viewer/web paths
 
@@ -18,23 +50,11 @@ SCRIPT_DIR = Path(__file__).resolve().parent  # still used for viewer/web paths
 copy_files("assets/cad", "input/cad", "**/*")
 copy_files("assets/3d",  "input/3d",  "**/*")
 
-# Copy viewers
-viewers = [
-    "cad_analysis", "cad_curve", "cad_edge", "cad_edge_detail",
-    "cad_edge_vtk", "cad_hierarchy", "cad_occ", "cad_roi", "cad_spline",
-    "cad_dual",
-]
-for viewer in viewers:
-    try:
-        copy_viewer(viewer, SCRIPT_DIR / "web")
-    except Exception as e:
-        log.warning(f"{e}")
 
 # Copy Three.js (used directly by CAD viewers via <script> tags)
 copy_files(get_three_dir(), SCRIPT_DIR / "web" / "three")
 
 # Copy non-viewer JS widgets
-from comfy_3d_viewers import get_nodes_dir
 for name in (
     "cadrille_inference.js", "mask_analyzer.js", "cad_preview_batch.js", "load_cad_upload.js",
     "cad_mesh_info.js", "cad_filename_info.js", "cad_load_glob_info.js",

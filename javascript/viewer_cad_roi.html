@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>CADabra ROI Selector</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+            background: #1a1a1a;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+        #container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+        #loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #ccc;
+            font-size: 14px;
+            text-align: center;
+            z-index: 10;
+        }
+        #error {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #ff6b6b;
+            font-size: 14px;
+            text-align: center;
+            z-index: 10;
+            max-width: 80%;
+            display: none;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+        /* Selection rectangle overlay */
+        #selection-rect {
+            position: absolute;
+            border: 2px dashed #00ff00;
+            background: rgba(0, 255, 0, 0.15);
+            pointer-events: none;
+            display: none;
+            z-index: 100;
+        }
+        /* Persisted ROI rectangle */
+        #roi-rect {
+            position: absolute;
+            border: 2px solid #ffaa00;
+            background: rgba(255, 170, 0, 0.1);
+            pointer-events: none;
+            display: none;
+            z-index: 99;
+        }
+        /* Instructions overlay */
+        #instructions {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: #888;
+            font-size: 11px;
+            z-index: 50;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 6px 10px;
+            border-radius: 4px;
+        }
+        /* Coordinate display */
+        #coords {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            color: #aaa;
+            font-size: 10px;
+            font-family: monospace;
+            z-index: 50;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <div id="loading">Waiting for CAD model...</div>
+        <div id="error"></div>
+        <div id="selection-rect"></div>
+        <div id="roi-rect"></div>
+        <div id="instructions">Click face or drag to select ROI | Scroll: zoom | Middle-drag: pan</div>
+        <div id="coords">X: - Y: -</div>
+    </div>
+
+    <!-- Three.js libraries -->
+    <script src="three/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.138.0/examples/js/loaders/GLTFLoader.js"></script>
+
+    <script>
+        // Global state
+        let scene, camera, renderer;
+        let currentMesh = null;
+        let currentEdges = null;
+        let boundsMin = [0, 0, 0];
+        let boundsMax = [1, 1, 1];
+        let nodeId = null;
+
+        // Selection state
+        let isDragging = false;
+        let startScreenX = 0, startScreenY = 0;
+        let currentRoi = null;
+
+        // Navigation state
+        let isPanning = false;
+        let panStartX = 0, panStartY = 0;
+        let panStartCameraLeft = 0, panStartCameraRight = 0;
+        let panStartCameraTop = 0, panStartCameraBottom = 0;
+        let zoomLevel = 1.0;
+        const MIN_ZOOM = 0.1;
+        const MAX_ZOOM = 10.0;
+
+        // Face selection state
+        let faceBboxes = [];  // Per-face bounding boxes from backend
+        let triangleFaceIds = [];  // Map triangle index -> CAD face ID
+        let raycaster = null;
+
+        // DOM elements
+        const container = document.getElementById('container');
+        const loadingDiv = document.getElementById('loading');
+        const errorDiv = document.getElementById('error');
+        const selectionRect = document.getElementById('selection-rect');
+        const roiRect = document.getElementById('roi-rect');
+        const coordsDiv = document.getElementById('coords');
+
+        // Initialize Three.js scene
+        function initScene() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x1a1a1a);
+
+            // Orthographic camera looking down Z axis
+            const aspect = container.clientWidth / container.clientHeight;
+            camera = new THREE.OrthographicCamera(-100, 100, 100, -100, 0.1, 10000);
+            camera.position.set(0, 0, 500);
+            camera.lookAt(0, 0, 0);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            container.appendChild(renderer.domElement);
+
+            // Lights
+            const ambientLight = new THREE.AmbientLight(0x606060, 1.5);
+            scene.add(ambientLight);
+
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(0, 0, 500);
+            scene.add(directionalLight);
+
+            // Initialize raycaster for face picking
+            raycaster = new THREE.Raycaster();
+
+            // Grid helper for reference (XY plane)
+            // Will be added after model loads with proper scale
+
+            // Mouse events
+            renderer.domElement.addEventListener('mousedown', onMouseDown);
+            renderer.domElement.addEventListener('mousemove', onMouseMove);
+            renderer.domElement.addEventListener('mouseup', onMouseUp);
+            renderer.domElement.addEventListener('mouseleave', onMouseLeave);
+            renderer.domElement.addEventListener('wheel', onWheel, { passive: false });
+            renderer.domElement.addEventListener('contextmenu', (e) => e.preventDefault());
+
+            // Window resize
+            window.addEventListener('resize', onWindowResize);
+
+            // Start animation loop
+            animate();
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            renderer.render(scene, camera);
+        }
+
+        function onWindowResize() {
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+
+            // Maintain aspect ratio for orthographic camera
+            const aspect = width / height;
+            const currentHeight = camera.top - camera.bottom;
+            const currentCenter = (camera.left + camera.right) / 2;
+
+            camera.left = currentCenter - (currentHeight * aspect) / 2;
+            camera.right = currentCenter + (currentHeight * aspect) / 2;
+            camera.updateProjectionMatrix();
+
+            renderer.setSize(width, height);
+        }
+
+        // Fit camera to model XY bounds
+        function fitCameraToModel() {
+            const xRange = boundsMax[0] - boundsMin[0];
+            const yRange = boundsMax[1] - boundsMin[1];
+            const maxRange = Math.max(xRange, yRange);
+
+            const centerX = (boundsMin[0] + boundsMax[0]) / 2;
+            const centerY = (boundsMin[1] + boundsMax[1]) / 2;
+            const padding = 1.15;
+
+            const aspect = container.clientWidth / container.clientHeight;
+
+            if (aspect > 1) {
+                // Wide viewport
+                camera.top = centerY + maxRange * padding / 2;
+                camera.bottom = centerY - maxRange * padding / 2;
+                camera.left = centerX - maxRange * padding * aspect / 2;
+                camera.right = centerX + maxRange * padding * aspect / 2;
+            } else {
+                // Tall viewport
+                camera.left = centerX - maxRange * padding / 2;
+                camera.right = centerX + maxRange * padding / 2;
+                camera.top = centerY + maxRange * padding / (2 * aspect);
+                camera.bottom = centerY - maxRange * padding / (2 * aspect);
+            }
+
+            camera.updateProjectionMatrix();
+            console.log('[ROI] Camera fitted to bounds:', camera.left, camera.right, camera.bottom, camera.top);
+        }
+
+        // Convert screen coordinates to world XY
+        function screenToWorld(screenX, screenY) {
+            const rect = renderer.domElement.getBoundingClientRect();
+            const ndcX = ((screenX - rect.left) / rect.width) * 2 - 1;
+            const ndcY = -((screenY - rect.top) / rect.height) * 2 + 1;
+
+            const worldX = camera.left + (ndcX + 1) / 2 * (camera.right - camera.left);
+            const worldY = camera.bottom + (ndcY + 1) / 2 * (camera.top - camera.bottom);
+
+            return { x: worldX, y: worldY };
+        }
+
+        // Convert world XY to screen coordinates
+        function worldToScreen(worldX, worldY) {
+            const rect = renderer.domElement.getBoundingClientRect();
+
+            const ndcX = 2 * (worldX - camera.left) / (camera.right - camera.left) - 1;
+            const ndcY = 2 * (worldY - camera.bottom) / (camera.top - camera.bottom) - 1;
+
+            const screenX = rect.left + (ndcX + 1) / 2 * rect.width;
+            const screenY = rect.top + (1 - ndcY) / 2 * rect.height;
+
+            return { x: screenX, y: screenY };
+        }
+
+        // Mouse handlers
+        function onMouseDown(e) {
+            // Middle button = pan
+            if (e.button === 1) {
+                e.preventDefault();
+                isPanning = true;
+                panStartX = e.clientX;
+                panStartY = e.clientY;
+                panStartCameraLeft = camera.left;
+                panStartCameraRight = camera.right;
+                panStartCameraTop = camera.top;
+                panStartCameraBottom = camera.bottom;
+                renderer.domElement.style.cursor = 'grabbing';
+                return;
+            }
+
+            // Left button = ROI selection
+            if (e.button === 0) {
+                isDragging = true;
+                startScreenX = e.clientX;
+                startScreenY = e.clientY;
+
+                selectionRect.style.display = 'block';
+                selectionRect.style.left = e.clientX + 'px';
+                selectionRect.style.top = e.clientY + 'px';
+                selectionRect.style.width = '0px';
+                selectionRect.style.height = '0px';
+            }
+        }
+
+        function onMouseMove(e) {
+            // Update coordinate display
+            const world = screenToWorld(e.clientX, e.clientY);
+            coordsDiv.textContent = `X: ${world.x.toFixed(2)} Y: ${world.y.toFixed(2)}`;
+
+            // Handle panning
+            if (isPanning) {
+                const dx = e.clientX - panStartX;
+                const dy = e.clientY - panStartY;
+
+                // Convert pixel delta to world delta
+                const rect = renderer.domElement.getBoundingClientRect();
+                const worldWidth = panStartCameraRight - panStartCameraLeft;
+                const worldHeight = panStartCameraTop - panStartCameraBottom;
+                const worldDx = -dx / rect.width * worldWidth;
+                const worldDy = dy / rect.height * worldHeight;
+
+                camera.left = panStartCameraLeft + worldDx;
+                camera.right = panStartCameraRight + worldDx;
+                camera.top = panStartCameraTop + worldDy;
+                camera.bottom = panStartCameraBottom + worldDy;
+                camera.updateProjectionMatrix();
+
+                // Redraw existing ROI if any
+                if (currentRoi) {
+                    const parts = currentRoi.split(',').map(parseFloat);
+                    if (parts.length === 4) {
+                        drawRoiRect(parts[0], parts[1], parts[2], parts[3]);
+                    }
+                }
+                return;
+            }
+
+            if (!isDragging) return;
+
+            // Update selection rectangle
+            const rect = renderer.domElement.getBoundingClientRect();
+            const x1 = Math.max(rect.left, Math.min(startScreenX, e.clientX));
+            const y1 = Math.max(rect.top, Math.min(startScreenY, e.clientY));
+            const x2 = Math.min(rect.right, Math.max(startScreenX, e.clientX));
+            const y2 = Math.min(rect.bottom, Math.max(startScreenY, e.clientY));
+
+            selectionRect.style.left = x1 + 'px';
+            selectionRect.style.top = y1 + 'px';
+            selectionRect.style.width = (x2 - x1) + 'px';
+            selectionRect.style.height = (y2 - y1) + 'px';
+        }
+
+        function onMouseUp(e) {
+            // End panning
+            if (isPanning) {
+                isPanning = false;
+                renderer.domElement.style.cursor = 'default';
+                return;
+            }
+
+            if (!isDragging) return;
+            isDragging = false;
+            selectionRect.style.display = 'none';
+
+            // Convert to world coordinates
+            const start = screenToWorld(startScreenX, startScreenY);
+            const end = screenToWorld(e.clientX, e.clientY);
+
+            const x1 = Math.min(start.x, end.x);
+            const y1 = Math.min(start.y, end.y);
+            const x2 = Math.max(start.x, end.x);
+            const y2 = Math.max(start.y, end.y);
+
+            // Check if selection is too small (click vs drag)
+            const minSize = Math.max(boundsMax[0] - boundsMin[0], boundsMax[1] - boundsMin[1]) * 0.01;
+            if (Math.abs(x2 - x1) < minSize || Math.abs(y2 - y1) < minSize) {
+                // This was a click, not a drag - try to select a face
+                console.log('[ROI] Click detected, trying face selection');
+
+                const faceBbox = getFaceAtPosition(e.clientX, e.clientY);
+                if (faceBbox) {
+                    selectFaceRoi(faceBbox, 0.2);  // 20% padding
+                    return;
+                }
+
+                console.log('[ROI] No face selected');
+                return;
+            }
+
+            // Build ROI string from drag selection
+            const roi = `${x1.toFixed(4)},${y1.toFixed(4)},${x2.toFixed(4)},${y2.toFixed(4)}`;
+            currentRoi = roi;
+
+            console.log('[ROI] Selected:', roi);
+
+            // Draw persisted ROI rectangle
+            drawRoiRect(x1, y1, x2, y2);
+
+            // Send to parent
+            window.parent.postMessage({
+                type: "ROI_SELECTED",
+                nodeId: nodeId,
+                roi: roi
+            }, "*");
+        }
+
+        function onMouseLeave(e) {
+            if (isDragging) {
+                isDragging = false;
+                selectionRect.style.display = 'none';
+            }
+            if (isPanning) {
+                isPanning = false;
+                renderer.domElement.style.cursor = 'default';
+            }
+        }
+
+        // Wheel handler for zoom
+        function onWheel(e) {
+            e.preventDefault();
+
+            // Get mouse position in world coordinates before zoom
+            const mouseWorld = screenToWorld(e.clientX, e.clientY);
+
+            // Determine zoom factor
+            const zoomFactor = e.deltaY > 0 ? 1.1 : 0.9;  // Zoom out / zoom in
+            const newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoomLevel * zoomFactor));
+
+            if (newZoom === zoomLevel) return;
+
+            const scale = newZoom / zoomLevel;
+            zoomLevel = newZoom;
+
+            // Scale camera around mouse position
+            const cameraWidth = camera.right - camera.left;
+            const cameraHeight = camera.top - camera.bottom;
+            const newWidth = cameraWidth * scale;
+            const newHeight = cameraHeight * scale;
+
+            // Keep mouse position fixed
+            const mouseNdcX = (mouseWorld.x - camera.left) / cameraWidth;
+            const mouseNdcY = (mouseWorld.y - camera.bottom) / cameraHeight;
+
+            camera.left = mouseWorld.x - mouseNdcX * newWidth;
+            camera.right = camera.left + newWidth;
+            camera.bottom = mouseWorld.y - mouseNdcY * newHeight;
+            camera.top = camera.bottom + newHeight;
+
+            camera.updateProjectionMatrix();
+
+            // Redraw existing ROI if any
+            if (currentRoi) {
+                const parts = currentRoi.split(',').map(parseFloat);
+                if (parts.length === 4) {
+                    drawRoiRect(parts[0], parts[1], parts[2], parts[3]);
+                }
+            }
+        }
+
+        // Draw ROI rectangle (in screen coordinates)
+        function drawRoiRect(x1, y1, x2, y2) {
+            const screenStart = worldToScreen(x1, y1);
+            const screenEnd = worldToScreen(x2, y2);
+
+            const rect = renderer.domElement.getBoundingClientRect();
+
+            const sx1 = Math.max(0, screenStart.x - rect.left);
+            const sy1 = Math.max(0, screenEnd.y - rect.top);  // Note: Y is flipped
+            const sx2 = Math.min(rect.width, screenEnd.x - rect.left);
+            const sy2 = Math.min(rect.height, screenStart.y - rect.top);
+
+            roiRect.style.display = 'block';
+            roiRect.style.left = (rect.left + sx1) + 'px';
+            roiRect.style.top = (rect.top + sy1) + 'px';
+            roiRect.style.width = (sx2 - sx1) + 'px';
+            roiRect.style.height = (sy2 - sy1) + 'px';
+        }
+
+        // Parse ROI string and draw
+        function drawExistingRoi(roiStr) {
+            if (!roiStr) return;
+
+            const parts = roiStr.split(',').map(parseFloat);
+            if (parts.length !== 4) return;
+
+            const [x1, y1, x2, y2] = parts;
+            currentRoi = roiStr;
+            drawRoiRect(x1, y1, x2, y2);
+            console.log('[ROI] Drew existing ROI:', roiStr);
+        }
+
+        // Show loading message
+        function showLoading(msg) {
+            loadingDiv.textContent = msg;
+            loadingDiv.style.display = 'block';
+            errorDiv.style.display = 'none';
+        }
+
+        // Show error message
+        function showError(msg) {
+            errorDiv.textContent = msg;
+            errorDiv.style.display = 'block';
+            loadingDiv.style.display = 'none';
+        }
+
+        // Find boundary edges (edges belonging to only 1 triangle)
+        // These are CAD face boundaries since each face is tessellated independently
+        function findBoundaryEdges(geometry) {
+            const position = geometry.attributes.position;
+            const index = geometry.index;
+
+            if (!index) {
+                console.warn('[ROI] No index buffer, cannot find boundary edges');
+                return new THREE.BufferGeometry();
+            }
+
+            // Build edge -> triangle count map
+            // Edge key: sorted vertex indices as string "v1,v2"
+            const edgeCount = new Map();
+
+            for (let i = 0; i < index.count; i += 3) {
+                const a = index.getX(i);
+                const b = index.getX(i + 1);
+                const c = index.getX(i + 2);
+
+                // 3 edges per triangle
+                [[a, b], [b, c], [c, a]].forEach(([v1, v2]) => {
+                    const key = v1 < v2 ? `${v1},${v2}` : `${v2},${v1}`;
+                    edgeCount.set(key, (edgeCount.get(key) || 0) + 1);
+                });
+            }
+
+            // Collect edges with count == 1 (boundary edges)
+            const boundaryVertices = [];
+            for (const [key, count] of edgeCount) {
+                if (count === 1) {
+                    const [v1, v2] = key.split(',').map(Number);
+                    boundaryVertices.push(
+                        position.getX(v1), position.getY(v1), position.getZ(v1),
+                        position.getX(v2), position.getY(v2), position.getZ(v2)
+                    );
+                }
+            }
+
+            console.log('[ROI] Found', boundaryVertices.length / 6, 'boundary edges');
+
+            const edgeGeom = new THREE.BufferGeometry();
+            edgeGeom.setAttribute('position', new THREE.Float32BufferAttribute(boundaryVertices, 3));
+            return edgeGeom;
+        }
+
+        // Load GLB mesh
+        async function loadGLB(glbpath) {
+            showLoading('Loading mesh...');
+
+            try {
+                const loader = new THREE.GLTFLoader();
+
+                loader.load(
+                    glbpath,
+                    (gltf) => {
+                        console.log('[ROI] GLB loaded');
+
+                        // Remove old mesh
+                        if (currentMesh) {
+                            scene.remove(currentMesh);
+                            currentMesh.geometry.dispose();
+                            currentMesh.material.dispose();
+                        }
+                        if (currentEdges) {
+                            scene.remove(currentEdges);
+                            currentEdges.geometry.dispose();
+                            currentEdges.material.dispose();
+                        }
+
+                        // Find mesh in scene
+                        let geometry = null;
+                        gltf.scene.traverse((child) => {
+                            if (child.isMesh && child.geometry) {
+                                geometry = child.geometry;
+                            }
+                        });
+
+                        if (!geometry) {
+                            throw new Error('No mesh found in GLB');
+                        }
+
+                        geometry.computeVertexNormals();
+
+                        // Check if we have vertex colors
+                        const hasVertexColors = geometry.attributes.color !== undefined;
+                        console.log('[ROI] Has vertex colors:', hasVertexColors);
+
+                        // Create mesh with material (use vertex colors if available)
+                        let material;
+                        if (hasVertexColors) {
+                            material = new THREE.MeshPhongMaterial({
+                                vertexColors: true,
+                                side: THREE.DoubleSide,
+                                flatShading: false,
+                                polygonOffset: true,
+                                polygonOffsetFactor: 1,
+                                polygonOffsetUnits: 1
+                            });
+                        } else {
+                            material = new THREE.MeshPhongMaterial({
+                                color: 0x6699cc,
+                                side: THREE.DoubleSide,
+                                flatShading: false,
+                                polygonOffset: true,
+                                polygonOffsetFactor: 1,
+                                polygonOffsetUnits: 1
+                            });
+                        }
+
+                        currentMesh = new THREE.Mesh(geometry, material);
+                        scene.add(currentMesh);
+
+                        // Draw CAD face boundary edges (open edges in the tessellated mesh)
+                        const edgesGeometry = findBoundaryEdges(geometry);
+                        const edgesMaterial = new THREE.LineBasicMaterial({ color: 0x000000 });
+                        currentEdges = new THREE.LineSegments(edgesGeometry, edgesMaterial);
+                        scene.add(currentEdges);
+
+                        // Fit camera
+                        fitCameraToModel();
+
+                        loadingDiv.style.display = 'none';
+                        console.log('[ROI] Mesh loaded, vertices:', geometry.attributes.position.count);
+                        console.log('[ROI] Loaded successfully');
+
+                        // Draw pending ROI if any
+                        if (pendingRoi) {
+                            console.log('[ROI] Drawing pending ROI after load:', pendingRoi);
+                            drawExistingRoi(pendingRoi);
+                        }
+                    },
+                    (xhr) => {
+                        const pct = (xhr.loaded / xhr.total * 100).toFixed(0);
+                        showLoading(`Loading mesh... ${pct}%`);
+                    },
+                    (error) => {
+                        console.error('[ROI] GLB load error:', error);
+                        showError('Failed to load mesh');
+                    }
+                );
+            } catch (error) {
+                console.error('[ROI] Error:', error);
+                showError('Error: ' + error.message);
+            }
+        }
+
+        // Get face bbox at clicked position using raycaster and triangle_face_ids
+        function getFaceAtPosition(screenX, screenY) {
+            if (!currentMesh || !raycaster || faceBboxes.length === 0 || triangleFaceIds.length === 0) return null;
+
+            const rect = renderer.domElement.getBoundingClientRect();
+            const mouse = new THREE.Vector2(
+                ((screenX - rect.left) / rect.width) * 2 - 1,
+                -((screenY - rect.top) / rect.height) * 2 + 1
+            );
+
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObject(currentMesh);
+
+            if (intersects.length > 0) {
+                const faceIndex = intersects[0].faceIndex;
+
+                // Look up the CAD face ID from triangleFaceIds
+                if (faceIndex >= 0 && faceIndex < triangleFaceIds.length) {
+                    const cadFaceId = triangleFaceIds[faceIndex];
+
+                    // Find the face bbox with matching ID
+                    const faceBbox = faceBboxes.find(fb => fb.id === cadFaceId);
+                    if (faceBbox) {
+                        console.log('[ROI] Clicked triangle', faceIndex, '-> CAD face', cadFaceId);
+                        return faceBbox;
+                    }
+                }
+            }
+            return null;
+        }
+
+        // Select ROI around a face bbox with padding
+        function selectFaceRoi(faceBbox, padding = 0.2) {
+            const minX = faceBbox.min[0];
+            const minY = faceBbox.min[1];
+            const maxX = faceBbox.max[0];
+            const maxY = faceBbox.max[1];
+
+            const width = maxX - minX;
+            const height = maxY - minY;
+            const padX = width * padding;
+            const padY = height * padding;
+
+            const x1 = minX - padX;
+            const y1 = minY - padY;
+            const x2 = maxX + padX;
+            const y2 = maxY + padY;
+
+            const roi = `${x1.toFixed(4)},${y1.toFixed(4)},${x2.toFixed(4)},${y2.toFixed(4)}`;
+            currentRoi = roi;
+
+            console.log('[ROI] Selected face ROI:', roi);
+            drawRoiRect(x1, y1, x2, y2);
+
+            window.parent.postMessage({
+                type: "ROI_SELECTED",
+                nodeId: nodeId,
+                roi: roi
+            }, "*");
+        }
+
+        // Store pending ROI to draw after model loads
+        let pendingRoi = null;
+
+        // Listen for messages from parent
+        window.addEventListener("message", (event) => {
+            if (event.data.type === "LOAD_MODEL") {
+                console.log('[ROI] Received LOAD_MODEL:', event.data);
+                console.log('[ROI] currentRoi from message:', event.data.currentRoi);
+
+                nodeId = event.data.nodeId;
+                boundsMin = event.data.boundsMin || [0, 0, 0];
+                boundsMax = event.data.boundsMax || [1, 1, 1];
+
+                // Store face bboxes and triangle-to-face mapping from backend
+                faceBboxes = event.data.faceBboxes || [];
+                triangleFaceIds = event.data.triangleFaceIds || [];
+                console.log('[ROI] Received', faceBboxes.length, 'face bboxes,', triangleFaceIds.length, 'triangle mappings');
+
+                // Store ROI to draw after load
+                pendingRoi = event.data.currentRoi || null;
+                console.log('[ROI] pendingRoi set to:', pendingRoi);
+
+                // Load model (will draw ROI after load completes)
+                if (event.data.glbUrl) {
+                    loadGLB(event.data.glbUrl);
+                }
+            }
+        });
+
+        // Initialize
+        initScene();
+    </script>
+</body>
+</html>
